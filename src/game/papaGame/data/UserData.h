@@ -20,10 +20,25 @@ public:
     double points = 0;
     double burgerzillas = 0;
     double killsTally = 0;
+    double startingLives = 0;
+    double totalLives = 0; // the constructor sets it to startingLives
+    double livesLost = 0;
+    bool gotHurt = false;
     std::vector<double> enemyKills = std::vector<double>(41, 0);
 
     // AS: UserData.earnPoints / killBurgerzilla / saveEnemyKill (SKELETON: HUD updateDisplay and challenges)
     void earnPoints(double amount) { points += amount; }
+    // AS: UserData.adjustLives — false when no life is left (SKELETON: HUD updateDisplay).
+    bool adjustLives(double amount)
+    {
+        totalLives += amount;
+        if (amount < 0) {
+            livesLost += -amount;
+        }
+        return totalLives >= 0;
+    }
+    // AS: UserData.resetLives
+    void resetLives() { totalLives = startingLives; }
     void killBurgerzilla(double amount = 1) { burgerzillas += amount; }
     void saveEnemyKill(double type, const std::string & /*weapon*/ = "none", const std::string & /*category*/ = "")
     {

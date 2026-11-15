@@ -240,8 +240,7 @@ bool Character::moveChar(double dx, double dy, double jumpDir, bool bounceAtWall
     }
     if (y > maxY) {
         if (isPlayer() && !isFinishingLevelPlayer() && y > maxY + heightmultiplier * height) {
-            y = maxY + heightmultiplier * height - 3;
-            fellOffLevel(); // restartPlayer / hurtPlayer, then checkGoingThroughDoor(0, 1)
+            fellOffLevel(maxY); // restartPlayer, or hurtPlayer and checkGoingThroughDoor(0, 1)
         }
         if (y > maxY + spriteheight + 50) {
             y = maxY + spriteheight + 50;

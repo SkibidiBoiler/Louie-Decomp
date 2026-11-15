@@ -37,7 +37,17 @@ public:
     void checkIfOnDoor();                   // AS: PlayerChar.checkIfOnDoor
     void checkGoingThroughDoor(double dx, double dy) override;
     void enterDoor(double tileX, double tileY);
-    void fellOffLevel() override;
+    void fellOffLevel(double maxY) override;
+    // Damage (AS: PlayerChar).
+    double getNormalAttackPower() const { return statAttack; }
+    void clearCombo();
+    bool canGetHit() const;
+    void hurtPlayer(double dir, double damage, bool forced = false);
+    void shovePlayer(double dir, double amount = 4);
+    void restartPlayer(double lives = -1);
+    void updateStunTime();
+    void dropWeapon() {} // AS: PlayerChar.dropWeapon (empty)
+    bool checkForHittingEnemies(bool justChecking = false); // AS: CustomerChar.checkForHittingEnemies
     void addToCombo(double amount = 1); // AS: PlayerChar.addToCombo
     void updateComboTimer();            // AS: PlayerChar.updateComboTimer
 
@@ -81,6 +91,12 @@ public:
     double startAttackFrame = 0, endAttackFrame = 4, repeatAttackFrame = 6;
     double reloadTimer = 0, reloadTimerMax = 1, bulletTimer = 0, bulletsFired = 0, bulletsPerRound = 1;
     double comboTally = 0, comboTimer = 0, comboTimerMax = 90;
+    bool isFinalBlow = false, isInvincible = false, isStartingGrabbing = false, canAutoWallJump = false;
+    bool isCheesed = false, isPausingAfterMiniboss = false, isHiding = false, fellOffTrain = false;
+    bool hitByBlast = false, hasPowerup = false;
+    double statAttack = 1, invincibleTimer = 0, invincibleFXID = -1, shoveTimer = 0, shoveTimerMax = 6;
+    double defaultHealth = 3;
+    Rect standCollRect, jumpCollRect, duckCollRect, stomp_collRect, pound_collRect;
     std::string hasWeaponType = "unknown";
     Rect attackRect;
 

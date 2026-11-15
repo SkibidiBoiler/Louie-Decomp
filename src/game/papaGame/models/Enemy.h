@@ -107,6 +107,8 @@ public:
     bool isAttacking = false;
     double spawnerObjectID = -1;
     double groupID = -1;
+    Rect stompRect;            // AS: stompRect (null unless hasStompRect)
+    bool hasStompRect = false; // port
     std::string enemyCategory;
     bool didTagStun = false;
 

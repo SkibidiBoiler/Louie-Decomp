@@ -90,7 +90,7 @@ public:
     virtual void checkGoingThroughDoor(double /*dx*/, double /*dy*/) {}
     virtual bool isPlayer() const { return false; }
     virtual bool isFinishingLevelPlayer() const { return false; }
-    virtual void fellOffLevel() {}
+    virtual void fellOffLevel(double /*maxY*/) {}
 
     obf_9G::obf_4R *gameObj = nullptr;
     double id = 0;
@@ -104,7 +104,7 @@ public:
     double spriteCenterX = 64, spriteCenterY = 40, spriteTargetX = 75, spriteTargetY = 75;
     double sheetWidth = 18, sheetHeight = 18, flipBlitOffset = 0;
     bool isHit = false, isStunned = false, isTurning = false;
-    double stunStartTime = 0, stunDuration = 90;
+    double stunStartTime = 0, stunDuration = 90, hitStartTime = 0, hitDuration = 700;
     double maxHealth = 5, currentHealth = 5;
     double animationFrame = 0, cycleFrame = 0, animationBlitStyle = 1;
     std::string cycleName;

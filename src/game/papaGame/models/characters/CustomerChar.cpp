@@ -54,6 +54,12 @@ void CustomerChar::defineVars()
     normalgravity = 2;
     jumpgravity = 2;
     stunDuration = 60;
+    collRect = {-15, -80, 30, 90};
+    standCollRect = {-8, -63, 16, 73};
+    jumpCollRect = {-8, -63, 16, 73};
+    duckCollRect = {-8, -20, 16, 30};
+    currentHealth = 3;
+    maxHealth = 3;
     shouldCheckCeilingSlopes = true;
     if (const data::CustomerDataFile *c = playerData()) {
         hasWeaponType = c->weaponType;
@@ -104,6 +110,8 @@ bool CustomerChar::loadTables(const std::string &path)
     };
     torsoOffsetsX_ = list("torsoOffsetsX");
     torsoOffsetsY_ = list("torsoOffsetsY");
+    stomp_collRect = rectField(tables, "stomp_collRect");
+    pound_collRect = rectField(tables, "pound_collRect");
     melee_attackRect = rectField(tables, "melee_attackRect");
     swing_attackRect = rectField(tables, "swing_attackRect");
     whip_attackRect = rectField(tables, "whip_attackRect");
@@ -116,7 +124,7 @@ bool CustomerChar::loadTables(const std::string &path)
 }
 
 // AS: PlayerChar.startupPlayer
-void CustomerChar::startupPlayer(double tileX, double tileY, bool /*newLevel*/, bool keepFacing)
+void CustomerChar::startupPlayer(double tileX, double tileY, bool newLevel, bool keepFacing)
 {
     const display::GameDisplay &display = *gameObj->obf_71;
     x = tileX * display.tileWidth + display.tileWidth / 2;
@@ -127,11 +135,39 @@ void CustomerChar::startupPlayer(double tileX, double tileY, bool /*newLevel*/, 
         facingDir = 1;
         walkingDir = 1;
     }
+    lastSafeX = tileX;
+    lastSafeY = tileY;
     isWalking = false;
     isDead = false;
+    isHit = false;
+    fellOffTrain = false;
+    if (!keepFacing) {
+        statAttack = 1;
+    }
+    canPressLeft = true;
+    canPressRight = true;
+    gameObj->obf_8o->stopHurtControls = false;
+    if (!keepFacing) {
+        // A fresh start begins stunned: the flicker is the start-up invincibility.
+        isStunned = true;
+        stunStartTime = 0;
+    }
+    if (isInvincible) {
+        isInvincible = false;
+        invincibleFXID = -1; // SKELETON: removeEffect(invincibleFXID)
+    }
+    if (newLevel) {
+        isFinishingLevel = false;
+        hitByBlast = false;
+        gameObj->obf_8o->stopActionControls = false;
+    }
+    if (!keepFacing) {
+        currentHealth = maxHealth; // SKELETON: GameHUD.updatePlayerHealth
+    }
+    // SKELETON: the EndPortalEffect on a new level and the skill tutorials (§_-6n§).
+    fallChar();
     prevX = x;
     prevY = y;
-    // SKELETON: the rest of startupPlayer (state flags, effects, projectiles) comes with damage and doors.
 }
 
 // AS: PlayerChar.canFudgeJump — a few frames after walking off a ledge a jump still counts.
@@ -211,12 +247,15 @@ void CustomerChar::enterDoor(double tileX, double tileY)
 }
 
 // Character.moveChar, below the bottom edge of the level (the player part).
-void CustomerChar::fellOffLevel()
+void CustomerChar::fellOffLevel(double maxY)
 {
     if (isDead) {
-        // SKELETON: restartPlayer.
+        restartPlayer();
     } else {
-        // SKELETON: hurtPlayer (or fellOffTrain on a train).
+        y = maxY + heightmultiplier * height - 3;
+        if (!isRidingElevator) { // (no trains in PL2: DataManager.isOnTrain is always false)
+            hurtPlayer(0, INT_MAX, true);
+        }
         checkGoingThroughDoor(0, 1);
     }
 }
@@ -686,7 +725,7 @@ void CustomerChar::endAnimationCycle()
         isSkidding = false;
         isWalking = false;
         isHit = false;
-        // SKELETON: restartPlayer.
+        restartPlayer();
     } else if (cycleName == "hit" || cycleName == "gloves_hit") {
         isHit = false;
         walkingDir = facingDir;
@@ -904,7 +943,14 @@ void CustomerChar::updateObject()
     if (hasWeaponType == "unknown") {
         hasWeaponType = data->weaponType;
     }
-    // SKELETON: collRect (duck / jump / stand), forceGrabYoffset and the boss music delay.
+    if (duck) {
+        collRect = duckCollRect;
+    } else if (jump) {
+        collRect = jumpCollRect;
+    } else {
+        collRect = standCollRect;
+    }
+    // SKELETON: forceGrabYoffset and the boss music delay.
     if (isDoubleJumping && !jump) {
         // SKELETON: Scooter starts sliding here when landing with Down held.
         isDoubleJumping = false;
@@ -1006,10 +1052,11 @@ void CustomerChar::updateObject()
         // SKELETON: sliding (slide speed on slopes, Scooter / Kahuna hops, the slide sound), ground pounding,
         // gliding (Foodini's balloons), wall jumping and wall sliding.
         checkIfAttacking();
-        // SKELETON: checkForHittingEnemies, checkForHittingObjects, checkForCollectingItems, checkForGrabbingTile,
-        // checkSteppingOnObjects, adjustCarriedObject.
+        checkForHittingEnemies();
+        // SKELETON: checkForHittingObjects, checkForCollectingItems, checkForGrabbingTile, checkSteppingOnObjects,
+        // adjustCarriedObject.
         checkIfOnDoor();
-        // SKELETON: updateStunTime.
+        updateStunTime();
         updateComboTimer();
         if (!isGrabbing && !isRidingObject && (!isRidingElevator || isDead)) {
             fallChar();
@@ -1033,6 +1080,264 @@ void CustomerChar::updateObject()
     wasTurning = isTurning;
     playerLastX = x;
     // SKELETON: the crawl hint and Professor Fitz's copter sound.
+}
+
+// AS: PlayerChar.clearCombo
+void CustomerChar::clearCombo()
+{
+    // SKELETON: the combo challenge is recorded here when comboTally > 1.
+    comboTimer = 0;
+    comboTally = 0;
+}
+
+// AS: PlayerChar.canGetHit
+bool CustomerChar::canGetHit() const
+{
+    return !isHit && !isStunned && !isInvincible && !isDead && !isFinishingLevel && !isPausingAfterMiniboss &&
+           !isHiding && !isRidingObject;
+}
+
+// AS: PlayerChar.hurtPlayer — knocked back stunned, or killed when the health runs out.
+void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
+{
+    if (forced && (isPausingAfterMiniboss || isFinishingLevel)) {
+        forced = false; // "Don't hurt him, he's finishing the level!"
+    }
+    if (!canGetHit() && !forced) {
+        return;
+    }
+    events::GameControls &controls = *gameObj->obf_8o;
+    currentHealth -= damage;
+    isHit = true;
+    hitStartTime = 0;
+    isGrabbing = false;
+    isStartingGrabbing = false;
+    isShoved = false;
+    clearCombo();
+    gameObj->obf_51->gotHurt = true;
+    isGroundPounding = false;
+    isDoubleJumping = false;
+    isClimbingLadder = false;
+    isGliding = false;
+    isWallJumping = false;
+    isWallSliding = false;
+    canAutoWallJump = false;
+    if (!isCrawling) {
+        isDucking = false;
+        duck = false;
+    }
+    // SKELETON: removeCheese when isCheesed.
+    if (currentHealth <= 0) {
+        currentHealth = 0;
+        // SKELETON: GameCam.setCameraJiggle(12, 10).
+        cancelAttack();
+        dropWeapon();
+        dirx = dir;
+        if (dir != 0) {
+            walkingDir = dir;
+            facingDir = dir * -1;
+        }
+        setSpeed(walkspeed);
+        if (!isCrawling) {
+            jumpspeed = jumpstart;
+            jump = true;
+        }
+        isDead = true;
+        hasPowerup = false;
+        isInvincible = false;
+        isWalking = false;
+        invincibleFXID = -1; // SKELETON: removeEffect(invincibleFXID) and player_died.wav
+        controls.stopHurtControls = true;
+    } else {
+        // SKELETON: GameCam.setCameraJiggle(6, 8).
+        dirx = dir;
+        if (dir != 0) {
+            walkingDir = dir;
+            facingDir = dir * -1;
+        }
+        if (!isCrawling) {
+            jumpspeed = -16;
+            jump = true;
+        }
+        isWalking = false;
+        setSpeed(8);
+        skidSpeed = 3;
+        cancelAttack();
+        controls.stopHurtControls = true;
+        isStunned = true;
+        // SKELETON: the DizzyEffect over the head (y offset -72, or -32 crawling) and player_hurt.wav.
+    }
+    // SKELETON: GameHUD.updatePlayerHealth, throwCarriedObject(0).
+}
+
+// AS: PlayerChar.shovePlayer — pushed back without damage.
+void CustomerChar::shovePlayer(double dir, double amount)
+{
+    if (!isGrabbing && !isStartingGrabbing) {
+        isShoved = true;
+        isTurning = false;
+        shoveTimer = 0;
+        dirx = dir;
+        if (dir != 0) {
+            walkingDir = dir;
+            facingDir = dir * -1;
+        }
+        if (dir == 1) {
+            canPressLeft = false;
+        } else if (dir == -1) {
+            canPressRight = false;
+        }
+        if (jump) {
+            amount = 1;
+        }
+        setSpeed(amount);
+    }
+}
+
+// AS: PlayerChar.restartPlayer — back to the last safe tile, or out of lives.
+void CustomerChar::restartPlayer(double lives)
+{
+    if (gameObj->obf_51->adjustLives(lives)) {
+        gameObj->obf_8o->stopHurtControls = false;
+        isDead = false;
+        gameObj->obf_8o->resetKeys();
+        startupPlayer(lastSafeX, lastSafeY);
+    } else {
+        // "DEAD!" SKELETON: endMusic and GameDisplay.startMainIrisOut, whose end shows the game over screen
+        // (§_-2K§). Until those exist the level starts again.
+        gameObj->obf_51->resetLives();
+        gameObj->obf_6V(gameObj->obf_AQ->currentLevel);
+    }
+}
+
+// AS: PlayerChar.updateStunTime
+void CustomerChar::updateStunTime()
+{
+    if (isStunned) {
+        ++stunStartTime;
+        if (stunStartTime >= stunDuration) {
+            isStunned = false;
+            // SKELETON: the stun stars (stunStarIDs) are removed here.
+        }
+    }
+    if (isShoved) {
+        ++shoveTimer;
+        if (shoveTimer >= shoveTimerMax) {
+            isShoved = false;
+            canPressRight = true;
+            canPressLeft = true;
+            walkingDir = facingDir;
+            isWalking = true;
+        }
+    }
+}
+
+// AS: CustomerChar.checkForHittingEnemies — the attack, slide and ground pound hit enemies; stomping stuns them;
+// touching one hurts the player (or shoves him away from a harmless one).
+bool CustomerChar::checkForHittingEnemies(bool justChecking)
+{
+    const Rect body{x + collRect.x, y + collRect.y, collRect.width, collRect.height};
+    Rect stomp{x + stomp_collRect.x, y + stomp_collRect.y, stomp_collRect.width, stomp_collRect.height};
+    const Rect attack{x + getTorsoOffsetX() + attackRect.x, y + getTorsoOffsetY() + attackRect.y, attackRect.width,
+                      attackRect.height};
+    if (isGroundPounding) {
+        stomp = {x + pound_collRect.x, y + pound_collRect.y, pound_collRect.width, pound_collRect.height};
+    }
+    bool result = false;
+    bool hitSomething = false, killedSomething = false, stomped = false;
+    const std::string weapon = playerData()->weaponClipName;
+    managers::EnemyManager &manager = *gameObj->obf_E;
+    for (size_t i = 0; i < manager.enemies.size(); ++i) {
+        Enemy *e = manager.enemies[i];
+        if (!e) {
+            continue;
+        }
+        if (justChecking) {
+            result = false;
+            break;
+        }
+        if (canDealDamage && isAttacking && cycleFrame >= startAttackFrame && cycleFrame <= endAttackFrame) {
+            if (e->checkSpriteCollision(attack)) {
+                bool killed = false;
+                if (!e->isHit) {
+                    killed = e->getHit(statAttack, facingDir, false, weapon);
+                }
+                if (!e->isDodging && e->isHit) {
+                    hitSomething = true;
+                    if (killed) {
+                        killedSomething = true;
+                    }
+                }
+                if (!e->isDead) {
+                    if (usingPowerTool()) {
+                        if (std::abs(x - e->x) <= 30) {
+                            shovePlayer(x < e->x ? -1 : 1);
+                        }
+                    } else {
+                        shovePlayer(x < e->x ? -1 : 1, 0);
+                    }
+                }
+            }
+        } else if (isSliding && e->checkSpriteCollision(body) && !e->isDead) {
+            e->getHit(statAttack, facingDir, false, playerData()->customerName == "Scooter" ? "slideskate" : "slide");
+        } else if (isGroundPounding && e->checkSpriteCollision(stomp) && !e->isDead && e->canBeStunned) {
+            e->getHit(statAttack, facingDir, false, "groundpound");
+            jumpspeed = -16;
+            jump = true;
+            isGliding = false;
+            isDoubleJumping = false;
+            isWallJumping = false;
+            isGroundPounding = false;
+            // SKELETON: GameCam.setCameraJiggle(10, 10) and papow.wav.
+        } else if (canGetHit() && !justChecking) {
+            if (e->checkSpriteCollision(body) && !e->isDead) {
+                if (isCheesed && jump && jumpspeed >= 0) {
+                    // "Hit enemy while cheesed!  Kill it."
+                    if (!e->isDead) {
+                        e->killMe();
+                    }
+                    break;
+                }
+                if (e->canBeStunned && ((jump && jumpspeed >= 0) || (!jump && wasJumping)) &&
+                    (!e->hasStompRect || e->checkSpriteCollision(stomp, &e->stompRect))) {
+                    e->stunEnemy();
+                    stomped = true;
+                    gravity = e->stunBounceGravity;
+                    jumpspeed = e->stunBounceJumpSpeed;
+                    triggerjump = true;
+                    jump = true;
+                    isGliding = false;
+                    isDoubleJumping = false;
+                    isWallJumping = false;
+                    isWallSliding = false;
+                    isGroundPounding = false;
+                    // SKELETON: stunbounce.wav at volume 0.7 when the enemy is not dead or hit.
+                    break;
+                }
+                if (!e->isStunned && !e->isUnstunning && !stomped && e->canDealDamage) {
+                    hurtPlayer(e->x > x ? -1 : 1, 1);
+                    e->reactToHurtingPlayer();
+                    break;
+                }
+                if ((e->isStunned || e->isUnstunning || !e->canDealDamage) && (!jump || jumpspeed >= 0)) {
+                    shovePlayer(x < e->x ? -1 : 1, e->shoveAmount);
+                    break;
+                }
+                break;
+            }
+        }
+    }
+    if (hitSomething && !usingPowerTool()) {
+        canDealDamage = false;
+    }
+    if (hitSomething && killedSomething) {
+        isFinalBlow = true;
+    } else if (hitSomething && !killedSomething) {
+        isFinalBlow = false;
+    } else if (!hitSomething && canDealDamage) {
+        isFinalBlow = false;
+    }
+    return result;
 }
 
 } // namespace papaGame::models::characters

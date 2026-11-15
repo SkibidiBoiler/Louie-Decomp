@@ -22,10 +22,16 @@ void GameControls::detectKeys()
     if (isPaused || stopCycle) {
         return;
     }
-    ++gameplayTimer;
-    ++currentLevelTimer;
-    // SKELETON: time bonus, being shoved.
-    if (!stopControls) {
+    if (!p.isFinishingLevel) {
+        ++gameplayTimer;
+        ++currentLevelTimer;
+    }
+    // SKELETON: UserData timeBonus / levelTimePlayed.
+    if (p.isShoved && ((p.walkingDir == 1 && keyPressedRight) || (p.walkingDir == -1 && keyPressedLeft))) {
+        p.isShoved = false;
+        p.walkingDir = p.facingDir;
+    }
+    if (!stopControls && !stopHurtControls && !stopActionControls) {
         keyCheckPlayer(p);
     }
     if (p.jump) {
@@ -35,15 +41,20 @@ void GameControls::detectKeys()
         if (p.jumpspeed < 0) {
             p.isClimbingLadder = false;
         }
-        p.jumpChar();
+        if (p.isDead && p.isRidingElevator) {
+            p.jumpChar(false);
+        } else {
+            p.jumpChar();
+            // SKELETON: ground pounding runs updateObject and jumpChar once more.
+        }
     }
-    if (wasJumping && !p.jump && !p.isWalking && p.skidSpeed != 0) {
+    if (wasJumping && !p.jump && !p.isWalking && p.skidSpeed != 0 && !p.isHit) {
         p.skidSpeed = 0;
     }
-    if (!p.isWalking && p.jump && p.skidSpeed != 0) {
+    if (!p.isWalking && p.jump && p.skidSpeed != 0 && !p.isHit) {
         p.skidSpeed = 0;
     }
-    if (wasJumping && !p.jump) {
+    if (wasJumping && !p.jump && !p.isHit) {
         // Landing: face the way the player looks, and drop any backwards air speed.
         p.walkingDir = p.facingDir;
         p.isTurning = false;
@@ -56,6 +67,20 @@ void GameControls::detectKeys()
     }
     if (p.triggerjumpx) {
         p.moveChar(p.walkingDir, 0, 0);
+    }
+    if (p.isDead && p.jump) {
+        // A dead player flies off in the direction of the hit (SKELETON: falling off a train at speed 30).
+        p.setSpeed(p.walkspeed);
+        if (p.isRidingElevator) {
+            p.moveChar(p.walkingDir, 0, 0, false, false, false);
+        } else {
+            p.moveChar(p.walkingDir, 0, 0);
+        }
+    }
+    if (!p.isDead && (p.isHit || p.isShoved)) {
+        if (p.speed > 0) {
+            p.moveChar(p.walkingDir, 0, 0);
+        }
     }
     p.updateObject();
     // SKELETON: items and bullets are processed before the enemies, effects and objects after.

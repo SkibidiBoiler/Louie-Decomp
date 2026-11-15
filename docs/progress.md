@@ -114,7 +114,15 @@ health, sprite collision and proximity sound helpers. Cycle tables come from `en
 points / kill tallies. `--trace` adds an `E` line per frame (id:type x,y cycle, d/s/h flags).
 SKELETON: the other 35 enemy types (`createEnemy` returns null: logged "ENEMY DOESN'T EXIST"), multi-sprite
 enemies, effects (dizzy stars, starburst), sounds, triggers to objects.
-Next: hitting enemies (`checkForHittingEnemies`), player damage, then objects (ladders, blocks), items, HUD.
+(14) Hitting enemies and player damage: `CustomerChar.checkForHittingEnemies` (attack rectangle during the attack
+frames, slide, ground pound, stomping stuns and bounces, touching hurts or shoves; `isFinalBlow`), combo
+(`addToCombo`, `updateComboTimer`, `clearCombo`), `PlayerChar.canGetHit`, `hurtPlayer` (knock-back stun, or death
+when the health, 3, runs out), `shovePlayer`, `updateStunTime`, `restartPlayer` + `UserData.adjustLives`
+(PL2 starts with 0 lives, so the first death ends the level), falling off the level (`fellOffLevel`), the
+stand/jump/duck collision rectangles and the rest of `startupPlayer` (start-up stun = invincibility flicker).
+`GameControls.detectKeys` now moves hit, shoved and dead players like the original.
+SKELETON: the game over screen and iris (a death restarts the level), camera jiggle, effects and sounds.
+Next: objects (ladders, blocks), items, HUD.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with
