@@ -344,6 +344,10 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
         const std::string objects = "{\n\"GameObject\": " +
             fieldConstantsJson(index, "papaGame.models", "GameObject") + "\n}\n";
         writeFile(out + "/objects.json", objects.data(), objects.size());
+        const std::string items = "{\n\"ItemManager\": " +
+            fieldConstantsJson(index, "papaGame.managers", "ItemManager") + ",\n\"GameItem\": " +
+            fieldConstantsJson(index, "papaGame.models", "GameItem") + "\n}\n";
+        writeFile(out + "/items.json", items.data(), items.size());
     }
     report(0.43f, "Converting frame scripts");
     {

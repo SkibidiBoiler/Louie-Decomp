@@ -41,6 +41,8 @@ public:
             objectArray[static_cast<size_t>(index)] = row;
         }
     }
+    // AS: ScreenData.updateItems
+    void updateItems(const std::vector<std::vector<as3::Value>> &rows) { itemArray = rows; }
     void saveEnemyState(double index, const std::vector<as3::Value> &row)
     {
         if (index >= 0 && index < static_cast<double>(enemyArray.size())) {
@@ -55,7 +57,7 @@ public:
     std::vector<double> startPoint;
     std::vector<std::vector<as3::Value>> enemyArray;  // first 4 fields Number, the rest String
     std::vector<std::vector<as3::Value>> objectArray; // first 4 fields Number, the rest String
-    std::vector<std::vector<double>> itemArray;
+    std::vector<std::vector<as3::Value>> itemArray; // saved rows name their item ("Coin")
     double roomID = as3::NaN;
     double whichTileset = 0;
     bool objectsInitialized = false;

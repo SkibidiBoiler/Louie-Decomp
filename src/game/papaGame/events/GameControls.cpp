@@ -83,7 +83,8 @@ void GameControls::detectKeys()
         }
     }
     p.updateObject();
-    // SKELETON: items and bullets are processed before the enemies, effects and objects after.
+    gameObj->obf_3Z->processItems();
+    // SKELETON: processBullets.
     gameObj->obf_E->processEnemies();
     // SKELETON: processEffects.
     gameObj->obf_7u->processObjects();

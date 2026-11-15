@@ -46,6 +46,8 @@ public:
     void shovePlayer(double dir, double amount = 4);
     void restartPlayer(double lives = -1);
     void updateStunTime();
+    void getHeart();                // AS: PlayerChar.getHeart
+    void checkForCollectingItems(); // AS: PlayerChar.checkForCollectingItems
     void dropWeapon() {} // AS: PlayerChar.dropWeapon (empty)
     bool checkForHittingEnemies(bool justChecking = false); // AS: CustomerChar.checkForHittingEnemies
     bool checkForHittingObjects();                          // AS: CustomerChar.checkForHittingObjects

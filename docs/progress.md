@@ -131,7 +131,14 @@ broken by ground pounds), `GameObject28` checkpoint (`DataManager.saveCheckpoint
 cycles come from `objects.json` (importer). The DEV `--ladder` flag is gone: real ladders work (level 1).
 SKELETON: the other object types (cage, pulley, blimps, berries, switch, door, boulder, cannon, sauce, spikes,
 training sensor), events/triggers between objects, carrying, pushing, stepping on objects, CheckpointData.
-Next: items, bullets, effects, HUD.
+(16) Items: `ItemManager` (§_-3Z§: addItem, checkForCollecting, processItems, saveItems -> `ScreenData.updateItems`,
+clearItems, buildItems, removeItem; `itemIDsToNames` from `items.json`), `GameItem` (placement, flicker, moving
+items) and the nine PL2 items (`GameItem_Coin`, `_PapaCoin`, `_SargeCoin`, `_RadishCoin`, `_Heart`, `_Daisy`,
+`_Balloon`, `_FizzoCan`, `_GummyWorm`). `itemArray` rows are now `as3::Value` (saved rows name their item).
+`PlayerChar.getHeart` / `checkForCollectingItems`, `UserData` money / special items, `GameDisplay.reblitItems`.
+The `T` trace line shows health, money and special items. SKELETON: dropMoney (it names PL3 money items),
+dropped weapons, GoldHelmet, the item effects and sounds.
+Next: bullets, effects, HUD.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

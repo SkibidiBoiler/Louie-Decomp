@@ -72,11 +72,22 @@ set(PL_SOURCES
     src/game/papaGame/managers/BitmapManager.cpp
     src/game/papaGame/managers/CharacterBlitter.cpp
     src/game/papaGame/managers/EnemyManager.cpp
+    src/game/papaGame/managers/ItemManager.cpp
     src/game/papaGame/managers/MapManager.cpp
     src/game/papaGame/managers/ObjectManager.cpp
     src/game/papaGame/models/Character.cpp
     src/game/papaGame/models/Enemy.cpp
+    src/game/papaGame/models/GameItem.cpp
     src/game/papaGame/models/GameObject.cpp
+    src/game/papaGame/models/items/GameItem_Balloon.cpp
+    src/game/papaGame/models/items/GameItem_Coin.cpp
+    src/game/papaGame/models/items/GameItem_Daisy.cpp
+    src/game/papaGame/models/items/GameItem_FizzoCan.cpp
+    src/game/papaGame/models/items/GameItem_GummyWorm.cpp
+    src/game/papaGame/models/items/GameItem_Heart.cpp
+    src/game/papaGame/models/items/GameItem_PapaCoin.cpp
+    src/game/papaGame/models/items/GameItem_RadishCoin.cpp
+    src/game/papaGame/models/items/GameItem_SargeCoin.cpp
     src/game/papaGame/models/objects/GameObject3.cpp
     src/game/papaGame/models/objects/GameObject21.cpp
     src/game/papaGame/models/objects/GameObject22.cpp

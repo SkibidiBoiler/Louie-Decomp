@@ -112,8 +112,10 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitSky();
     reblitBackdrop();
     reblitTiles();
-    // SKELETON: items and effects are drawn before the objects, bullets after the enemies.
+    reblitItems(true, false);
+    // SKELETON: reblitEffects(false).
     reblitObjects(false);
+    reblitItems(false, false);
     reblitEnemies(false);
     if (gameObj->playerObj && gameObj->playerObj->blitter) {
         reblitMultispritePlayer();
@@ -121,7 +123,9 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitObjects(true);
     // SKELETON: the player on a foreground moving tile is drawn here.
     reblitEnemies(true);
-    // SKELETON: effects, items, bullets and overlays.
+    // SKELETON: reblitEffects(true).
+    reblitItems(false, true);
+    // SKELETON: bullets and overlays.
     drawTransition();
     smooth_ = false;
 }
@@ -556,6 +560,33 @@ void GameDisplay::blitLadder(const models::GameObject &o)
              (o.ytile + 1) * tileWidth - currentYcoord - offsetY);
         blit(sheet, o.topCapFrame * o.spritewidth, 0, o.spritewidth, o.spriteheight, dx,
              (o.ytile - h) * tileWidth - currentYcoord - offsetY);
+    }
+}
+
+// AS: GameDisplay.reblitItems
+void GameDisplay::reblitItems(bool background, bool foreground)
+{
+    managers::ItemManager &manager = *gameObj->obf_3Z;
+    for (models::GameItem *it : manager.items) {
+        if (!it || it->background != background || it->foreground != foreground || !it->checkOnScreen()) {
+            continue;
+        }
+        const double frame = it->animationFrame;
+        const double w = it->spritewidth, h = it->spriteheight;
+        const double sx = (frame - std::floor(frame / it->sheetWidth) * it->sheetWidth) * w;
+        const double sy = std::floor(frame / it->sheetWidth) * h;
+        const double ix = it->prevX + (it->x - it->prevX) * drawAlpha_;
+        const double iy = it->prevY + (it->y - it->prevY) * drawAlpha_;
+        double dx = ix - (it->spriteTargetX - it->spriteCenterX) - currentXcoord - w / 2;
+        double dy = iy - (it->spriteTargetY - it->spriteCenterY) - currentYcoord - h / 2;
+        if (!smooth_) {
+            dx = std::floor(dx);
+            dy = std::floor(dy);
+        }
+        const auto index = static_cast<size_t>(it->sheetIndex);
+        if (it->sheetIndex >= 0 && index < manager.objectSheets.size() && manager.objectSheets[index]) {
+            blit(*manager.objectSheets[index], sx, sy, w, h, dx, dy);
+        }
     }
 }
 

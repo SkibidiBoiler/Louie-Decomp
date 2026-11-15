@@ -18,6 +18,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_8o = std::make_unique<papaGame::events::GameControls>(this);
     obf_E = std::make_unique<papaGame::managers::EnemyManager>(this);
     obf_7u = std::make_unique<papaGame::managers::ObjectManager>(this);
+    obf_3Z = std::make_unique<papaGame::managers::ItemManager>(this);
 }
 
 bool obf_4R::loadLevelData(const std::string &gameDir)
@@ -26,6 +27,7 @@ bool obf_4R::loadLevelData(const std::string &gameDir)
     playerObj->loadTables(gameDir + "/customerchar.json");
     obf_E->loadTables(gameDir + "/enemies.json");
     obf_7u->loadTables(gameDir + "/objects.json");
+    obf_3Z->loadTables(gameDir + "/items.json");
     return obf_AQ->prepareLevelData(gameDir + "/levels.xml");
 }
 
@@ -73,7 +75,8 @@ void obf_4R::obf_4X(double roomID, double doorID, double /*xOffset*/, double /*y
 {
     obf_E->saveEnemies();
     obf_7u->saveObjects();
-    // SKELETON: saving items, clearing bullets/effects and extra sprites.
+    obf_3Z->saveItems();
+    // SKELETON: clearing bullets/effects and extra sprites.
     obf_AQ->setActiveRoom(roomID);
     if (obf_AQ->currentScreenData == nullptr) {
         return;

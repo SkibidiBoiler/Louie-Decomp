@@ -106,8 +106,10 @@ void DataManager::initializeScreenObjects(double whichScreen)
     if (!currentScreenData->objectsInitialized) {
         gameObj->obf_7u->clearObjects(whichScreen, true);
         gameObj->obf_E->clearEnemies(whichScreen, true);
+        gameObj->obf_3Z->clearItems(whichScreen, true);
         gameObj->obf_7u->buildObjects(whichScreen);
         gameObj->obf_E->buildEnemies(whichScreen);
+        gameObj->obf_3Z->buildItems(whichScreen);
         gameObj->obf_E->preblitSheets();
         gameObj->obf_7u->preblitSheets();
     } else {

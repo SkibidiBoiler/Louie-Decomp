@@ -1054,7 +1054,8 @@ void CustomerChar::updateObject()
         checkIfAttacking();
         checkForHittingEnemies();
         checkForHittingObjects();
-        // SKELETON: checkForCollectingItems, checkForGrabbingTile, checkSteppingOnObjects,
+        checkForCollectingItems();
+        // SKELETON: checkForGrabbingTile, checkSteppingOnObjects,
         // adjustCarriedObject.
         checkIfOnDoor();
         updateStunTime();
@@ -1394,6 +1395,20 @@ void CustomerChar::checkForPoundingObjects()
             }
         }
     }
+}
+
+// AS: PlayerChar.getHeart (SKELETON: GameHUD.updatePlayerHealth)
+void CustomerChar::getHeart()
+{
+    if (currentHealth < maxHealth) {
+        ++currentHealth;
+    }
+}
+
+// AS: PlayerChar.checkForCollectingItems
+void CustomerChar::checkForCollectingItems()
+{
+    gameObj->obf_3Z->checkForCollecting({x + collRect.x, y + collRect.y, collRect.width, collRect.height});
 }
 
 } // namespace papaGame::models::characters

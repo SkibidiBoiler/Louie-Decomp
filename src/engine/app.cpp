@@ -298,8 +298,10 @@ void App::tickLevel()
     }
     if (trace_) {
         const auto &dm = *game_->obf_AQ;
-        SDL_Log("T %d room %.0f x %.1f y %.1f tile %.0f,%.0f %s/%s%s%s%s%s", scriptFrame_, dm.currentScreen, player.x,
-                player.y, player.xtile, player.ytile, player.cycleName.c_str(), player.footCycleName.c_str(),
+        SDL_Log("T %d room %.0f x %.1f y %.1f tile %.0f,%.0f hp %.0f $%.0f sp %.0f %s/%s%s%s%s%s", scriptFrame_,
+                dm.currentScreen, player.x,
+                player.y, player.xtile, player.ytile, player.currentHealth, game_->obf_51->money,
+                game_->obf_51->specialitems, player.cycleName.c_str(), player.footCycleName.c_str(),
                 player.jump ? " jump" : "", player.isClimbingLadder ? " ladder" : "",
                 player.waitToEnterDoor ? " door" : "",
                 game_->obf_71->isTransitionOut ? " out" : (game_->obf_71->isTransitioningIn ? " in" : ""));

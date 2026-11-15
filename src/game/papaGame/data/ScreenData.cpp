@@ -72,7 +72,7 @@ void ScreenData::populateData(const engine::XmlNode &xml)
         }
         tileArray.push_back(std::move(cells));
     }
-    itemArray = splitNumberRows(xml.childText("itemArray"));
+    itemArray = splitMixedRows(xml.childText("itemArray"), SIZE_MAX);
     enemyArray = splitMixedRows(xml.childText("enemyArray"), 4);
     objectArray = splitMixedRows(xml.childText("objectArray"), 4);
     doorArray = splitNumberRows(xml.childText("doorArray"));

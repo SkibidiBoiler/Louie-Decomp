@@ -18,6 +18,8 @@ public:
     double selectedStyle = 1;
     // MochiDigits in the original (an obfuscated number against memory editing): plain doubles in the port.
     double points = 0;
+    double money = 0;
+    double specialitems = 0;
     double burgerzillas = 0;
     double killsTally = 0;
     double startingLives = 0;
@@ -28,6 +30,9 @@ public:
 
     // AS: UserData.earnPoints / killBurgerzilla / saveEnemyKill (SKELETON: HUD updateDisplay and challenges)
     void earnPoints(double amount) { points += amount; }
+    // AS: UserData.earnMoney / collectSpecialItem (SKELETON: HUD updateDisplay, ChallengeManager.recordSpecialItem)
+    void earnMoney(double amount = 1) { money += amount; }
+    void collectSpecialItem(double amount = 1) { specialitems += amount; }
     // AS: UserData.adjustLives — false when no life is left (SKELETON: HUD updateDisplay).
     bool adjustLives(double amount)
     {
