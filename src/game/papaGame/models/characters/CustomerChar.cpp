@@ -190,6 +190,77 @@ void CustomerChar::startDucking()
     isTurning = false;
 }
 
+// AS: PlayerChar.checkIfOnLadder — a ladder tile here; going down it must not start on solid ground.
+bool CustomerChar::checkIfOnLadder(double dir)
+{
+    const managers::MapManager &map = *gameObj->obf_4i;
+    if (map.getTileProperty(xtile, ytile, "ladder") > 0) {
+        if (!isClimbingLadder && dir == 1 &&
+            (map.getTileProperty(xtile, ytile + 1, "collision") > 0 ||
+             map.getTileProperty(xtile, ytile + 1, "thrublock") > 0)) {
+            return false;
+        }
+        // SKELETON: false while cheesed.
+        return true;
+    }
+    return false;
+}
+
+// AS: PlayerChar.checkIfOnDoor — standing in a doorway arms it; walking out the door's side enters it.
+void CustomerChar::checkIfOnDoor()
+{
+    const managers::MapManager &map = *gameObj->obf_4i;
+    const std::vector<double> door = map.getTileDoor(xtile, ytile);
+    if (!door.empty() && !isDead) {
+        waitToEnterDoor = true;
+        doorDirX = door[4];
+        doorDirY = door[5];
+        doorXtile = xtile;
+        doorYtile = ytile;
+    } else if (map.isWithinBounds(xtile, ytile)) {
+        waitToEnterDoor = false;
+    }
+}
+
+// AS: PlayerChar.checkGoingThroughDoor — called by moveChar when the player hits a level edge.
+void CustomerChar::checkGoingThroughDoor(double dx, double dy)
+{
+    if (waitToEnterDoor && !gameObj->obf_71->isTransitioningIn) {
+        if (dx == doorDirX && dy == doorDirY) {
+            enterDoor(doorXtile, doorYtile);
+        }
+    }
+}
+
+// AS: PlayerChar.enterDoor
+void CustomerChar::enterDoor(double tileX, double tileY)
+{
+    const std::vector<double> door = gameObj->obf_4i->getTileDoor(tileX, tileY);
+    if (door.empty()) {
+        return;
+    }
+    const double dirY = door[5];
+    cancelAttack();
+    if (dirY == -1) {
+        jump = true; // going up: jump into the room above
+        jumpspeed = jumpstart;
+    } else {
+        jump = false;
+    }
+    gameObj->obf_8o->travelThroughDoor(door[0] - 1, door[1], door[2], door[3], door[4], dirY);
+}
+
+// Character.moveChar, below the bottom edge of the level (the player part).
+void CustomerChar::fellOffLevel()
+{
+    if (isDead) {
+        // SKELETON: restartPlayer.
+    } else {
+        // SKELETON: hurtPlayer (or fellOffTrain on a train).
+        checkGoingThroughDoor(0, 1);
+    }
+}
+
 // AS: CustomerChar.getTorsoOffsetX
 double CustomerChar::getTorsoOffsetX() const
 {
@@ -996,7 +1067,9 @@ void CustomerChar::updateObject()
         // gliding (Foodini's balloons), wall jumping and wall sliding.
         checkIfAttacking();
         // SKELETON: checkForHittingEnemies, checkForHittingObjects, checkForCollectingItems, checkForGrabbingTile,
-        // checkSteppingOnObjects, adjustCarriedObject, checkIfOnDoor, updateStunTime, updateComboTimer.
+        // checkSteppingOnObjects, adjustCarriedObject.
+        checkIfOnDoor();
+        // SKELETON: updateStunTime, updateComboTimer.
         if (!isGrabbing && !isRidingObject && (!isRidingElevator || isDead)) {
             fallChar();
         }

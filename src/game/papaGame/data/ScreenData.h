@@ -29,6 +29,7 @@ public:
                double roomIndex = -1);
 
     void populateData(const engine::XmlNode &xml);
+    double checkForDoorID(double x, double y) const;
 
     obf_9G::obf_4R *gameObj = nullptr;
     std::vector<std::vector<TileCell>> tileArray;

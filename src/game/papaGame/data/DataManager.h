@@ -57,7 +57,8 @@ public:
     const Grid *collisionArray = nullptr;
     const Grid *thruArray = nullptr;
     const Grid *grabArray = nullptr;
-    double COLLISION_TILE_NUMBER = 0, THRUBLOCK_TILE_NUMBER = 0, GRAB_TILE_NUMBER = 0, LADDER_TILE_NUMBER = 0;
+    double COLLISION_TILE_NUMBER = 0, SLOPE_TILE_NUMBER = 0, THRUBLOCK_TILE_NUMBER = 0, GRAB_TILE_NUMBER = 0;
+    double LADDER_TILE_NUMBER = 0;
 
 private:
     const engine::XmlNode *findWorld(double tileset) const;

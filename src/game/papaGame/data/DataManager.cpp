@@ -155,6 +155,7 @@ bool DataManager::loadTables(const std::string &path)
     THRUBLOCK_TILE_NUMBER = number("THRUBLOCK_TILE_NUMBER");
     GRAB_TILE_NUMBER = number("GRAB_TILE_NUMBER");
     LADDER_TILE_NUMBER = number("LADDER_TILE_NUMBER");
+    SLOPE_TILE_NUMBER = number("SLOPE_TILE_NUMBER");
     lists_.clear();
     for (const auto &[name, value] : tables_.fields) {
         if (value.type == engine::JsonValue::Type::Array && (name.find("TileList") != std::string::npos)) {

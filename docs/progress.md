@@ -94,7 +94,16 @@ foot cycles (`grabAnimationCycle` / `grabFootAnimationCycle`, frame sync, `endAn
 `startAttacking` / `setupAttackRect` / `cancelAttack`, and the attack, skid and lunge parts of `keyCheckPlayer`.
 The cycles and attack tables come from `customerchar.json` (importer; re-import needed for older data).
 `--walk-test` also attacks at frames 82-84.
-Next: ladders, doors and the room switch with the player, then enemies (hitting them with `attackRect`).
+(12) Ladders and doors: `PlayerChar.checkIfOnLadder` and the ladder part of `keyCheckPlayer` (grab, climb at
+climbSpeed 5, hop off the top); `MapManager.setProperty` (ladders are `GameObject3` objects that mark tiles, so
+real ladders appear with objects; DEV `--ladder x,y,h`). Doors: `ScreenData.checkForDoorID`,
+`WorldData.getDoorArray`, `MapManager.getTileDoor` (= getTileProperty "door"), `checkIfOnDoor`,
+`checkGoingThroughDoor`, `enterDoor`, `GameControls.travelThroughDoor`, the room wipe (`startTransition`,
+`blitTransition`, `finishTransition`) and `§_-4X§` placing the player at the target door.
+DEV testing without screenshots: `--input "R1-60,U61-90"` (keys LRUDJA, logic frames), `--trace` (one line per
+frame: room, position, tile, cycles, flags; plus the room's doors and ladder tiles), `--frames N`, `--level N`.
+`tools/as_func.py <deob dir> <Class> <method>` prints one original function compactly.
+Next: enemies (EnemyManager, hitting them with `attackRect`), then objects (ladders, blocks), items, HUD.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

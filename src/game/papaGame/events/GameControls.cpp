@@ -131,7 +131,46 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
         }
         p.canPressDown = true;
     }
-    // SKELETON: ladders (keyPressedUp / Down next to a ladder).
+    const bool up = keyPressedUp;
+    if (!p.isAttacking && !p.isWallSliding && !p.isPushingObject && !p.isSliding && !p.isGliding && !p.isGroundPounding &&
+        (!p.jump || p.jumpspeed >= 0)) { // SKELETON: && !isCheesed
+        const double tileWidth = gameObj->obf_71->tileWidth;
+        // Grabbing a ladder snaps the player to its side, facing the way they were.
+        auto grabLadder = [&](double dir) {
+            // SKELETON: ladder_grab.wav when not already climbing.
+            p.isClimbingLadder = true;
+            p.climbDir = dir;
+            if (p.facingDir == 1) {
+                p.x = p.xtile * tileWidth + 12;
+            } else {
+                p.x = (p.xtile + 1) * tileWidth - 12;
+            }
+            if (p.jump && p.jumpspeed >= 0) {
+                p.jump = false;
+            }
+        };
+        if (up && p.checkIfOnLadder(-1)) {
+            grabLadder(-1);
+            p.canPressDoubleJump = false;
+        } else if (down && (p.checkIfOnLadder(1) || p.checkIfLadderBelow())) {
+            if (p.checkIfLadderBelow() && !p.checkIfOnLadder(1)) {
+                p.y += 18; // step down onto the ladder below
+                p.ytile = std::floor(p.y / tileWidth);
+            }
+            grabLadder(1);
+        } else if (p.isClimbingLadder && !down && !up) {
+            p.climbDir = 0;
+        }
+    }
+    if (p.isClimbingLadder && p.climbDir != 0) {
+        p.moveChar(0, p.climbDir, 0, false, false, true, p.climbSpeed);
+        if (p.isClimbingLadder && !p.checkIfOnLadder(p.climbDir)) {
+            // Off the top or bottom: a small hop.
+            p.isClimbingLadder = false;
+            p.jump = true;
+            p.jumpspeed = -12;
+        }
+    }
     // The left and right branches of the original are the same code mirrored.
     auto walk = [&](double dir) {
         if (p.isRidingObject || p.isSliding || p.isGroundPounding || p.isClimbingLadder || p.isAttackLunging) {
@@ -262,6 +301,22 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
     } else if (!p.canPressAction) {
         p.canPressAction = true;
     }
+}
+
+// AS: GameControls.travelThroughDoor — the room switch happens when the "out" wipe finishes.
+void GameControls::travelThroughDoor(double roomID, double doorID, double xOffset, double yOffset, double dirX,
+                                     double dirY)
+{
+    doorRoomID = roomID;
+    doorDoorID = doorID;
+    doorXoffset = xOffset;
+    doorYoffset = yOffset;
+    doorDirX = dirX;
+    doorDirY = dirY;
+    gameObj->obf_3Y->unsetCameraForceScrolling();
+    travelingThroughDoor = true;
+    gameObj->obf_71->startTransition("out");
+    stopCycle = true;
 }
 
 } // namespace papaGame::events

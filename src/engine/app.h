@@ -41,6 +41,7 @@ private:
     void nextMode();
     void switchRoom(int delta);
     void tickLevel();
+    void parseInputScript(const char *script);
     void tap(float winX, float winY);
 
     SDL_Window *window_ = nullptr;
@@ -81,7 +82,15 @@ private:
     bool dragging_ = false;
     bool freeCam_ = false; // DEV: the camera stays where --cam / a room switch put it until the player moves
     Input input_;
-    int walkTest_ = -1; // DEV: --walk-test frame counter
+    // DEV: scripted input (--input / --walk-test): actions held over logic-frame ranges; per-frame trace.
+    struct ScriptedKey {
+        Action action;
+        int from, to;
+    };
+    std::vector<ScriptedKey> inputScript_;
+    int scriptFrame_ = -1;
+    bool trace_ = false;
+    int quitAfterFrames_ = -1;
 
     // DEV: Enemy35 walking back and forth in the blit demo.
     double sargeX_ = 200.0;

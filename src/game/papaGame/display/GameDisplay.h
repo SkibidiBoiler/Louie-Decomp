@@ -36,6 +36,12 @@ public:
     void reblitBackdrop();
     void reblitTiles();
     void reblitMultispritePlayer();
+    // AS: startTransition / blitTransition / finishTransition — the wipe between rooms. blitTransition's
+    // movement runs once per logic frame (from advanceFrame); drawTransition is its drawing part.
+    void startTransition(const std::string &type);
+    void blitTransition();
+    void finishTransition();
+    void drawTransition();
 
     obf_9G::obf_4R *gameObj = nullptr;
     GameCam *camObj = nullptr;
@@ -72,12 +78,17 @@ public:
     bool showLightning = false;
     double spriteFlickerCounter = 0;
     double lightningTimer = 0;
+    bool isTransitioningIn = false;
+    bool isTransitionOut = false;
+    double transitionX = 0;
+    double transitionSpeed = 64;
 
 private:
     void blit(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx, double dy) const;
 
     // Port: interpolation state for redrawScreen.
     double prevTrainX_ = 0;
+    double prevTransitionX_ = 0;
     double drawCamX_ = 0, drawCamY_ = 0, drawTrainX_ = 0;
     bool smooth_ = false;
     double drawAlpha_ = 1;

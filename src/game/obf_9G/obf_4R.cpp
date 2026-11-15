@@ -62,12 +62,12 @@ void obf_4R::obf_52()
     // SKELETON: initializeScreenObjects, level music and the portal sound.
 }
 
-// AS: §_-4R§.§_-4X§
-void obf_4R::obf_4X(double whichRoom)
+// AS: §_-4R§.§_-4X§ — enter room `roomID` through its door `doorID`.
+// The door's offsets are passed along but not read: the player is placed by the door's direction.
+void obf_4R::obf_4X(double roomID, double doorID, double /*xOffset*/, double /*yOffset*/, double dirX, double dirY)
 {
-    // SKELETON: saving enemies/objects/items, clearing bullets/effects, the player and the door position are
-    // not ported yet; this is the room switch itself.
-    obf_AQ->setActiveRoom(whichRoom);
+    // SKELETON: saving enemies/objects/items, clearing bullets/effects and extra sprites.
+    obf_AQ->setActiveRoom(roomID);
     if (obf_AQ->currentScreenData == nullptr) {
         return;
     }
@@ -75,6 +75,21 @@ void obf_4R::obf_4X(double whichRoom)
     obf_71->currentXcoord = 0;
     obf_71->currentYcoord = 0;
     obf_3Y->setCameraBounds();
+    // SKELETON: HUD updateDisplay / updateTimer.
+    const auto &doors = obf_AQ->currentScreenData->doorArray;
+    if (doorID >= 0 && doorID < static_cast<double>(doors.size()) && doors[static_cast<size_t>(doorID)].size() >= 4) {
+        const auto &door = doors[static_cast<size_t>(doorID)];
+        const double tileX = door[0] + dirX;
+        const double tileY = door[1] + (door[3] - 1) + dirY;
+        playerObj->startupPlayer(tileX, tileY, false, true);
+    }
+    obf_3Y->adjustCamera(playerObj->x, playerObj->y, true, true);
+    obf_3Y->savePrevious(); // port: no interpolation across the room switch
+    obf_71->currentXcoord = 0;
+    obf_71->currentYcoord = 0;
+    // SKELETON: initializeScreenObjects, HUD.
+    obf_8o->stopCycle = false;
+    obf_71->startTransition("in");
 }
 
 } // namespace obf_9G

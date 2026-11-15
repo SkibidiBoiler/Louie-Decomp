@@ -1,5 +1,7 @@
 #include "game/papaGame/data/WorldData.h"
 
+#include "game/obf_9G/obf_4R.h"
+
 namespace papaGame::data {
 
 namespace {
@@ -72,6 +74,27 @@ std::vector<double> WorldData::getWorldRoomIDs() const
         ids.push_back(room.size() > 6 ? room[6] : as3::NaN);
     }
     return ids;
+}
+
+// AS: WorldData.getDoorArray — [target room, target door, offsetX, offsetY, dirX, dirY]. worldDoorArray rows
+// link two doors: [room A (1-based), door A, room B, door B].
+std::vector<double> WorldData::getDoorArray(double screen, double doorID) const
+{
+    const DataManager &dm = *gameObj->obf_AQ;
+    const auto &door = dm.currentScreens[static_cast<size_t>(screen)]->doorArray[static_cast<size_t>(doorID)];
+    auto at = [&](size_t i) { return i < door.size() ? door[i] : as3::NaN; };
+    for (const auto &link : worldDoorArray) {
+        if (link.size() < 4) {
+            continue;
+        }
+        if (link[0] == screen + 1 && link[1] == doorID) {
+            return {link[2], link[3], at(2), at(3), at(4), at(5)};
+        }
+        if (link[2] == screen + 1 && link[3] == doorID) {
+            return {link[0], link[1], at(2), at(3), at(4), at(5)};
+        }
+    }
+    return {};
 }
 
 } // namespace papaGame::data

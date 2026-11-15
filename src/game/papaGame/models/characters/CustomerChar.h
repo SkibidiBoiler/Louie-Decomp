@@ -52,6 +52,11 @@ public:
     void setSpeed(double v) { speed = v; }  // AS: PlayerChar.setSpeed
     bool canFudgeJump() const;              // AS: PlayerChar.canFudgeJump
     void startDucking();                    // AS: PlayerChar.startDucking (no sliding on slopes yet)
+    bool checkIfOnLadder(double dir);       // AS: PlayerChar.checkIfOnLadder
+    void checkIfOnDoor();                   // AS: PlayerChar.checkIfOnDoor
+    void checkGoingThroughDoor(double dx, double dy) override;
+    void enterDoor(double tileX, double tileY);
+    void fellOffLevel() override;
 
     // Animation.
     const AnimationCycle &grabAnimationCycle();
@@ -82,7 +87,9 @@ public:
     bool isAttackLunging = false, wasJumping = false, wasTurning = false;
     bool isFinishPushing = false, isPushingObject = false, isGroundPounding = false, isWallJumping = false;
     bool isRidingElevator = false;
-    double climbDir = 1;
+    double climbDir = 1, climbSpeed = 5;
+    bool waitToEnterDoor = false;
+    double doorDirX = 0, doorDirY = 0, doorXtile = 0, doorYtile = 0;
     double skidSpeed = 0, useSkidSpeed = 0, maxSkidSpeed = 8, skidTimer = 0, skidTimerInterval = 2;
     double skidDecayTimer = 0, skidDecayTimerInterval = 1, skidDecayAmount = 1;
     double lastSafeTime = 0, lastSafeTimeBuffer = 6, whichJumpSound = 1, lastSafeX = 0, lastSafeY = 0;

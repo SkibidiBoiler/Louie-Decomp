@@ -17,6 +17,8 @@ public:
     void adjustCamera(double anchorX, double anchorY, bool anchorIsPlayerChar, bool snap = false);
 
     // Port: remember the position before a logic step so rendering can interpolate between steps.
+    void unsetCameraForceScrolling() { forcedScrollingCamera = false; } // AS: GameCam.unsetCameraForceScrolling
+
     void savePrevious() { prevX = x; prevY = y; }
 
     obf_9G::obf_4R *gameObj = nullptr;

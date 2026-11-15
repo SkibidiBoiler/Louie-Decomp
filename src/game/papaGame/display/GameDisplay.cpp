@@ -90,6 +90,7 @@ void GameDisplay::advanceFrame()
 {
     prevTrainX_ = trainX;
     trainX += trainSpeed; // AS: from reblitSky
+    blitTransition();
 }
 
 // AS: GameDisplay.redrawScreen
@@ -115,8 +116,88 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     if (gameObj->playerObj && gameObj->playerObj->blitter) {
         reblitMultispritePlayer();
     }
+    // SKELETON: foreground objects/enemies/effects and overlays come later.
+    drawTransition();
     smooth_ = false;
-    // SKELETON: foreground objects/enemies/effects, overlays and transitions come later.
+}
+
+// AS: GameDisplay.startTransition
+void GameDisplay::startTransition(const std::string &type)
+{
+    const managers::BitmapManager &bitmaps = *gameObj->bitmapManager;
+    if (type == "in") {
+        isTransitioningIn = true;
+        const engine::Sheet *sheet = bitmaps.sheets->get("transition_in_effect");
+        transitionX = 0 - (sheet ? sheet->width : 0);
+        // SKELETON: the HUD is shown here.
+    } else if (type == "out") {
+        isTransitionOut = true;
+        const engine::Sheet *sheet = bitmaps.sheets->get("transition_out_effect");
+        transitionX = 0 - (sheet ? sheet->width : 0);
+    }
+    prevTransitionX_ = transitionX;
+}
+
+// AS: GameDisplay.blitTransition (the movement; drawTransition draws it)
+void GameDisplay::blitTransition()
+{
+    prevTransitionX_ = transitionX;
+    if (isTransitioningIn || isTransitionOut) {
+        transitionX += transitionSpeed;
+        if (transitionX > screenPxWidth) {
+            finishTransition();
+        }
+    }
+}
+
+// AS: GameDisplay.finishTransition
+void GameDisplay::finishTransition()
+{
+    events::GameControls &controls = *gameObj->obf_8o;
+    if (isTransitioningIn) {
+        isTransitioningIn = false;
+    } else if (isTransitionOut) {
+        isTransitionOut = false;
+        if (controls.travelingThroughDoor) {
+            gameObj->obf_4X(controls.doorRoomID, controls.doorDoorID, controls.doorXoffset, controls.doorYoffset,
+                            controls.doorDirX, controls.doorDirY);
+            controls.travelingThroughDoor = false;
+        }
+        // SKELETON: otherwise game over (§_-2K§) or finishLevel.
+    }
+}
+
+// The drawing half of GameDisplay.blitTransition: the wipe sheet at transitionX, black on the covered side.
+void GameDisplay::drawTransition()
+{
+    if (!isTransitioningIn && !isTransitionOut) {
+        return;
+    }
+    const managers::BitmapManager &bitmaps = *gameObj->bitmapManager;
+    SDL_Renderer *renderer = gameObj->renderer;
+    const double x = prevTransitionX_ + (transitionX - prevTransitionX_) * drawAlpha_;
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+    if (isTransitioningIn) {
+        const engine::Sheet *sheet = bitmaps.sheets->get("transition_in_effect");
+        const double w = sheet ? sheet->width : 0;
+        if (sheet) {
+            blit(*sheet, 0, 0, w, sheet->height, x, 0);
+        }
+        if (x + w < screenPxWidth) {
+            const SDL_FRect rect{static_cast<float>(x + w), 0, static_cast<float>(screenPxWidth - (x + w)),
+                                 static_cast<float>(screenPxHeight)};
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    } else {
+        const engine::Sheet *sheet = bitmaps.sheets->get("transition_out_effect");
+        if (sheet) {
+            blit(*sheet, 0, 0, sheet->width, sheet->height, x, 0);
+        }
+        if (x < screenPxWidth) {
+            const SDL_FRect rect{0, 0, static_cast<float>(x), static_cast<float>(screenPxHeight)};
+            SDL_RenderFillRect(renderer, &rect);
+        }
+    }
 }
 
 void GameDisplay::blit(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx,

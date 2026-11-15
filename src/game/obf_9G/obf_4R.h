@@ -33,7 +33,7 @@ public:
     void obf_6V(double whichLevel);
     void obf_52();
     // AS: §_-4R§.§_-4X§ — the room-switch part of entering a door (no player or objects yet).
-    void obf_4X(double whichRoom);
+    void obf_4X(double roomID, double doorID, double xOffset, double yOffset, double dirX, double dirY);
 
     SDL_Renderer *renderer = nullptr; // port
     const engine::SymbolLibrary *symbols = nullptr; // port

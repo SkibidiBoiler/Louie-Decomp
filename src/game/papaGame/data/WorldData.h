@@ -16,6 +16,8 @@ public:
 
     void populateData(const engine::XmlNode &xml);
     std::vector<double> getWorldRoomIDs() const;
+    // Empty when the door leads nowhere (the original returns null).
+    std::vector<double> getDoorArray(double screen, double doorID) const;
 
     obf_9G::obf_4R *gameObj = nullptr;
     double worldID = as3::NaN;

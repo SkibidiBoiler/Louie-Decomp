@@ -1,8 +1,10 @@
 #include "engine/app.h"
 #include "engine/paths.h"
+#include "game/as3.h"
 #include "game/papaGame/managers/CharacterBlitter.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -73,8 +75,15 @@ SDL_AppResult App::init(int argc, char *argv[])
         mode_ = Mode::Import; // nothing imported yet
     }
     for (int i = 1; i + 1 < argc; ++i) {
-        if (std::strcmp(argv[i], "--walk-test") == 0) { // DEV: walk right and jump, for --capture checks
-            walkTest_ = 0;
+        if (std::strcmp(argv[i], "--walk-test") == 0) { // DEV: walk right, jump and attack (--capture checks)
+            parseInputScript("R0-199,J31-44,A82-84");
+        } else if (std::strcmp(argv[i], "--input") == 0) { // DEV: e.g. "R0-60,U61-90": keys LRUDJA, frames
+            parseInputScript(argv[i + 1]);
+        } else if (std::strcmp(argv[i], "--trace") == 0) { // DEV: log the player's state every logic frame
+            trace_ = true;
+            scriptFrame_ = std::max(scriptFrame_, 0);
+        } else if (std::strcmp(argv[i], "--frames") == 0) { // DEV: quit after N logic frames
+            quitAfterFrames_ = std::atoi(argv[i + 1]);
         } else if (std::strcmp(argv[i], "--touch") == 0) { // DEV: show the on-screen buttons
             input_.touch.visible = true;
         }
@@ -100,6 +109,16 @@ SDL_AppResult App::init(int argc, char *argv[])
                 SDL_Log("Player sheet %s: %gx%g cells, %g per row", path.c_str(), blitter.spriteWidth, blitter.spriteHeight,
                         blitter.spritesPerRow);
             }
+        } else if (std::strcmp(argv[i], "--ladder") == 0 && game_) {
+            // DEV: a ladder "x,y,height" in tiles (bottom tile y), marked like GameObject3 does, until objects exist.
+            double lx = 0, ly = 0, lh = 0;
+            if (std::sscanf(argv[i + 1], "%lf,%lf,%lf", &lx, &ly, &lh) == 3) {
+                for (int k = 0; k < static_cast<int>(lh); ++k) {
+                    game_->obf_4i->setProperty(lx, ly - lh + 1 + k, "ladder");
+                }
+            }
+        } else if (std::strcmp(argv[i], "--level") == 0 && game_) { // DEV: start level N (0-based)
+            game_->obf_6V(std::atof(argv[i + 1]));
         } else if (std::strcmp(argv[i], "--room") == 0 && game_) { // DEV: start in room N (0-based)
             switchRoom(std::atoi(argv[i + 1]) - static_cast<int>(game_->obf_AQ->currentScreen));
         } else if (std::strcmp(argv[i], "--cam") == 0 && game_) { // DEV: camera "x,y", clamped like a pan
@@ -197,8 +216,35 @@ void App::switchRoom(int delta)
     }
     const int n = static_cast<int>(game_->obf_AQ->currentScreens.size());
     const int room = ((static_cast<int>(game_->obf_AQ->currentScreen) + delta) % n + n) % n;
-    game_->obf_4X(room);
-    freeCam_ = true; // the player is not moved to the new room yet (SKELETON in obf_4X)
+    game_->obf_4X(room, 0, 0, 0, 0, 0); // DEV: enter through the room's first door
+}
+
+void App::parseInputScript(const char *script)
+{
+    // "<keys><from>-<to>,...": keys from LRUDJA (left, right, up, down, jump, attack), logic frames from 1.
+    inputScript_.clear();
+    for (const std::string &part : as3::split(script, ',')) {
+        size_t k = 0;
+        std::vector<Action> keys;
+        for (; k < part.size() && std::isalpha(static_cast<unsigned char>(part[k])); ++k) {
+            switch (part[k]) {
+            case 'L': keys.push_back(Action::Left); break;
+            case 'R': keys.push_back(Action::Right); break;
+            case 'U': keys.push_back(Action::Up); break;
+            case 'D': keys.push_back(Action::Down); break;
+            case 'J': keys.push_back(Action::Jump); break;
+            case 'A': keys.push_back(Action::Attack); break;
+            default: break;
+            }
+        }
+        int from = 0, to = 0;
+        if (std::sscanf(part.c_str() + k, "%d-%d", &from, &to) == 2) {
+            for (Action a : keys) {
+                inputScript_.push_back({a, from, to});
+            }
+        }
+    }
+    scriptFrame_ = 0;
 }
 
 void App::tickLevel()
@@ -212,11 +258,16 @@ void App::tickLevel()
     const bool *keys = SDL_GetKeyboardState(nullptr);
     const bool panning = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
     ActionState actions = panning ? ActionState{} : input_.poll();
-    if (walkTest_ >= 0) { // DEV: right until the capture (~3 s), jump at frames 30-45, attack at 82-84
-        ++walkTest_;
-        actions.held[static_cast<size_t>(Action::Right)] = walkTest_ < 200;
-        actions.held[static_cast<size_t>(Action::Jump)] = walkTest_ > 30 && walkTest_ < 45;
-        actions.held[static_cast<size_t>(Action::Attack)] = walkTest_ > 81 && walkTest_ < 85;
+    if (scriptFrame_ >= 0) {
+        ++scriptFrame_;
+        for (const ScriptedKey &k : inputScript_) {
+            if (scriptFrame_ >= k.from && scriptFrame_ <= k.to) {
+                actions.held[static_cast<size_t>(k.action)] = true;
+                if (k.action == Action::Jump) {
+                    actions.held[static_cast<size_t>(Action::Up)] = true;
+                }
+            }
+        }
     }
     controls.keyPressedLeft = actions[Action::Left];
     controls.keyPressedRight = actions[Action::Right];
@@ -227,6 +278,38 @@ void App::tickLevel()
     player.savePrevious();
     const double heldX = cam.x, heldY = cam.y;
     controls.detectKeys(); // moves the camera (GameCam.adjustCamera)
+    if (trace_ && scriptFrame_ == 1) {
+        // DEV: the room's doors (tile x, y, w, h, dirX, dirY) and ladder tiles, to plan --input scripts.
+        const auto &dm = *game_->obf_AQ;
+        for (const auto &d : dm.currentScreenData->doorArray) {
+            std::string row;
+            for (double v : d) {
+                row += as3::String(v) + " ";
+            }
+            SDL_Log("DOOR %s", row.c_str());
+        }
+        const auto &tiles = dm.currentScreenData->tileArray;
+        std::string ladders;
+        for (size_t ty = 0; ty < tiles.size(); ++ty) {
+            for (size_t tx = 0; tx < tiles[ty].size(); ++tx) {
+                if (game_->obf_4i->getTileProperty(static_cast<double>(tx), static_cast<double>(ty), "ladder") > 0) {
+                    ladders += std::to_string(tx) + "," + std::to_string(ty) + " ";
+                }
+            }
+        }
+        SDL_Log("LADDERS %s", ladders.c_str());
+    }
+    if (trace_) {
+        const auto &dm = *game_->obf_AQ;
+        SDL_Log("T %d room %.0f x %.1f y %.1f tile %.0f,%.0f %s/%s%s%s%s%s", scriptFrame_, dm.currentScreen, player.x,
+                player.y, player.xtile, player.ytile, player.cycleName.c_str(), player.footCycleName.c_str(),
+                player.jump ? " jump" : "", player.isClimbingLadder ? " ladder" : "",
+                player.waitToEnterDoor ? " door" : "",
+                game_->obf_71->isTransitionOut ? " out" : (game_->obf_71->isTransitioningIn ? " in" : ""));
+    }
+    if (quitAfterFrames_ >= 0 && --quitAfterFrames_ == 0) {
+        quitRequested_ = true;
+    }
     constexpr double kPan = 12.0;
     double dx = -static_cast<double>(dragX_), dy = -static_cast<double>(dragY_);
     dragX_ = dragY_ = 0.0f;

@@ -125,4 +125,18 @@ void ScreenData::populateData(const engine::XmlNode &xml)
     roomID = as3::Number(xml.childText("roomID"));
 }
 
+// AS: ScreenData.checkForDoorID — the door whose tile rectangle [x, y, w, h, ...] holds (x, y), or -1.
+double ScreenData::checkForDoorID(double x, double y) const
+{
+    double found = -1;
+    for (size_t i = 0; i < doorArray.size(); ++i) {
+        const auto &d = doorArray[i];
+        if (d.size() >= 4 && x >= d[0] && x < d[0] + d[2] && y >= d[1] && y < d[1] + d[3]) {
+            found = static_cast<double>(i);
+            break;
+        }
+    }
+    return found;
+}
+
 } // namespace papaGame::data
