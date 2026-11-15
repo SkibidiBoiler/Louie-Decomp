@@ -71,8 +71,9 @@ movement, gravity and tile collisions (he starts in the air: the original drops 
 `GameControls`, `GameCam.adjustCamera`.
 (6) importer writes `datamanager.json`: every constant field of `papaGame.data.DataManager` (tile collision /
 thru / grab arrays, slope tile lists, `COLLISION_TILE_NUMBER`...), read from the ABC (scanner now tracks local
-registers); checked against the decompiled source: 55/55 equal. Next: load it in `DataManager`, translate
-`getPropValue`, `MapManager.getTileProperty`/`isWithinBounds`, then `Character.getMyCorners`/`fallChar`/`jumpChar`/
+registers); checked against the decompiled source: 55/55 equal. Loaded by `DataManager::loadTables`;
+`getPropValue`, `setupCollisionArrays` and `MapManager` (`getTileProperty` without "door", `isWithinBounds`) are
+translated. Next: `Character.getMyCorners`/`fallChar`/`jumpChar`/
 `moveChar`/`checkForSlopes`, `GameControls.detectKeys`/`keyCheckPlayer`, `CustomerChar` animation, `adjustCamera`.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached

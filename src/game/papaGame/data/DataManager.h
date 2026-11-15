@@ -2,9 +2,13 @@
 // AS: papaGame.data.DataManager — level XML, the current world and its rooms.
 // Ported so far: level loading and room setup (setupLevelScreens, setActiveRoom, clearLevelScreens).
 #include <memory>
+#include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <vector>
 
+#include "engine/json.h"
 #include "engine/xml.h"
 #include "game/papaGame/data/LevelData.h"
 #include "game/papaGame/data/ScreenData.h"
@@ -21,6 +25,11 @@ public:
     // Port: replaces prepareLevelData/generateLevelData (the XML is decoded offline into levels.xml).
     bool prepareLevelData(const std::string &levelsXmlPath);
     void levelDataLoaded(bool loaded);
+
+    // Port: loads the constant tables (datamanager.json, read from the SWF by the importer).
+    bool loadTables(const std::string &path);
+    double getPropValue(std::string_view property, const ScreenData::TileCell &cell) const;
+    void setupCollisionArrays();
 
     void setupLevelScreens(double whichLevel);
     std::string getWorldTitle(double whichWorld) const;
@@ -42,8 +51,19 @@ public:
     double currentScreen = 0;
     double currentTileset = 1;
 
+    // Constant tables (see loadTables).
+    using Grid = std::vector<std::vector<double>>;
+    Grid standardCollisionArray, standardThruArray, standardGrabArray;
+    const Grid *collisionArray = nullptr;
+    const Grid *thruArray = nullptr;
+    const Grid *grabArray = nullptr;
+    double COLLISION_TILE_NUMBER = 0, THRUBLOCK_TILE_NUMBER = 0, GRAB_TILE_NUMBER = 0, LADDER_TILE_NUMBER = 0;
+
 private:
     const engine::XmlNode *findWorld(double tileset) const;
+    bool inList(const char *list, double tile) const;
+    engine::JsonValue tables_;
+    std::unordered_map<std::string, std::unordered_set<double>> lists_; // tile lists for indexOf
 };
 
 } // namespace papaGame::data

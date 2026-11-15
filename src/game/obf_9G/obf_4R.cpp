@@ -11,6 +11,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     // Same order as the original (§_-AP§ creates the DataManager, §_-9k§ the rest).
     obf_AQ = std::make_unique<papaGame::data::DataManager>(this);
     bitmapManager = std::make_unique<papaGame::managers::BitmapManager>(this, sheets);
+    obf_4i = std::make_unique<papaGame::managers::MapManager>(this);
     obf_71 = std::make_unique<papaGame::display::GameDisplay>(this);
     obf_3Y = std::make_unique<papaGame::display::GameCam>(this);
     playerObj = std::make_unique<papaGame::models::characters::CustomerChar>(this);
@@ -18,6 +19,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
 
 bool obf_4R::loadLevelData(const std::string &gameDir)
 {
+    obf_AQ->loadTables(gameDir + "/datamanager.json");
     return obf_AQ->prepareLevelData(gameDir + "/levels.xml");
 }
 

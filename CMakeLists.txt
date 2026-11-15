@@ -51,6 +51,7 @@ set(PL_SOURCES
     src/engine/movieclip.cpp
     src/engine/sheets.cpp
     src/engine/settings.cpp
+    src/engine/json.cpp
     src/engine/xml.cpp
     src/import/abc.cpp
     src/import/importer.cpp
@@ -68,6 +69,7 @@ set(PL_SOURCES
     src/game/papaGame/display/GameDisplay.cpp
     src/game/papaGame/managers/BitmapManager.cpp
     src/game/papaGame/managers/CharacterBlitter.cpp
+    src/game/papaGame/managers/MapManager.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
 )
 

@@ -14,6 +14,7 @@
 #include "game/papaGame/display/GameCam.h"
 #include "game/papaGame/display/GameDisplay.h"
 #include "game/papaGame/managers/BitmapManager.h"
+#include "game/papaGame/managers/MapManager.h"
 #include "game/papaGame/models/characters/CustomerChar.h"
 
 namespace obf_9G {
@@ -39,6 +40,7 @@ public:
     std::unique_ptr<papaGame::data::CustomerData> obf_3A;
     std::unique_ptr<papaGame::data::DataManager> obf_AQ;
     std::unique_ptr<papaGame::managers::BitmapManager> bitmapManager;
+    std::unique_ptr<papaGame::managers::MapManager> obf_4i;
     std::unique_ptr<papaGame::display::GameDisplay> obf_71;
     std::unique_ptr<papaGame::display::GameCam> obf_3Y;
     std::unique_ptr<papaGame::models::characters::CustomerChar> playerObj;

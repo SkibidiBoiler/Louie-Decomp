@@ -77,7 +77,7 @@ void DataManager::setupLevelScreens(double whichLevel)
         }
         currentScreens.push_back(std::move(thisScreen));
     }
-    // SKELETON: setupCollisionArrays() comes with the collision code (milestone B).
+    setupCollisionArrays();
 }
 
 // AS: DataManager.getWorldTitle
@@ -117,6 +117,138 @@ bool DataManager::isOnTrain() const
 bool DataManager::isAnimatedBackground() const
 {
     return currentLevel == 9;
+}
+
+bool DataManager::loadTables(const std::string &path)
+{
+    size_t size = 0;
+    char *raw = static_cast<char *>(SDL_LoadFile(path.c_str(), &size));
+    if (!raw) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot read %s (import the game again)", path.c_str());
+        return false;
+    }
+    const bool ok = engine::parseJson(std::string_view(raw, size), tables_);
+    SDL_free(raw);
+    if (!ok) {
+        return false;
+    }
+    auto grid = [&](const char *name, Grid &out) {
+        out.clear();
+        if (const engine::JsonValue *v = tables_.get(name)) {
+            for (const auto &row : v->items) {
+                std::vector<double> r;
+                for (const auto &n : row.items) {
+                    r.push_back(n.number);
+                }
+                out.push_back(std::move(r));
+            }
+        }
+    };
+    grid("standardCollisionArray", standardCollisionArray);
+    grid("standardThruArray", standardThruArray);
+    grid("standardGrabArray", standardGrabArray);
+    auto number = [&](const char *name) {
+        const engine::JsonValue *v = tables_.get(name);
+        return v ? v->number : 0.0;
+    };
+    COLLISION_TILE_NUMBER = number("COLLISION_TILE_NUMBER");
+    THRUBLOCK_TILE_NUMBER = number("THRUBLOCK_TILE_NUMBER");
+    GRAB_TILE_NUMBER = number("GRAB_TILE_NUMBER");
+    LADDER_TILE_NUMBER = number("LADDER_TILE_NUMBER");
+    lists_.clear();
+    for (const auto &[name, value] : tables_.fields) {
+        if (value.type == engine::JsonValue::Type::Array && (name.find("TileList") != std::string::npos)) {
+            auto &set = lists_[name];
+            for (const auto &n : value.items) {
+                set.insert(n.number);
+            }
+        }
+    }
+    return true;
+}
+
+bool DataManager::inList(const char *list, double tile) const
+{
+    auto it = lists_.find(list);
+    return it != lists_.end() && it->second.count(tile) > 0;
+}
+
+// AS: DataManager.setupCollisionArrays
+void DataManager::setupCollisionArrays()
+{
+    collisionArray = &standardCollisionArray;
+    thruArray = &standardThruArray;
+    grabArray = &standardGrabArray;
+}
+
+// AS: DataManager.getPropValue (cells are always arrays here; the "NOT ARRAY" branch is never taken)
+double DataManager::getPropValue(std::string_view property, const ScreenData::TileCell &cell) const
+{
+    struct Slope {
+        const char *list;
+        double value;
+    };
+    static const Slope floorSlopes[] = {
+        {"slopeTileList_22A", 3}, {"slopeTileList_22B", 4}, {"slopeTileList_22C", 5}, {"slopeTileList_22D", 6},
+        {"slopeTileList_45A", 1}, {"slopeTileList_45B", 2}, {"slopeTileList_67A", 7}, {"slopeTileList_67B", 8},
+        {"slopeTileList_67C", 9}, {"slopeTileList_67D", 10}};
+    static const Slope ceilingSlopes[] = {
+        {"slopeTileList_22E", 3}, {"slopeTileList_22F", 4}, {"slopeTileList_22G", 5}, {"slopeTileList_22H", 6},
+        {"slopeTileList_45C", 1}, {"slopeTileList_45D", 2}, {"slopeTileList_67E", 7}, {"slopeTileList_67F", 8},
+        {"slopeTileList_67G", 9}, {"slopeTileList_67H", 10}};
+    // ceilingslopereverse: the ceiling lists, then the floor lists mirrored.
+    static const Slope reverseSlopes[] = {
+        {"slopeTileList_22E", 3}, {"slopeTileList_22F", 4}, {"slopeTileList_22G", 5}, {"slopeTileList_22H", 6},
+        {"slopeTileList_45C", 1}, {"slopeTileList_45D", 2}, {"slopeTileList_67E", 7}, {"slopeTileList_67F", 8},
+        {"slopeTileList_67G", 9}, {"slopeTileList_67H", 10}, {"slopeTileList_22A", 5}, {"slopeTileList_22B", 6},
+        {"slopeTileList_22C", 3}, {"slopeTileList_22D", 4}, {"slopeTileList_45A", 2}, {"slopeTileList_45B", 1},
+        {"slopeTileList_67A", 9}, {"slopeTileList_67B", 10}, {"slopeTileList_67C", 7}, {"slopeTileList_67D", 8}};
+    auto firstMatch = [&](const Slope *table, size_t n, double tile) {
+        for (size_t i = 0; i < n; ++i) {
+            if (inList(table[i].list, tile)) {
+                return table[i].value;
+            }
+        }
+        return 0.0;
+    };
+    double value = 0;
+    for (const double tile : cell) {
+        if (tile == COLLISION_TILE_NUMBER) {
+            value = property == "collision" ? 1 : 0;
+        } else if (tile == THRUBLOCK_TILE_NUMBER) {
+            value = property == "thrublock" || property == "thru" ? 1 : 0;
+        } else if (tile == GRAB_TILE_NUMBER) {
+            value = property == "grab" ? 1 : 0;
+        } else if (tile == LADDER_TILE_NUMBER) {
+            value = property == "ladder" ? 1 : 0;
+        } else if (property != "grab") {
+            // QUIRK: for "grab" (and "ladder") on an ordinary tile the value of the previous layer is kept.
+            if (property == "thru") {
+                value = inList("thruTileList", tile) ? 1 : 0;
+            } else if (property == "slope" || property == "solidslope") {
+                value = firstMatch(floorSlopes, std::size(floorSlopes), tile);
+                if (property == "solidslope" && value != 0 && !inList("slopeTileList_solid", tile)) {
+                    value = 0;
+                }
+            } else if (property == "ceilingslope") {
+                value = firstMatch(ceilingSlopes, std::size(ceilingSlopes), tile);
+            } else if (property == "ceilingslopereverse") {
+                value = firstMatch(reverseSlopes, std::size(reverseSlopes), tile);
+                if (value != 0 && inList("slopeTileList_solid", tile)) {
+                    value = 0;
+                }
+            } else if (property == "collision" || property == "naturalcollision") {
+                value = inList("solidTileList", tile) ? 1 : 0;
+            }
+            if (value == -1) {
+                value = 0;
+            }
+        }
+        if (value > 0) {
+            break;
+        }
+    }
+    return value;
 }
 
 } // namespace papaGame::data
