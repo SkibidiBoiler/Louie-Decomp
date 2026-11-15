@@ -28,6 +28,19 @@ struct AnimationCycle {
     double frameAt(double index) const;
 };
 
+// Port: the array literals a class assigns in code, [name, 1, blitStyle, randomize, loopFrame, first, last] and
+// [name, 2, blitStyle, randomize, loopFrame, [frames]].
+inline AnimationCycle cycleType1(std::string name, double blitStyle, double randomize, double loopFrame, double first,
+                                 double last)
+{
+    return {std::move(name), 1, blitStyle, randomize, loopFrame, {}, first, last};
+}
+inline AnimationCycle cycleType2(std::string name, double blitStyle, double randomize, double loopFrame,
+                                 std::vector<double> frames)
+{
+    return {std::move(name), 2, blitStyle, randomize, loopFrame, std::move(frames), 0, 0};
+}
+
 // Port: a class's `...CycleFrames` constants by field name, as the importer writes them.
 using CycleTable = std::map<std::string, AnimationCycle>;
 void parseCycleTable(const engine::JsonValue &fields, CycleTable &out);

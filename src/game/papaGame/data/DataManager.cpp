@@ -104,12 +104,28 @@ void DataManager::setActiveRoom(double index)
 void DataManager::initializeScreenObjects(double whichScreen)
 {
     if (!currentScreenData->objectsInitialized) {
+        gameObj->obf_7u->clearObjects(whichScreen, true);
         gameObj->obf_E->clearEnemies(whichScreen, true);
+        gameObj->obf_7u->buildObjects(whichScreen);
         gameObj->obf_E->buildEnemies(whichScreen);
         gameObj->obf_E->preblitSheets();
+        gameObj->obf_7u->preblitSheets();
     } else {
         SDL_Log("ERROR: Screen %s is already initialized!", as3::String(whichScreen).c_str());
     }
+}
+
+// AS: DataManager.saveCheckpoint (SKELETON: CheckpointData, the saved room states and tallies to restart from)
+void DataManager::saveCheckpoint(double tileX, double tileY)
+{
+    SDL_Log("Saving Checkpoint... (level %s, room %s, tile %s,%s)", as3::String(currentLevel).c_str(),
+            as3::String(currentScreen).c_str(), as3::String(tileX).c_str(), as3::String(tileY).c_str());
+}
+
+// AS: DataManager.clearCheckpoint
+void DataManager::clearCheckpoint()
+{
+    SDL_Log("Clearing Checkpoint");
 }
 
 // AS: DataManager.clearLevelScreens

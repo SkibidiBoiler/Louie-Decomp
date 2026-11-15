@@ -73,8 +73,17 @@ set(PL_SOURCES
     src/game/papaGame/managers/CharacterBlitter.cpp
     src/game/papaGame/managers/EnemyManager.cpp
     src/game/papaGame/managers/MapManager.cpp
+    src/game/papaGame/managers/ObjectManager.cpp
     src/game/papaGame/models/Character.cpp
     src/game/papaGame/models/Enemy.cpp
+    src/game/papaGame/models/GameObject.cpp
+    src/game/papaGame/models/objects/GameObject3.cpp
+    src/game/papaGame/models/objects/GameObject21.cpp
+    src/game/papaGame/models/objects/GameObject22.cpp
+    src/game/papaGame/models/objects/GameObject23.cpp
+    src/game/papaGame/models/objects/GameObject24.cpp
+    src/game/papaGame/models/objects/GameObject25.cpp
+    src/game/papaGame/models/objects/GameObject28.cpp
     src/game/papaGame/models/enemies/Enemy1.cpp
     src/game/papaGame/models/enemies/Enemy2.cpp
     src/game/papaGame/models/enemies/Enemy6.cpp

@@ -1053,7 +1053,8 @@ void CustomerChar::updateObject()
         // gliding (Foodini's balloons), wall jumping and wall sliding.
         checkIfAttacking();
         checkForHittingEnemies();
-        // SKELETON: checkForHittingObjects, checkForCollectingItems, checkForGrabbingTile, checkSteppingOnObjects,
+        checkForHittingObjects();
+        // SKELETON: checkForCollectingItems, checkForGrabbingTile, checkSteppingOnObjects,
         // adjustCarriedObject.
         checkIfOnDoor();
         updateStunTime();
@@ -1338,6 +1339,61 @@ bool CustomerChar::checkForHittingEnemies(bool justChecking)
         isFinalBlow = false;
     }
     return result;
+}
+
+// AS: CustomerChar.checkForHittingObjects — the attack breaks objects that accept "punch"; pushing.
+bool CustomerChar::checkForHittingObjects()
+{
+    const Rect attack{x + getTorsoOffsetX() + attackRect.x, y + getTorsoOffsetY() + attackRect.y, attackRect.width,
+                      attackRect.height};
+    bool hit = false, pushing = false;
+    managers::ObjectManager &manager = *gameObj->obf_7u;
+    for (size_t i = 0; i < manager.objects.size(); ++i) {
+        GameObject *o = manager.objects[i];
+        if (!o) {
+            continue;
+        }
+        if (canDealDamage && isAttacking && cycleFrame >= startAttackFrame && cycleFrame <= endAttackFrame) {
+            if (o->checkSpriteCollision(attack) && o->acceptsDamage("weapon", "punch")) {
+                o->getHit();
+                hit = true;
+                // SKELETON: the hit effect a little above the object, toward the player (effects).
+            }
+        }
+        if (i < manager.objects.size() && manager.objects[i] == o && o->isPushable && o->checkPushingObject()) {
+            pushing = true;
+        }
+    }
+    if (hit && !usingPowerTool()) {
+        canDealDamage = false;
+    }
+    if (pushing && !jump && !isAttacking && !isHit && !duck) {
+        isFinishPushing = false;
+        isPushingObject = true;
+        wasPushing = true;
+    } else {
+        isPushingObject = false;
+        if (wasPushing) {
+            isFinishPushing = true;
+            wasPushing = false;
+        }
+    }
+    return hit;
+}
+
+// AS: CustomerChar.checkForPoundingObjects
+void CustomerChar::checkForPoundingObjects()
+{
+    const Rect pound{x + pound_collRect.x, y + pound_collRect.y, pound_collRect.width, pound_collRect.height};
+    if (isGroundPounding) {
+        managers::ObjectManager &manager = *gameObj->obf_7u;
+        for (int i = static_cast<int>(manager.objects.size()) - 1; i >= 0; --i) {
+            GameObject *o = i < static_cast<int>(manager.objects.size()) ? manager.objects[static_cast<size_t>(i)] : nullptr;
+            if (o && o->checkSpriteCollision(pound) && o->acceptsDamage("weapon", "Pound")) {
+                o->getHit();
+            }
+        }
+    }
 }
 
 } // namespace papaGame::models::characters

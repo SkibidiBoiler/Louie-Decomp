@@ -85,6 +85,8 @@ void GameControls::detectKeys()
     p.updateObject();
     // SKELETON: items and bullets are processed before the enemies, effects and objects after.
     gameObj->obf_E->processEnemies();
+    // SKELETON: processEffects.
+    gameObj->obf_7u->processObjects();
     // SKELETON: cameraAnchor (setCameraAnchor) is not ported; the anchor is always the player (cameraAnchor 0).
     gameObj->obf_3Y->adjustCamera(p.x, p.y, true);
     // SKELETON: the HUD timer; redrawScreen comes next in the original (the port redraws in its render pass).

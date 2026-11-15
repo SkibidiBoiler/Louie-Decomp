@@ -35,6 +35,8 @@ public:
     std::string getWorldTitle(double whichWorld) const;
     void setActiveRoom(double index);
     void initializeScreenObjects(double whichScreen);
+    void saveCheckpoint(double tileX = -1, double tileY = -1);
+    void clearCheckpoint();
     void clearLevelScreens();
     bool isOnTrain() const;
     bool isAnimatedBackground() const;

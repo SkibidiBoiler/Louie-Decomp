@@ -109,14 +109,6 @@ SDL_AppResult App::init(int argc, char *argv[])
                 SDL_Log("Player sheet %s: %gx%g cells, %g per row", path.c_str(), blitter.spriteWidth, blitter.spriteHeight,
                         blitter.spritesPerRow);
             }
-        } else if (std::strcmp(argv[i], "--ladder") == 0 && game_) {
-            // DEV: a ladder "x,y,height" in tiles (bottom tile y), marked like GameObject3 does, until objects exist.
-            double lx = 0, ly = 0, lh = 0;
-            if (std::sscanf(argv[i + 1], "%lf,%lf,%lf", &lx, &ly, &lh) == 3) {
-                for (int k = 0; k < static_cast<int>(lh); ++k) {
-                    game_->obf_4i->setProperty(lx, ly - lh + 1 + k, "ladder");
-                }
-            }
         } else if (std::strcmp(argv[i], "--level") == 0 && game_) { // DEV: start level N (0-based)
             game_->obf_6V(std::atof(argv[i + 1]));
         } else if (std::strcmp(argv[i], "--room") == 0 && game_) { // DEV: start in room N (0-based)

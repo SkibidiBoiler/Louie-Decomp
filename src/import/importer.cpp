@@ -340,6 +340,11 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
     writeFieldConstants(index, "papaGame.data", "DataManager", out + "/datamanager.json");
     writeFieldConstants(index, "papaGame.models.characters", "CustomerChar", out + "/customerchar.json");
     writeEnemyConstants(index, out + "/enemies.json");
+    {
+        const std::string objects = "{\n\"GameObject\": " +
+            fieldConstantsJson(index, "papaGame.models", "GameObject") + "\n}\n";
+        writeFile(out + "/objects.json", objects.data(), objects.size());
+    }
     report(0.43f, "Converting frame scripts");
     {
         // Timeline scripts (stop, gotoAndPlay, part poses) become data: <class> <frame> <op> [target] [number].

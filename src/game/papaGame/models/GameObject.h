@@ -1,0 +1,107 @@
+#pragma once
+// AS: papaGame.models.GameObject (extends Character) — the base of GameObject1..GameObject33: ladders, blocks,
+// checkpoints, cages, blimps, switches...
+// SKELETON: grabbing / throwing / riding, pushing, stepping on objects, triggers between objects and camera pans.
+#include <string>
+#include <vector>
+
+#include "game/as3.h"
+#include "game/papaGame/models/Character.h"
+
+namespace engine { struct JsonValue; }
+
+namespace papaGame::models {
+
+class GameObject : public Character {
+public:
+    // AS: GameObject(gameObj, xtile, ytile, id, whichScreen, screenObjID, extraParams). As with Enemy, the port
+    // runs the constructor body in init() so that the subclass overrides are called.
+    explicit GameObject(obf_9G::obf_4R *gameObj);
+    virtual void init(double xtile, double ytile, double id, double whichScreen, double screenObjID,
+                      const std::vector<as3::Value> &extraParams);
+    // Port: the base class's cycle defaults from objects.json.
+    static void loadTables(const engine::JsonValue &base);
+
+    virtual void setupParams(const std::vector<as3::Value> & /*params*/) {}
+    void placeObject(double tileX, double tileY);
+    void addCollision();
+    void removeCollision();
+    virtual void saveObjectData() {}
+    const AnimationCycle &grabAnimationCycle() override;
+    void endAnimationCycle() override;
+    virtual void activateObject();
+    virtual void deactivateObject();
+    virtual void finishActivatingObject();
+    virtual void finishDeactivatingObject();
+    void broadcastTriggered(double amount);
+    virtual void unregisterSpawn() {}
+    virtual bool checkOnScreen();
+    virtual void checkAdditionalBlitting(bool /*foreground*/, bool /*before*/ = false) {}
+    void allowReactions() { canReact = true; } // AS: GameObject.allowReactions
+    void updateObject() override;
+    virtual void getHit(double /*damage*/ = 1) {}
+    bool acceptsDamage(const std::string &kind, const std::string &weapon) const;
+    virtual bool checkPushingObject() { return false; } // SKELETON: pushable objects
+
+    std::string objectname;
+    double whichScreen = -1;
+    double screenObjID = -1;
+    double originalScreenIndex = -1;
+    double originalScreenObjectID = -1;
+    bool isInteractive = true;
+    bool isActivated = true;
+    bool isDeactivated = false;
+    bool isActivating = false;
+    bool isDeactivating = false;
+    bool canReactivate = true;
+    bool isSolidActive = false;
+    bool isSolidInactive = false;
+    std::string solidType = "none";
+    Rect solidTilesRect{0, 0, 2, 2};
+    bool isGrabbable = false;
+    bool isGrabbed = false;
+    bool isPushable = false;
+    AnimationCycle activeCycleFrames, inactiveCycleFrames, activatingCycleFrames, deactivatingCycleFrames;
+    bool jigglecam = false;
+    double jiggleamount = 10;
+    double jiggleduration = 20;
+    bool foreground = false;
+    bool isPlaced = false;
+    bool isShootable = false;
+    bool blocksBullets = false;
+    double throwSpeed = 4;
+    double statAttack = 1;
+    bool saveState = false;
+    bool canReact = true;
+    bool waitPanBack = false;
+    double currentTriggers = 0;
+    double necessaryTriggers = 1;
+    double broadcastStyle = 1;
+    bool broadcastOff = true;
+    bool broadcastOn = false;
+    double broadcastAmount = 0;
+    double broadcastAmountOn = -1;
+    double broadcastAmountOff = 1;
+    double broadcastReceiptMethod = 2;
+    bool canBeShot = false;
+    bool canBeMeleed = false;
+    bool canBeBrokenByObjects = false;
+    std::vector<std::string> shotByWeapons{"all"};
+    std::vector<std::string> meleedByWeapons{"all"};
+    std::vector<std::string> brokenByObjects{"all"};
+    bool canTravelBetweenRooms = true;
+    bool isTilingObject = false;
+    bool isLadder = false;
+    double tilingHeight = 5;
+    double topCapFrame = 0;
+    double tilingFrame = 0;
+    double bottomCapFrame = 0;
+    double initialY = 0;
+    bool isSteppable = false;
+    bool isSteppableByObjects = false;
+
+private:
+    static CycleTable base_;
+};
+
+} // namespace papaGame::models

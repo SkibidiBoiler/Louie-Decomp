@@ -7,7 +7,7 @@
 #include "engine/sheets.h"
 
 namespace obf_9G { class obf_4R; }
-namespace papaGame::models { class Character; }
+namespace papaGame::models { class Character; class GameObject; }
 
 namespace papaGame::display {
 
@@ -38,6 +38,8 @@ public:
     void reblitTiles();
     void reblitMultispritePlayer();
     void reblitEnemies(bool foreground = true);
+    void reblitObjects(bool foreground = true);
+    void blitLadder(const models::GameObject &o);
     bool checkOnScreen(const models::Character &c) const;
     // AS: startTransition / blitTransition / finishTransition — the wipe between rooms. blitTransition's
     // movement runs once per logic frame (from advanceFrame); drawTransition is its drawing part.

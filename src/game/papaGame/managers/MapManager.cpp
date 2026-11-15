@@ -14,6 +14,49 @@ bool MapManager::isWithinBounds(double x, double y) const
 }
 
 // AS: MapManager.setProperty — objects (ladders, blocks) mark tiles by adding a special tile number to the cell.
+namespace {
+
+// The marker tile number a property adds to a cell (0 for an unknown property).
+double propertyTile(const data::DataManager &dm, std::string_view property)
+{
+    if (property == "collision") {
+        return dm.COLLISION_TILE_NUMBER;
+    }
+    if (property == "slope") {
+        return dm.SLOPE_TILE_NUMBER;
+    }
+    if (property == "thrublock") {
+        return dm.THRUBLOCK_TILE_NUMBER;
+    }
+    if (property == "grab") {
+        return dm.GRAB_TILE_NUMBER;
+    }
+    if (property == "ladder") {
+        return dm.LADDER_TILE_NUMBER;
+    }
+    return 0;
+}
+
+} // namespace
+
+// AS: MapManager.unsetProperty
+void MapManager::unsetProperty(double x, double y, std::string_view property)
+{
+    data::DataManager &dm = *gameObj->obf_AQ;
+    const double special = propertyTile(dm, property);
+    if (special == 0) {
+        return;
+    }
+    auto &tiles = dm.currentScreenData->tileArray;
+    if (x >= 0 && y >= 0 && x < static_cast<double>(tiles[0].size()) && y < static_cast<double>(tiles.size())) {
+        auto &cell = tiles[static_cast<size_t>(y)][static_cast<size_t>(x)];
+        auto it = std::find(cell.begin(), cell.end(), special);
+        if (it != cell.end()) {
+            cell.erase(it);
+        }
+    }
+}
+
 void MapManager::setProperty(double x, double y, std::string_view property)
 {
     data::DataManager &dm = *gameObj->obf_AQ;

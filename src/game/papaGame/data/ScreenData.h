@@ -31,6 +31,16 @@ public:
     void populateData(const engine::XmlNode &xml);
     double checkForDoorID(double x, double y) const;
     // AS: ScreenData.saveEnemyState — a killed enemy's row becomes [0], so it is not built again.
+    // AS: ScreenData.saveObjectState
+    void saveObjectState(double index, const std::vector<as3::Value> &row, bool force = false)
+    {
+        if (index >= 0 && (force || index < static_cast<double>(objectArray.size()))) {
+            if (index >= static_cast<double>(objectArray.size())) {
+                objectArray.resize(static_cast<size_t>(index) + 1);
+            }
+            objectArray[static_cast<size_t>(index)] = row;
+        }
+    }
     void saveEnemyState(double index, const std::vector<as3::Value> &row)
     {
         if (index >= 0 && index < static_cast<double>(enemyArray.size())) {
@@ -49,6 +59,7 @@ public:
     double roomID = as3::NaN;
     double whichTileset = 0;
     bool objectsInitialized = false;
+    double objectTotal = 0;
     bool loadedRoom = false;
     double roomIndex = -1;
 };

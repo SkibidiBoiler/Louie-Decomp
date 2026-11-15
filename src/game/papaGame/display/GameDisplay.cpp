@@ -112,13 +112,16 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitSky();
     reblitBackdrop();
     reblitTiles();
-    // SKELETON: items, effects and objects are drawn before the enemies, bullets after.
+    // SKELETON: items and effects are drawn before the objects, bullets after the enemies.
+    reblitObjects(false);
     reblitEnemies(false);
     if (gameObj->playerObj && gameObj->playerObj->blitter) {
         reblitMultispritePlayer();
     }
-    // SKELETON: foreground objects before the enemies; effects, items, bullets and overlays after.
+    reblitObjects(true);
+    // SKELETON: the player on a foreground moving tile is drawn here.
     reblitEnemies(true);
+    // SKELETON: effects, items, bullets and overlays.
     drawTransition();
     smooth_ = false;
 }
@@ -490,6 +493,69 @@ void GameDisplay::reblitEnemies(bool foreground)
         if (e->sheetIndex >= 0 && index < manager.objectSheets.size() && manager.objectSheets[index]) {
             blit(*manager.objectSheets[index], sx, sy, w, h, dx, dy);
         }
+    }
+}
+
+// AS: GameDisplay.reblitObjects (SKELETON: blitTilingObject, moving tiles the player rides, blitCollisionArea)
+void GameDisplay::reblitObjects(bool foreground)
+{
+    managers::ObjectManager &manager = *gameObj->obf_7u;
+    for (models::GameObject *o : manager.objects) {
+        if (!o || o->foreground != foreground || !o->checkOnScreen()) {
+            continue;
+        }
+        if (o->isLadder) {
+            blitLadder(*o);
+            continue;
+        }
+        const double frame = o->animationFrame;
+        const double w = o->spritewidth, h = o->spriteheight;
+        const double perRow = o->sheetWidth;
+        const double flip = o->facingDir == -1 ? o->flipBlitOffset : 0;
+        const double sx = (frame - std::floor(frame / perRow) * perRow) * w;
+        const double sy = std::floor(frame / perRow) * h + flip;
+        const double ox = o->prevX + (o->x - o->prevX) * drawAlpha_;
+        const double oy = o->prevY + (o->y - o->prevY) * drawAlpha_;
+        double dx = ox - (o->spriteTargetX - o->spriteCenterX) - currentXcoord - w / 2;
+        double dy = oy - (o->spriteTargetY - o->spriteCenterY) - currentYcoord - h / 2;
+        if (!smooth_) {
+            dx = std::floor(dx);
+            dy = std::floor(dy);
+        }
+        o->checkAdditionalBlitting(foreground, true);
+        const auto index = static_cast<size_t>(o->sheetIndex);
+        if (o->sheetIndex >= 0 && index < manager.objectSheets.size() && manager.objectSheets[index]) {
+            blit(*manager.objectSheets[index], sx, sy, w, h, dx, dy);
+        }
+        o->checkAdditionalBlitting(foreground);
+    }
+}
+
+// AS: GameDisplay.blitLadder — the rungs from the bottom tile up, then the bottom and top caps.
+void GameDisplay::blitLadder(const models::GameObject &o)
+{
+    const managers::ObjectManager &manager = *gameObj->obf_7u;
+    const auto index = static_cast<size_t>(o.sheetIndex);
+    if (o.sheetIndex < 0 || index >= manager.objectSheets.size() || !manager.objectSheets[index]) {
+        return;
+    }
+    const engine::Sheet &sheet = *manager.objectSheets[index];
+    if (!o.isActivated) {
+        return; // "Ladder not activated?!"
+    }
+    const double offsetX = o.spriteTargetX - o.spriteCenterX;
+    const double offsetY = o.spriteTargetY - o.spriteCenterY;
+    const double h = o.tilingHeight;
+    if (h > 1) {
+        const double dx = o.xtile * tileWidth - currentXcoord - offsetX;
+        for (int i = 0; i < h; ++i) {
+            blit(sheet, o.tilingFrame * o.spritewidth, 0, o.spritewidth, o.spriteheight, dx,
+                 (o.ytile - i) * tileWidth - currentYcoord - offsetY);
+        }
+        blit(sheet, o.bottomCapFrame * o.spritewidth, 0, o.spritewidth, o.spriteheight, dx,
+             (o.ytile + 1) * tileWidth - currentYcoord - offsetY);
+        blit(sheet, o.topCapFrame * o.spritewidth, 0, o.spritewidth, o.spriteheight, dx,
+             (o.ytile - h) * tileWidth - currentYcoord - offsetY);
     }
 }
 

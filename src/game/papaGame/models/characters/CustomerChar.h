@@ -48,6 +48,8 @@ public:
     void updateStunTime();
     void dropWeapon() {} // AS: PlayerChar.dropWeapon (empty)
     bool checkForHittingEnemies(bool justChecking = false); // AS: CustomerChar.checkForHittingEnemies
+    bool checkForHittingObjects();                          // AS: CustomerChar.checkForHittingObjects
+    void checkForPoundingObjects();                         // AS: CustomerChar.checkForPoundingObjects
     void addToCombo(double amount = 1); // AS: PlayerChar.addToCombo
     void updateComboTimer();            // AS: PlayerChar.updateComboTimer
 
@@ -91,6 +93,7 @@ public:
     double startAttackFrame = 0, endAttackFrame = 4, repeatAttackFrame = 6;
     double reloadTimer = 0, reloadTimerMax = 1, bulletTimer = 0, bulletsFired = 0, bulletsPerRound = 1;
     double comboTally = 0, comboTimer = 0, comboTimerMax = 90;
+    bool wasPushing = false;
     bool isFinalBlow = false, isInvincible = false, isStartingGrabbing = false, canAutoWallJump = false;
     bool isCheesed = false, isPausingAfterMiniboss = false, isHiding = false, fellOffTrain = false;
     bool hitByBlast = false, hasPowerup = false;

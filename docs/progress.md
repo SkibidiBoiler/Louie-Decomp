@@ -122,7 +122,16 @@ when the health, 3, runs out), `shovePlayer`, `updateStunTime`, `restartPlayer` 
 stand/jump/duck collision rectangles and the rest of `startupPlayer` (start-up stun = invincibility flicker).
 `GameControls.detectKeys` now moves hit, shoved and dead players like the original.
 SKELETON: the game over screen and iris (a death restarts the level), camera jiggle, effects and sounds.
-Next: objects (ladders, blocks), items, HUD.
+(15) Objects: `ObjectManager` (§_-7u§: addObject, processObjects, clearObjects, saveObjects, buildObjects,
+removeObject, getObject; `checkSteppingOnObjects` only the moving-tile part), `GameObject` (placeObject,
+add/removeCollision through `MapManager.set/unsetProperty`, activate / deactivate cycles, acceptsDamage) and the
+types `GameObject3` ladder (marks its tiles; `GameDisplay.blitLadder`), `GameObject21`-`25` cracker blocks (solid,
+broken by ground pounds), `GameObject28` checkpoint (`DataManager.saveCheckpoint` is a log line for now).
+`CustomerChar.checkForHittingObjects` / `checkForPoundingObjects`; `GameDisplay.reblitObjects`. The base object's
+cycles come from `objects.json` (importer). The DEV `--ladder` flag is gone: real ladders work (level 1).
+SKELETON: the other object types (cage, pulley, blimps, berries, switch, door, boulder, cannon, sauce, spikes,
+training sensor), events/triggers between objects, carrying, pushing, stepping on objects, CheckpointData.
+Next: items, bullets, effects, HUD.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with
