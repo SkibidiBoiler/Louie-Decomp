@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "engine/json.h"
+#include "game/as3.h"
 #include "game/obf_9G/obf_4R.h"
 
 namespace papaGame::models {
@@ -370,27 +372,27 @@ void Character::checkForCeilingSlopes(double atY)
     }
     const double row = std::floor(head / tw);
     const double col = std::floor(x / tw);
-    const double type = map.getTileProperty(col, row, "ceilingslope");
-    if (type <= 0) {
+    const double slopeType = map.getTileProperty(col, row, "ceilingslope");
+    if (slopeType <= 0) {
         return;
     }
     const double ix = x - xtile * tw;
     double ceiling = head;
-    if (type == 1) {
+    if (slopeType == 1) {
         ceiling = row * tw + ix;
-    } else if (type == 2) {
+    } else if (slopeType == 2) {
         ceiling = row * tw + (tw - ix);
-    } else if (type == 3) {
+    } else if (slopeType == 3) {
         ceiling = row * tw + std::floor(ix / 2);
-    } else if (type == 4) {
+    } else if (slopeType == 4) {
         ceiling = row * tw + (tw / 2 + std::floor(ix / 2));
-    } else if (type == 5) {
+    } else if (slopeType == 5) {
         ceiling = row * tw + (tw / 2 + std::floor((tw - ix) / 2));
-    } else if (type == 6) {
+    } else if (slopeType == 6) {
         ceiling = row * tw + std::floor((tw - ix) / 2);
-    } else if (type == 7 || type == 8) {
+    } else if (slopeType == 7 || slopeType == 8) {
         ceiling = ix <= tw / 2 ? row * tw + ix * 2 : row * tw + (ix - tw / 2) * 2;
-    } else if (type == 9 || type == 10) {
+    } else if (slopeType == 9 || slopeType == 10) {
         ceiling = ix < tw / 2 ? row * tw + (tw - ix - tw / 2) * 2 : row * tw + std::floor((tw - ix) * 2);
     }
     if (ceiling > head) {
@@ -679,6 +681,217 @@ void Character::checkForSlopes(double dirX, double dirY)
         }
     }
     (void)rise;
+}
+
+double AnimationCycle::frameAt(double index) const
+{
+    if (index < 0 || index >= static_cast<double>(frames.size())) {
+        return as3::NaN;
+    }
+    return frames[static_cast<size_t>(index)];
+}
+
+void parseCycleTable(const engine::JsonValue &fields, CycleTable &out)
+{
+    out.clear();
+    for (const auto &[field, v] : fields.fields) {
+        if (!field.ends_with("CycleFrames") || v.items.size() < 6) {
+            continue;
+        }
+        AnimationCycle c;
+        c.name = v.items[0].string;
+        c.type = v.items[1].number;
+        c.blitStyle = v.items[2].number;
+        c.randomize = v.items[3].number;
+        c.loopFrame = v.items[4].number;
+        if (v.items[5].type == engine::JsonValue::Type::Array) {
+            for (const auto &n : v.items[5].items) {
+                c.frames.push_back(n.number);
+            }
+        } else {
+            c.firstFrame = v.items[5].number;
+            c.lastFrame = v.items.size() > 6 ? v.items[6].number : c.firstFrame;
+        }
+        out[field] = std::move(c);
+    }
+}
+
+bool Rect::intersects(const Rect &o) const
+{
+    if (width <= 0 || height <= 0 || o.width <= 0 || o.height <= 0) {
+        return false;
+    }
+    return x < o.x + o.width && o.x < x + width && y < o.y + o.height && o.y < y + height;
+}
+
+Rect rectField(const engine::JsonValue &fields, const char *name)
+{
+    const engine::JsonValue *v = fields.get(name);
+    if (!v || v->items.size() != 4) {
+        return {};
+    }
+    return {v->items[0].number, v->items[1].number, v->items[2].number, v->items[3].number};
+}
+
+const AnimationCycle &Character::cycleFrames(const std::string &field) const
+{
+    static const AnimationCycle none{"none", 2, 1, 0, 0, {0}};
+    if (!cycleTable) {
+        return none;
+    }
+    auto it = cycleTable->find(field);
+    if (it == cycleTable->end()) {
+        it = cycleTable->find("standCycleFrames");
+    }
+    return it == cycleTable->end() ? none : it->second;
+}
+
+// AS: Character.grabAnimationCycle (returns [])
+const AnimationCycle &Character::grabAnimationCycle()
+{
+    static const AnimationCycle empty{};
+    return empty;
+}
+
+// AS: Character.adjustHealth
+void Character::adjustHealth(double amount)
+{
+    currentHealth += amount;
+    if (currentHealth > maxHealth) {
+        currentHealth = maxHealth;
+    } else if (currentHealth <= 0) {
+        currentHealth = 0;
+        killMe();
+    }
+}
+
+// AS: Character.adjustFrameSync
+void Character::adjustFrameSync(const std::string &newName, const std::string &oldName, double firstFrame,
+                                const AnimationCycle & /*cycle*/)
+{
+    if (newName != oldName) {
+        animationFrame = firstFrame;
+        cycleFrame = 0;
+        cycleName = newName;
+    }
+}
+
+// AS: Character.updateSprite
+void Character::updateSprite()
+{
+    const AnimationCycle &cycle = grabAnimationCycle();
+    const double firstFrame = cycle.type == 1 ? cycle.firstFrame : cycle.frameAt(0);
+    if (cycle.name != cycleName) {
+        adjustFrameSync(cycle.name, cycleName, firstFrame, cycle);
+    } else {
+        adjustFrameSync(cycle.name, cycleName, firstFrame, cycle);
+        spriteChangeFrame(1, cycle, cycle.type);
+    }
+    animationBlitStyle = cycle.blitStyle;
+}
+
+// AS: Character.spriteChangeFrame
+void Character::spriteChangeFrame(double step, const AnimationCycle &cycle, double cycleType)
+{
+    if (cycleType == 1) {
+        animationFrame += step;
+        const double loopFrame = cycle.loopFrame;
+        const double lastFrame = cycle.lastFrame;
+        if (animationFrame > lastFrame) {
+            if (cycle.randomize != 0) {
+                animationFrame = lastFrame;
+                randomizeAnimationCycle();
+            } else if (loopFrame == -1) {
+                animationFrame = lastFrame;
+                endAnimationCycle();
+            } else {
+                animationFrame = loopFrame;
+            }
+        }
+        if (animationFrame < loopFrame && facingDir != walkingDir) {
+            animationFrame = lastFrame;
+        }
+    } else if (cycleType == 2) {
+        const double loopFrame = cycle.loopFrame;
+        const double last = static_cast<double>(cycle.frames.size()) - 1;
+        cycleFrame += step;
+        if (cycleFrame < 0) {
+            cycleFrame = last;
+        } else if (cycleFrame > last) {
+            if (cycle.randomize != 0) {
+                cycleFrame = last;
+                randomizeAnimationCycle();
+            } else if (loopFrame == -1) {
+                cycleFrame = last;
+                endAnimationCycle();
+            } else {
+                cycleFrame = loopFrame;
+            }
+        }
+        animationFrame = cycle.frameAt(cycleFrame);
+    }
+}
+
+// AS: Character.checkSpriteCollision
+bool Character::checkSpriteCollision(const Rect &r, const Rect *rect) const
+{
+    const Rect mine = getCurrentCollRect(rect);
+    if (!std::isnan(x) && !std::isnan(y)) {
+        return mine.intersects(r);
+    }
+    return false;
+}
+
+// AS: Character.getCurrentCollRect
+Rect Character::getCurrentCollRect(const Rect *rect) const
+{
+    const Rect &r = rect ? *rect : collRect;
+    return {x + r.x, y + r.y, r.width, r.height};
+}
+
+// AS: Character.getProximityVolume
+double Character::getProximityVolume() const
+{
+    double volume = 0;
+    if (const auto *p = gameObj->playerObj.get()) {
+        const double dx = x - p->x, dy = y - p->y;
+        const double dist = std::abs(std::sqrt(dx * dx + dy * dy));
+        const double range = 500;
+        volume = (range - dist) / range;
+        if (volume < 0.15) {
+            volume = 0.15;
+        } else if (volume > 1) {
+            volume = 1;
+        }
+    }
+    return volume;
+}
+
+// AS: Character.getProximityPan
+double Character::getProximityPan() const
+{
+    double pan = 0;
+    if (const auto *p = gameObj->playerObj.get()) {
+        const double dx = x - p->x;
+        pan = std::abs(dx) / 700;
+        if (pan < 0) {
+            pan = 0;
+        } else if (pan > 1) {
+            pan = 1;
+        }
+        if (dx < 0) {
+            pan *= -1;
+        }
+    }
+    return pan;
+}
+
+// AS: Character.isReallyOnScreen
+bool Character::isReallyOnScreen() const
+{
+    const display::GameDisplay &d = *gameObj->obf_71;
+    return xtile >= d.currentXtileLeft && xtile <= d.currentXtileRight && ytile >= d.currentYtileUp &&
+           ytile <= d.currentYtileDown;
 }
 
 } // namespace papaGame::models

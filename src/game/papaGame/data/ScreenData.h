@@ -30,6 +30,13 @@ public:
 
     void populateData(const engine::XmlNode &xml);
     double checkForDoorID(double x, double y) const;
+    // AS: ScreenData.saveEnemyState — a killed enemy's row becomes [0], so it is not built again.
+    void saveEnemyState(double index, const std::vector<as3::Value> &row)
+    {
+        if (index >= 0 && index < static_cast<double>(enemyArray.size())) {
+            enemyArray[static_cast<size_t>(index)] = row;
+        }
+    }
 
     obf_9G::obf_4R *gameObj = nullptr;
     std::vector<std::vector<TileCell>> tileArray;

@@ -14,15 +14,6 @@ namespace papaGame::models::characters {
 
 namespace {
 
-// cycle[5][index]; reading past the end gives undefined, which is NaN as a Number.
-double frameAt(const AnimationCycle &cycle, double index)
-{
-    if (index < 0 || index >= static_cast<double>(cycle.frames.size())) {
-        return as3::NaN;
-    }
-    return cycle.frames[static_cast<size_t>(index)];
-}
-
 // Speeds on slopes are scaled by the cosine of the slope angle: types 1-2 are 45 degrees, 3-6 are 22 and
 // 7-10 the steep ones, whose angle the callers give.
 double slopeSpeed(double slope, double speed, double steepAngle)
@@ -105,54 +96,23 @@ bool CustomerChar::loadTables(const std::string &path)
         }
         return out;
     };
-    cycles_.clear();
-    for (const auto &[field, v] : tables.fields) {
-        if (field.ends_with("CycleFrames") && v.items.size() >= 6) {
-            AnimationCycle c;
-            c.name = v.items[0].string;
-            c.type = v.items[1].number;
-            c.blitStyle = v.items[2].number;
-            c.randomize = v.items[3].number;
-            c.loopFrame = v.items[4].number;
-            if (v.items[5].type == engine::JsonValue::Type::Array) {
-                c.frames = numbers(v.items[5]);
-            } else {
-                c.firstFrame = v.items[5].number;
-                c.lastFrame = v.items.size() > 6 ? v.items[6].number : c.firstFrame;
-            }
-            cycles_[field] = std::move(c);
-        }
-    }
+    parseCycleTable(tables, cycles_);
+    cycleTable = &cycles_;
     auto list = [&](const char *name) {
         const engine::JsonValue *v = tables.get(name);
         return v ? numbers(*v) : std::vector<double>{};
     };
-    auto rect = [&](const char *name) {
-        const std::vector<double> r = list(name);
-        return r.size() == 4 ? Rect{r[0], r[1], r[2], r[3]} : Rect{};
-    };
     torsoOffsetsX_ = list("torsoOffsetsX");
     torsoOffsetsY_ = list("torsoOffsetsY");
-    melee_attackRect = rect("melee_attackRect");
-    swing_attackRect = rect("swing_attackRect");
-    whip_attackRect = rect("whip_attackRect");
-    other_attackRect = rect("other_attackRect");
+    melee_attackRect = rectField(tables, "melee_attackRect");
+    swing_attackRect = rectField(tables, "swing_attackRect");
+    whip_attackRect = rectField(tables, "whip_attackRect");
+    other_attackRect = rectField(tables, "other_attackRect");
     melee_frameRange = list("melee_frameRange");
     swing_frameRange = list("swing_frameRange");
     whip_frameRange = list("whip_frameRange");
     other_frameRange = list("other_frameRange");
     return cycles_.count("standCycleFrames") > 0;
-}
-
-// Port: `this[field]` for a cycle array. A missing one falls back to standing.
-const AnimationCycle &CustomerChar::cycleFrames(const std::string &field) const
-{
-    static const AnimationCycle none{"none", 2, 1, 0, 0, {0}};
-    auto it = cycles_.find(field);
-    if (it == cycles_.end()) {
-        it = cycles_.find("standCycleFrames");
-    }
-    return it == cycles_.end() ? none : it->second;
 }
 
 // AS: PlayerChar.startupPlayer
@@ -530,7 +490,7 @@ void CustomerChar::updateSprite()
     if (foot.name == "foot_climb") {
         step = climbDir;
     }
-    double firstFrame = foot.type == 1 ? foot.firstFrame : frameAt(foot, 0);
+    double firstFrame = foot.type == 1 ? foot.firstFrame : foot.frameAt(0);
     if (foot.name != footCycleName) {
         adjustFootFrameSync(foot.name, footCycleName, firstFrame, foot);
     } else {
@@ -538,7 +498,7 @@ void CustomerChar::updateSprite()
         footSpriteChangeFrame(step, foot, foot.type);
     }
     const AnimationCycle &torso = grabAnimationCycle();
-    firstFrame = torso.type == 1 ? torso.firstFrame : frameAt(torso, 0);
+    firstFrame = torso.type == 1 ? torso.firstFrame : torso.frameAt(0);
     if (torso.name != cycleName) {
         adjustFrameSync(torso.name, cycleName, firstFrame, torso);
     } else {
@@ -548,50 +508,10 @@ void CustomerChar::updateSprite()
     animationBlitStyle = torso.blitStyle;
 }
 
-// AS: Character.spriteChangeFrame
-void CustomerChar::spriteChangeFrame(double step, const AnimationCycle &cycle, double type)
-{
-    if (type == 1) {
-        animationFrame += step;
-        const double loopFrame = cycle.loopFrame;
-        const double lastFrame = cycle.lastFrame;
-        if (animationFrame > lastFrame) {
-            if (cycle.randomize != 0) {
-                animationFrame = lastFrame; // randomizeAnimationCycle does nothing for the player
-            } else if (loopFrame == -1) {
-                animationFrame = lastFrame;
-                endAnimationCycle();
-            } else {
-                animationFrame = loopFrame;
-            }
-        }
-        if (animationFrame < loopFrame && facingDir != walkingDir) {
-            animationFrame = lastFrame;
-        }
-    } else if (type == 2) {
-        const double loopFrame = cycle.loopFrame;
-        const double last = static_cast<double>(cycle.frames.size()) - 1;
-        cycleFrame += step;
-        if (cycleFrame < 0) {
-            cycleFrame = last;
-        } else if (cycleFrame > last) {
-            if (cycle.randomize != 0) {
-                cycleFrame = last; // randomizeAnimationCycle does nothing for the player
-            } else if (loopFrame == -1) {
-                cycleFrame = last;
-                endAnimationCycle();
-            } else {
-                cycleFrame = loopFrame;
-            }
-        }
-        animationFrame = frameAt(cycle, cycleFrame);
-    }
-}
-
 // AS: CustomerChar.footSpriteChangeFrame
-void CustomerChar::footSpriteChangeFrame(double step, const AnimationCycle &cycle, double type)
+void CustomerChar::footSpriteChangeFrame(double step, const AnimationCycle &cycle, double cycleType)
 {
-    if (type == 1) {
+    if (cycleType == 1) {
         footAnimationFrame += step;
         const double loopFrame = cycle.loopFrame;
         const double lastFrame = cycle.lastFrame;
@@ -601,7 +521,7 @@ void CustomerChar::footSpriteChangeFrame(double step, const AnimationCycle &cycl
         if (footAnimationFrame < loopFrame && facingDir != walkingDir) {
             footAnimationFrame = lastFrame;
         }
-    } else if (type == 2) {
+    } else if (cycleType == 2) {
         const double loopFrame = cycle.loopFrame;
         const double last = static_cast<double>(cycle.frames.size()) - 1;
         footCycleFrame += step;
@@ -610,7 +530,7 @@ void CustomerChar::footSpriteChangeFrame(double step, const AnimationCycle &cycl
         } else if (footCycleFrame > last) {
             footCycleFrame = loopFrame == -1 ? last : loopFrame;
         }
-        footAnimationFrame = frameAt(cycle, footCycleFrame);
+        footAnimationFrame = cycle.frameAt(footCycleFrame);
     }
 }
 
@@ -622,17 +542,17 @@ void CustomerChar::adjustFootFrameSync(const std::string &newName, const std::st
     const double last = static_cast<double>(cycle.frames.size()) - 1;
     if (newName == "foot_duck" && (oldName == "foot_crawl" || oldName == "foot_turncrawl" || oldName == "foot_hurtcrawl")) {
         footCycleFrame = last;
-        footAnimationFrame = frameAt(cycle, footCycleFrame);
+        footAnimationFrame = cycle.frameAt(footCycleFrame);
         footCycleName = newName;
     } else if (newName == "foot_crawl" &&
                (oldName == "foot_duck" || oldName == "foot_turncrawl" || oldName == "foot_hurtcrawl")) {
         footCycleFrame = cycle.loopFrame;
-        footAnimationFrame = frameAt(cycle, footCycleFrame);
+        footAnimationFrame = cycle.frameAt(footCycleFrame);
         footCycleName = newName;
     } else if ((oldName == "foot_doublejump" || oldName == "foot_doublefall") && newName == "foot_attack1_swing1" &&
                playerData()->customerClipName == "Cooper") {
         footCycleFrame = 4;
-        footAnimationFrame = frameAt(cycle, footCycleFrame);
+        footAnimationFrame = cycle.frameAt(footCycleFrame);
         footCycleName = newName;
     } else if (newName.starts_with("foot_slide") && (oldName.starts_with("foot_slide") || oldName.starts_with("foot_double")) &&
                newName != oldName) {
@@ -664,7 +584,7 @@ void CustomerChar::adjustFootFrameSync(const std::string &newName, const std::st
             footCycleName = names[static_cast<size_t>(from - 1)];
         } else {
             footCycleFrame = cycle.loopFrame;
-            footAnimationFrame = frameAt(cycle, cycleFrame); // QUIRK: indexed by the torso's cycleFrame
+            footAnimationFrame = cycle.frameAt(cycleFrame); // QUIRK: indexed by the torso's cycleFrame
             footCycleName = newName;
         }
     } else if (newName == "foot_push" && oldName == "foot_finishpush") {
@@ -694,18 +614,18 @@ void CustomerChar::adjustFrameSync(const std::string &newName, const std::string
     const double last = static_cast<double>(cycle.frames.size()) - 1;
     if (newName == "duck" && (oldName == "crawl" || oldName == "turncrawl" || oldName == "hurtcrawl")) {
         cycleFrame = last;
-        animationFrame = frameAt(cycle, cycleFrame);
+        animationFrame = cycle.frameAt(cycleFrame);
         cycleName = newName;
     } else if (newName == "crawl" && (oldName == "duck" || oldName == "turncrawl" || oldName == "hurtcrawl")) {
         cycleFrame = cycle.loopFrame;
-        animationFrame = frameAt(cycle, cycleFrame);
+        animationFrame = cycle.frameAt(cycleFrame);
         cycleName = newName;
     } else if (newName.find("shoot_") != std::string::npos && oldName.find("shoot_") != std::string::npos) {
         cycleName = newName;
     } else if ((oldName == "doublejump" || oldName == "doublefall") && newName == "attack1_swing1" &&
                playerData()->customerClipName == "Connor") {
         cycleFrame = 4;
-        animationFrame = frameAt(cycle, cycleFrame);
+        animationFrame = cycle.frameAt(cycleFrame);
         cycleName = newName;
         bulletTimer += 4;
     } else if (newName.starts_with("slide") && (oldName.starts_with("slide") || oldName.starts_with("double"))) {
@@ -735,7 +655,7 @@ void CustomerChar::adjustFrameSync(const std::string &newName, const std::string
             cycleName = names[static_cast<size_t>(from - 1)];
         } else {
             cycleFrame = cycle.loopFrame;
-            animationFrame = frameAt(cycle, cycleFrame);
+            animationFrame = cycle.frameAt(cycleFrame);
             cycleName = newName;
         }
     } else if (newName == "push" && oldName == "finishpush") {
@@ -789,9 +709,29 @@ void CustomerChar::endAnimationCycle()
         // Guns keep firing while the attack key is held, until the round is spent.
         if (controls.keyPressedAction && bulletsFired < bulletsPerRound) {
             cycleFrame = 0;
-            animationFrame = frameAt(cycleFrames(cycleName + "CycleFrames"), 0);
+            animationFrame = cycleFrames(cycleName + "CycleFrames").frameAt(0);
         } else {
             isAttacking = false;
+        }
+    }
+}
+
+// AS: PlayerChar.addToCombo
+void CustomerChar::addToCombo(double amount)
+{
+    comboTally += amount;
+    comboTimer = 0;
+    // SKELETON: ChallengeManager.recordCombo(comboTally) when comboTally > 1.
+}
+
+// AS: PlayerChar.updateComboTimer
+void CustomerChar::updateComboTimer()
+{
+    if (comboTally > 0) {
+        ++comboTimer;
+        if (comboTimer >= comboTimerMax) {
+            comboTimer = 0;
+            comboTally = 0;
         }
     }
 }
@@ -1069,7 +1009,8 @@ void CustomerChar::updateObject()
         // SKELETON: checkForHittingEnemies, checkForHittingObjects, checkForCollectingItems, checkForGrabbingTile,
         // checkSteppingOnObjects, adjustCarriedObject.
         checkIfOnDoor();
-        // SKELETON: updateStunTime, updateComboTimer.
+        // SKELETON: updateStunTime.
+        updateComboTimer();
         if (!isGrabbing && !isRidingObject && (!isRidingElevator || isDead)) {
             fallChar();
         }

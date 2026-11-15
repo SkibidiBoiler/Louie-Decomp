@@ -16,12 +16,14 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_3Y = std::make_unique<papaGame::display::GameCam>(this);
     playerObj = std::make_unique<papaGame::models::characters::CustomerChar>(this);
     obf_8o = std::make_unique<papaGame::events::GameControls>(this);
+    obf_E = std::make_unique<papaGame::managers::EnemyManager>(this);
 }
 
 bool obf_4R::loadLevelData(const std::string &gameDir)
 {
     obf_AQ->loadTables(gameDir + "/datamanager.json");
     playerObj->loadTables(gameDir + "/customerchar.json");
+    obf_E->loadTables(gameDir + "/enemies.json");
     return obf_AQ->prepareLevelData(gameDir + "/levels.xml");
 }
 
@@ -59,14 +61,16 @@ void obf_4R::obf_52()
     obf_71->currentXcoord = 0;
     obf_71->currentYcoord = 0;
     obf_3Y->savePrevious(); // port: no interpolation across the snap
-    // SKELETON: initializeScreenObjects, level music and the portal sound.
+    obf_AQ->initializeScreenObjects(0);
+    // SKELETON: level music and the portal sound.
 }
 
 // AS: §_-4R§.§_-4X§ — enter room `roomID` through its door `doorID`.
 // The door's offsets are passed along but not read: the player is placed by the door's direction.
 void obf_4R::obf_4X(double roomID, double doorID, double /*xOffset*/, double /*yOffset*/, double dirX, double dirY)
 {
-    // SKELETON: saving enemies/objects/items, clearing bullets/effects and extra sprites.
+    obf_E->saveEnemies();
+    // SKELETON: saving objects/items, clearing bullets/effects and extra sprites.
     obf_AQ->setActiveRoom(roomID);
     if (obf_AQ->currentScreenData == nullptr) {
         return;
@@ -87,7 +91,8 @@ void obf_4R::obf_4X(double roomID, double doorID, double /*xOffset*/, double /*y
     obf_3Y->savePrevious(); // port: no interpolation across the room switch
     obf_71->currentXcoord = 0;
     obf_71->currentYcoord = 0;
-    // SKELETON: initializeScreenObjects, HUD.
+    obf_AQ->initializeScreenObjects(0);
+    // SKELETON: HUD.
     obf_8o->stopCycle = false;
     obf_71->startTransition("in");
 }

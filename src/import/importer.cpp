@@ -74,7 +74,8 @@ void appendJson(std::string &out, const AbcValue &v)
 }
 
 // Field constants of class `ns`.`name` (from the first ABC block that has it) as a JSON object.
-void writeFieldConstants(const SwfIndex &index, const char *ns, const char *name, const std::string &path)
+// The constant field initializers of class ns.name, as a JSON object.
+std::string fieldConstantsJson(const SwfIndex &index, const char *ns, const char *name)
 {
     std::map<std::string, AbcValue> fields;
     for (const Tag &tag : index.abc) {
@@ -101,6 +102,24 @@ void writeFieldConstants(const SwfIndex &index, const char *ns, const char *name
         first = false;
         json += "\"" + field + "\": ";
         appendJson(json, value);
+    }
+    json += "\n}";
+    return json;
+}
+
+void writeFieldConstants(const SwfIndex &index, const char *ns, const char *name, const std::string &path)
+{
+    const std::string json = fieldConstantsJson(index, ns, name) + "\n";
+    writeFile(path, json.data(), json.size());
+}
+
+// enemies.json: {"Enemy": {...}, "Enemy1": {...}, ...} — the cycle tables and rectangles of every enemy class.
+void writeEnemyConstants(const SwfIndex &index, const std::string &path)
+{
+    std::string json = "{\n\"Enemy\": " + fieldConstantsJson(index, "papaGame.models", "Enemy");
+    for (int i = 1; i <= 39; ++i) {
+        const std::string name = "Enemy" + std::to_string(i);
+        json += ",\n\"" + name + "\": " + fieldConstantsJson(index, "papaGame.models.enemies", name.c_str());
     }
     json += "\n}\n";
     writeFile(path, json.data(), json.size());
@@ -320,6 +339,7 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
     // attack rectangles.
     writeFieldConstants(index, "papaGame.data", "DataManager", out + "/datamanager.json");
     writeFieldConstants(index, "papaGame.models.characters", "CustomerChar", out + "/customerchar.json");
+    writeEnemyConstants(index, out + "/enemies.json");
     report(0.43f, "Converting frame scripts");
     {
         // Timeline scripts (stop, gotoAndPlay, part poses) become data: <class> <frame> <op> [target] [number].

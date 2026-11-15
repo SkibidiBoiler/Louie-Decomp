@@ -1,12 +1,44 @@
 #pragma once
 // AS: papaGame.models.Character — position, tile collision and movement shared by the player and enemies.
 // Ported so far: getMyCorners, cloud/ladder/edge checks, fallChar, jumpChar, moveChar.
-// Also checkForSlopes / checkForCeilingSlopes. SKELETON: moving tiles, crawl gaps and doors.
+// Also checkForSlopes / checkForCeilingSlopes, the sprite animation (updateSprite, spriteChangeFrame), health
+// and sprite collisions. SKELETON: moving tiles, crawl gaps and doors.
 #include <climits>
+#include <map>
+#include <string>
+#include <vector>
 
+namespace engine { struct JsonValue; }
 namespace obf_9G { class obf_4R; }
 
 namespace papaGame::models {
+
+// One `...CycleFrames` array: [name, type, blitStyle, randomize, loopFrame, frames] (type 2), or
+// [name, type, blitStyle, randomize, loopFrame, firstFrame, lastFrame] (type 1).
+struct AnimationCycle {
+    std::string name;
+    double type = 2;
+    double blitStyle = 1;
+    double randomize = 0;
+    double loopFrame = 0; // -1: play once and call endAnimationCycle
+    std::vector<double> frames;
+    double firstFrame = 0, lastFrame = 0;
+
+    // cycle[5][index]; reading past the end gives undefined, which is NaN as a Number.
+    double frameAt(double index) const;
+};
+
+// Port: a class's `...CycleFrames` constants by field name, as the importer writes them.
+using CycleTable = std::map<std::string, AnimationCycle>;
+void parseCycleTable(const engine::JsonValue &fields, CycleTable &out);
+
+// A flash.geom.Rectangle.
+struct Rect {
+    double x = 0, y = 0, width = 0, height = 0;
+    bool intersects(const Rect &o) const; // AS: Rectangle.intersects
+};
+// Port: a [x, y, w, h] constant from the importer (zero if missing).
+Rect rectField(const engine::JsonValue &fields, const char *name);
 
 class Character {
 public:
@@ -14,6 +46,31 @@ public:
     virtual ~Character() = default;
 
     virtual void defineVars() {}
+    // Port: remember the position before a logic step (interpolation).
+    void savePrevious() { prevX = x; prevY = y; }
+
+    // AS: Character.updateObject / destroy / killMe (empty in Character).
+    virtual void updateObject() {}
+    virtual void destroy() {}
+    virtual void killMe(double /*dir*/ = 1) {}
+    void adjustHealth(double amount);
+    // Animation: grabAnimationCycle picks the cycle; updateSprite advances it.
+    virtual const AnimationCycle &grabAnimationCycle();
+    virtual void randomizeAnimationCycle() {}
+    virtual void endAnimationCycle() {}
+    // The original also passes the old frame numbers and the cycle type, which no override reads.
+    virtual void adjustFrameSync(const std::string &newName, const std::string &oldName, double firstFrame,
+                                 const AnimationCycle &cycle);
+    virtual void updateSprite();
+    void spriteChangeFrame(double step, const AnimationCycle &cycle, double type);
+    // Port: `this[field]` for a cycle array; a missing one falls back to standing.
+    const AnimationCycle &cycleFrames(const std::string &field) const;
+    bool checkSpriteCollision(const Rect &r, const Rect *rect = nullptr) const;
+    Rect getCurrentCollRect(const Rect *rect = nullptr) const;
+    void setSheetIndex(double index) { sheetIndex = index; }
+    double getProximityVolume() const;
+    double getProximityPan() const;
+    bool isReallyOnScreen() const;
     bool checkIfOnCloud();
     bool checkIfLadderBelow();
     bool checkIfHalfOnCloud(double dir);
@@ -22,7 +79,7 @@ public:
     bool moveChar(double dirx, double diry, double jumpDir, bool bounceAtWalls = false, bool checkEdges = false,
                   bool collide = true, double fixedSpeed = INT_MAX);
     virtual void fallChar();
-    void jumpChar(bool collide = true);
+    virtual void jumpChar(bool collide = true);
     void getMyCorners(double px, double py);
     void checkForCeilingSlopes(double dir = -1);
     void checkForSlopes(double dirx, double diry);
@@ -36,6 +93,23 @@ public:
     virtual void fellOffLevel() {}
 
     obf_9G::obf_4R *gameObj = nullptr;
+    double id = 0;
+    double type = 0;
+    double damageAmount = 1;
+    std::string sheetname;
+    bool sheetIsBitmap = true;
+    double sheetIndex = -1;
+    Rect collRect{0, 0, 32, 32};
+    bool facingWalking = false;
+    double spriteCenterX = 64, spriteCenterY = 40, spriteTargetX = 75, spriteTargetY = 75;
+    double sheetWidth = 18, sheetHeight = 18, flipBlitOffset = 0;
+    bool isHit = false, isStunned = false, isTurning = false;
+    double stunStartTime = 0, stunDuration = 90;
+    double maxHealth = 5, currentHealth = 5;
+    double animationFrame = 0, cycleFrame = 0, animationBlitStyle = 1;
+    std::string cycleName;
+    const CycleTable *cycleTable = nullptr; // port: the class's cycle constants
+    double prevX = 0, prevY = 0;            // port: interpolation
     double x = 0, y = 0, xtile = 0, ytile = 0;
     double height = 15, width = 15, playerheight = 60;
     double spriteheight = 80, spritewidth = 128;

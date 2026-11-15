@@ -103,7 +103,18 @@ real ladders appear with objects; DEV `--ladder x,y,h`). Doors: `ScreenData.chec
 DEV testing without screenshots: `--input "R1-60,U61-90"` (keys LRUDJA, logic frames), `--trace` (one line per
 frame: room, position, tile, cycles, flags; plus the room's doors and ladder tiles), `--frames N`, `--level N`.
 `tools/as_func.py <deob dir> <Class> <method>` prints one original function compactly.
-Next: enemies (EnemyManager, hitting them with `attackRect`), then objects (ladders, blocks), items, HUD.
+(13) Enemies: `EnemyManager` (§_-E§: addEnemy, processEnemies, clearEnemies, saveEnemies, buildEnemies,
+removeEnemy with a one-frame graveyard, getEnemy, preblit), `Enemy` (placeEnemy, getHit, killMe juggling,
+lookForPlayer, adjustSpeedForSlopes, saveEnemyKill...), and Leaf Landing's types: `Enemy1` onion, `Enemy2` brown
+onion (paces to targetTileX), `Enemy6` tomato (hops, QUIRK: delay timer never resets), `Enemy34` Burgerzilla.
+`Character` now holds the shared animation (`updateSprite`, `spriteChangeFrame`, `cycleFrames`), `Rect`,
+health, sprite collision and proximity sound helpers. Cycle tables come from `enemies.json` (importer).
+`DataManager.initializeScreenObjects` builds the room's enemies (start of level and after each door);
+`ScreenData.saveEnemyState` remembers kills; `GameDisplay.reblitEnemies` draws them (interpolated); `UserData`
+points / kill tallies. `--trace` adds an `E` line per frame (id:type x,y cycle, d/s/h flags).
+SKELETON: the other 35 enemy types (`createEnemy` returns null: logged "ENEMY DOESN'T EXIST"), multi-sprite
+enemies, effects (dizzy stars, starburst), sounds, triggers to objects.
+Next: hitting enemies (`checkForHittingEnemies`), player damage, then objects (ladders, blocks), items, HUD.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

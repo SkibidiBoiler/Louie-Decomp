@@ -112,11 +112,13 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitSky();
     reblitBackdrop();
     reblitTiles();
-    // SKELETON: items, effects, objects, enemies and bullets come later (the original draws them here).
+    // SKELETON: items, effects and objects are drawn before the enemies, bullets after.
+    reblitEnemies(false);
     if (gameObj->playerObj && gameObj->playerObj->blitter) {
         reblitMultispritePlayer();
     }
-    // SKELETON: foreground objects/enemies/effects and overlays come later.
+    // SKELETON: foreground objects before the enemies; effects, items, bullets and overlays after.
+    reblitEnemies(true);
     drawTransition();
     smooth_ = false;
 }
@@ -433,6 +435,62 @@ void GameDisplay::reblitMultispritePlayer()
     cell(b.frontFootSheet, p.footAnimationFrame, b.footSpriteWidth, b.footSpriteHeight, b.footSpritesPerRow, footFlip,
          footX, footY);
     // SKELETON: blitCollisionArea (debug bounds) is not drawn.
+}
+
+} // namespace papaGame::display
+
+namespace papaGame::display {
+
+// AS: GameDisplay.checkOnScreen — within checkOnScreenOffset tiles of the visible area.
+bool GameDisplay::checkOnScreen(const models::Character &c) const
+{
+    const double offset = checkOnScreenOffset;
+    const double w = c.widthmultiplier - 0.5;
+    const double h = c.heightmultiplier - 0.5;
+    if (c.xtile + w < currentXtileLeft - offset) {
+        return false;
+    }
+    if (c.xtile > currentXtileRight + offset) {
+        return false;
+    }
+    if (c.ytile < currentYtileUp - offset) {
+        return false;
+    }
+    if (c.ytile - h > currentYtileDown + offset) {
+        return false;
+    }
+    return true;
+}
+
+// AS: GameDisplay.reblitEnemies (SKELETON: reblitMultispriteEnemy; blitCollisionArea is a debug view)
+void GameDisplay::reblitEnemies(bool foreground)
+{
+    managers::EnemyManager &manager = *gameObj->obf_E;
+    for (models::Enemy *e : manager.enemies) {
+        if (!e || e->foreground != foreground || !e->checkOnScreen() || e->isMultiSprite) {
+            continue;
+        }
+        const double frame = e->animationFrame;
+        const double w = e->spritewidth, h = e->spriteheight;
+        const double perRow = e->sheetWidth;
+        const double flip = e->facingDir == -1 ? e->flipBlitOffset : 0;
+        const double sx = (frame - std::floor(frame / perRow) * perRow) * w;
+        const double sy = std::floor(frame / perRow) * h + flip;
+        // Port: with smooth rendering the enemy is drawn between its last two logic positions.
+        const double ex = e->prevX + (e->x - e->prevX) * drawAlpha_;
+        const double ey = e->prevY + (e->y - e->prevY) * drawAlpha_;
+        double dx = ex - (e->spriteTargetX - e->spriteCenterX) - currentXcoord - w / 2;
+        double dy = ey - (e->spriteTargetY - e->spriteCenterY) - currentYcoord - h / 2;
+        if (!smooth_) {
+            dx = std::floor(dx);
+            dy = std::floor(dy);
+        }
+        e->checkBeforeBlitting();
+        const auto index = static_cast<size_t>(e->sheetIndex);
+        if (e->sheetIndex >= 0 && index < manager.objectSheets.size() && manager.objectSheets[index]) {
+            blit(*manager.objectSheets[index], sx, sy, w, h, dx, dy);
+        }
+    }
 }
 
 } // namespace papaGame::display

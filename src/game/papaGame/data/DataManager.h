@@ -34,6 +34,7 @@ public:
     void setupLevelScreens(double whichLevel);
     std::string getWorldTitle(double whichWorld) const;
     void setActiveRoom(double index);
+    void initializeScreenObjects(double whichScreen);
     void clearLevelScreens();
     bool isOnTrain() const;
     bool isAnimatedBackground() const;

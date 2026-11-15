@@ -15,6 +15,7 @@
 #include "game/papaGame/events/GameControls.h"
 #include "game/papaGame/display/GameDisplay.h"
 #include "game/papaGame/managers/BitmapManager.h"
+#include "game/papaGame/managers/EnemyManager.h"
 #include "game/papaGame/managers/MapManager.h"
 #include "game/papaGame/models/characters/CustomerChar.h"
 
@@ -47,6 +48,7 @@ public:
     std::unique_ptr<papaGame::display::GameCam> obf_3Y;
     std::unique_ptr<papaGame::models::characters::CustomerChar> playerObj;
     std::unique_ptr<papaGame::events::GameControls> obf_8o;
+    std::unique_ptr<papaGame::managers::EnemyManager> obf_E;
 };
 
 } // namespace obf_9G

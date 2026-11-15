@@ -78,3 +78,9 @@ The same for `papaGame.models.characters.CustomerChar` (the player): its animati
 `torsoOffsetsX/Y`, and the attack rectangles and frame ranges (`"swing_attackRect": [x, y, width, height]`,
 `"swing_frameRange": [start, end, repeat]`). A `new Rectangle(...)` with constant arguments is written as its
 four numbers.
+
+## enemies.json
+
+One object per enemy class, `{"Enemy": {...}, "Enemy1": {...}, ..., "Enemy39": {...}}`, with the same
+constant fields: the base class's defaults and rectangles (`lookForPlayerRect`, `keepChasingPlayerRect`) and each
+type's cycles. A class that inherits its cycles from another enemy class has an empty object.

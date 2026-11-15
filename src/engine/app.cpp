@@ -276,6 +276,11 @@ void App::tickLevel()
     controls.keyPressedJump = actions[Action::Jump];
     controls.keyPressedAction = actions[Action::Attack];
     player.savePrevious();
+    for (papaGame::models::Enemy *e : game_->obf_E->enemies) {
+        if (e) {
+            e->savePrevious();
+        }
+    }
     const double heldX = cam.x, heldY = cam.y;
     controls.detectKeys(); // moves the camera (GameCam.adjustCamera)
     if (trace_ && scriptFrame_ == 1) {
@@ -306,6 +311,20 @@ void App::tickLevel()
                 player.jump ? " jump" : "", player.isClimbingLadder ? " ladder" : "",
                 player.waitToEnterDoor ? " door" : "",
                 game_->obf_71->isTransitionOut ? " out" : (game_->obf_71->isTransitioningIn ? " in" : ""));
+        // DEV: the room's enemies: id:type x,y cycle and flags (d dead, s stunned, h hit).
+        std::string enemies;
+        for (const papaGame::models::Enemy *e : game_->obf_E->enemies) {
+            if (e) {
+                char buf[96];
+                SDL_snprintf(buf, sizeof(buf), " %.0f:%.0f %.0f,%.0f %s%s%s%s", e->id, e->type, e->x, e->y,
+                             e->cycleName.c_str(), e->isDead ? " d" : "", e->isStunned ? " s" : "",
+                             e->isHit ? " h" : "");
+                enemies += buf;
+            }
+        }
+        if (!enemies.empty()) {
+            SDL_Log("E%s", enemies.c_str());
+        }
     }
     if (quitAfterFrames_ >= 0 && --quitAfterFrames_ == 0) {
         quitRequested_ = true;

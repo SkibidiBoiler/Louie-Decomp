@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 
 #include "game/as3.h"
+#include "game/obf_9G/obf_4R.h"
 
 namespace papaGame::data {
 
@@ -97,6 +98,18 @@ void DataManager::setActiveRoom(double index)
     const auto i = static_cast<size_t>(index);
     currentScreenData = i < currentScreens.size() ? currentScreens[i].get() : nullptr;
     currentScreen = index;
+}
+
+// AS: DataManager.initializeScreenObjects (SKELETON: objects, items, events and the other preblits)
+void DataManager::initializeScreenObjects(double whichScreen)
+{
+    if (!currentScreenData->objectsInitialized) {
+        gameObj->obf_E->clearEnemies(whichScreen, true);
+        gameObj->obf_E->buildEnemies(whichScreen);
+        gameObj->obf_E->preblitSheets();
+    } else {
+        SDL_Log("ERROR: Screen %s is already initialized!", as3::String(whichScreen).c_str());
+    }
 }
 
 // AS: DataManager.clearLevelScreens
