@@ -64,3 +64,9 @@ statement per line, in script order: `<class> <frame (0-based)> <op> <target> <n
 `play`, `gotoAndPlay`/`gotoAndStop` (target = label or `-`, number = 1-based frame) or `child` (target = container
 instance name; `MovieClip(this.<target>.getChildAt(0)).gotoAndStop(<number>)`). Statements the converter does not
 recognise are skipped and counted in the import log.
+
+## datamanager.json
+
+Constant fields of `papaGame.data.DataManager` (instance initialiser and static constants) as one JSON object,
+`{ "<field>": <number | string | array> }`, read from the game's bytecode by the importer so these tables (tile
+collision and slope lists, special tile numbers, ...) never live in the repository.

@@ -184,9 +184,10 @@ bool Abc::parse(const uint8_t *data, size_t size)
         inst.iinit = r.u30();
         readTraits(r, &inst.traits);
     }
+    classes_.resize(classCount);
     for (uint32_t i = 0; i < classCount && r.ok(); ++i) {
-        r.u30(); // cinit
-        readTraits(r, nullptr);
+        classes_[i].cinit = r.u30();
+        readTraits(r, &classes_[i].traits);
     }
     n = r.u30(); // scripts
     for (uint32_t i = 0; i < n && r.ok(); ++i) {
@@ -316,139 +317,166 @@ AbcValue Abc::constant(uint32_t index, uint8_t kind) const
 std::map<std::string, AbcValue> Abc::instanceFieldConstants(const std::string &ns, const std::string &name) const
 {
     std::map<std::string, AbcValue> fields;
-    for (const Instance &inst : instances_) {
+    for (size_t i = 0; i < instances_.size(); ++i) {
+        const Instance &inst = instances_[i];
         if (multinameName(inst.name) != name || multinameNs(inst.name) != ns) {
             continue;
         }
-        for (const Trait &t : inst.traits) {
-            if ((t.kind & 0x0F) == 0 || (t.kind & 0x0F) == 6) {
-                if (t.vindex) {
-                    fields[multinameName(t.name)] = constant(t.vindex, t.vkind);
-                }
-            }
+        if (i < classes_.size()) {
+            scanInitializer(classes_[i].traits, classes_[i].cinit, fields);
         }
-        auto body = bodies_.find(inst.iinit);
-        if (body == bodies_.end()) {
-            return fields;
-        }
-        // Follow constant pushes, array literals and field stores in the initialiser, in code order.
-        const auto &code = body->second.code;
-        Reader r(code.data(), code.size());
-        std::vector<AbcValue> stack;
-        auto push = [&](AbcValue v) { stack.push_back(std::move(v)); };
-        auto pop = [&]() {
-            if (stack.empty()) {
-                return AbcValue{};
-            }
-            AbcValue v = std::move(stack.back());
-            stack.pop_back();
-            return v;
-        };
-        // Unconditional jumps are followed, and conditional ones are decided when both operands are known
-        // constants (the obfuscator's opaque predicates); otherwise the scan falls through.
-        size_t steps = 0;
-        while (r.ok() && r.pos() < code.size() && ++steps < 1000000) {
-            const uint8_t op = r.u8();
-            AbcValue v;
-            switch (op) {
-            case 0x24: v.type = AbcValue::Type::Number; v.number = static_cast<int8_t>(r.u8()); push(v); continue;
-            case 0x25: v.type = AbcValue::Type::Number; v.number = static_cast<int16_t>(r.u30()); push(v); continue;
-            case 0x2D: push(constant(r.u30(), 0x03)); continue;
-            case 0x2E: push(constant(r.u30(), 0x04)); continue;
-            case 0x2F: push(constant(r.u30(), 0x06)); continue;
-            case 0x2C: push(constant(r.u30(), 0x01)); continue;
-            case 0x56: { // newarray
-                const uint32_t count = r.u30();
-                v.type = AbcValue::Type::Array;
-                v.items.resize(count);
-                for (uint32_t i = count; i-- > 0;) {
-                    v.items[i] = pop();
-                }
-                push(std::move(v));
-                continue;
-            }
-            case 0x61: case 0x68: { // setproperty / initproperty
-                const uint32_t mn = r.u30();
-                AbcValue value = pop();
-                pop(); // object
-                if (value.type != AbcValue::Type::Unknown) {
-                    fields[multinameName(mn)] = std::move(value);
-                }
-                continue;
-            }
-            case 0x10: { // jump
-                const int32_t off = r.s24();
-                r.seek(static_cast<size_t>(static_cast<int64_t>(r.pos()) + off));
-                continue;
-            }
-            case 0x11: case 0x12: { // iftrue / iffalse
-                const int32_t off = r.s24();
-                const AbcValue a = pop();
-                if (a.type == AbcValue::Type::Number) {
-                    const bool truthy = a.number != 0 && a.number == a.number;
-                    if (truthy == (op == 0x11)) {
-                        r.seek(static_cast<size_t>(static_cast<int64_t>(r.pos()) + off));
-                    }
-                }
-                continue;
-            }
-            case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
-            case 0x18: case 0x19: case 0x1A: { // compare-and-branch
-                const int32_t off = r.s24();
-                const AbcValue b = pop();
-                const AbcValue a = pop();
-                if (a.type == AbcValue::Type::Number && b.type == AbcValue::Type::Number) {
-                    const double x = a.number, y = b.number;
-                    bool take = false;
-                    switch (op) {
-                    case 0x0C: take = !(x < y); break;  // ifnlt
-                    case 0x0D: take = !(x <= y); break; // ifnle
-                    case 0x0E: take = !(x > y); break;  // ifngt
-                    case 0x0F: take = !(x >= y); break; // ifnge
-                    case 0x13: case 0x19: take = x == y; break; // ifeq / ifstricteq
-                    case 0x14: case 0x1A: take = x != y; break; // ifne / ifstrictne
-                    case 0x15: take = x < y; break;     // iflt
-                    case 0x16: take = x <= y; break;    // ifle
-                    case 0x17: take = x > y; break;     // ifgt
-                    case 0x18: take = x >= y; break;    // ifge
-                    default: break;
-                    }
-                    if (take) {
-                        r.seek(static_cast<size_t>(static_cast<int64_t>(r.pos()) + off));
-                    }
-                }
-                continue;
-            }
-            case 0x26: v.type = AbcValue::Type::Number; v.number = 1; push(v); continue; // pushtrue
-            case 0x27: v.type = AbcValue::Type::Number; v.number = 0; push(v); continue; // pushfalse
-            case 0x29: pop(); continue;                         // pop
-            case 0x2A: if (!stack.empty()) push(stack.back()); continue; // dup
-            case 0xD0: case 0xD1: case 0xD2: case 0xD3: case 0x20: case 0x28:
-                push(AbcValue{}); // getlocalN, pushnull, pushnan
-                continue;
-            case 0x5D: case 0x5E: r.u30(); push(AbcValue{}); continue; // findpropstrict / findproperty
-            default: break;
-            }
-            switch (operandsOf(op)) {
-            case U8: r.u8(); break;
-            case U30: r.u30(); break;
-            case U30x2: r.u30(); r.u30(); break;
-            case S24: r.s24(); break;
-            case Switch: {
-                r.s24();
-                const uint32_t cases = r.u30();
-                for (uint32_t i = 0; i <= cases; ++i) {
-                    r.s24();
-                }
-                break;
-            }
-            case Debug: r.u8(); r.u30(); r.u8(); r.u30(); break;
-            case None: break;
-            }
-        }
+        scanInitializer(inst.traits, inst.iinit, fields);
         return fields;
     }
     return fields;
+}
+
+void Abc::scanInitializer(const std::vector<Trait> &traits, uint32_t method, std::map<std::string, AbcValue> &fields) const
+{
+    for (const Trait &t : traits) {
+        if (((t.kind & 0x0F) == 0 || (t.kind & 0x0F) == 6) && t.vindex) {
+            fields[multinameName(t.name)] = constant(t.vindex, t.vkind);
+        }
+    }
+    auto body = bodies_.find(method);
+    if (body == bodies_.end()) {
+        return;
+    }
+    // Follow constant pushes, array literals and field stores in the initialiser, in code order.
+    const auto &code = body->second.code;
+    Reader r(code.data(), code.size());
+    std::vector<AbcValue> stack;
+    std::vector<AbcValue> locals(256);
+    auto push = [&](AbcValue v) { stack.push_back(std::move(v)); };
+    auto pop = [&]() {
+        if (stack.empty()) {
+            return AbcValue{};
+        }
+        AbcValue v = std::move(stack.back());
+        stack.pop_back();
+        return v;
+    };
+    // Unconditional jumps are followed, and conditional ones are decided when both operands are known
+    // constants (the obfuscator's opaque predicates); otherwise the scan falls through.
+    size_t steps = 0;
+    while (r.ok() && r.pos() < code.size() && ++steps < 1000000) {
+        const uint8_t op = r.u8();
+        AbcValue v;
+        switch (op) {
+        case 0x24: v.type = AbcValue::Type::Number; v.number = static_cast<int8_t>(r.u8()); push(v); continue;
+        case 0x25: v.type = AbcValue::Type::Number; v.number = static_cast<int16_t>(r.u30()); push(v); continue;
+        case 0x2D: push(constant(r.u30(), 0x03)); continue;
+        case 0x2E: push(constant(r.u30(), 0x04)); continue;
+        case 0x2F: push(constant(r.u30(), 0x06)); continue;
+        case 0x2C: push(constant(r.u30(), 0x01)); continue;
+        case 0x56: { // newarray
+            const uint32_t count = r.u30();
+            v.type = AbcValue::Type::Array;
+            v.items.resize(count);
+            for (uint32_t i = count; i-- > 0;) {
+                v.items[i] = pop();
+            }
+            push(std::move(v));
+            continue;
+        }
+        case 0x61: case 0x68: { // setproperty / initproperty
+            const uint32_t mn = r.u30();
+            AbcValue value = pop();
+            pop(); // object
+            if (value.type != AbcValue::Type::Unknown) {
+                fields[multinameName(mn)] = std::move(value);
+            }
+            continue;
+        }
+        case 0x10: { // jump
+            const int32_t off = r.s24();
+            r.seek(static_cast<size_t>(static_cast<int64_t>(r.pos()) + off));
+            continue;
+        }
+        case 0x11: case 0x12: { // iftrue / iffalse
+            const int32_t off = r.s24();
+            const AbcValue a = pop();
+            if (a.type == AbcValue::Type::Number) {
+                const bool truthy = a.number != 0 && a.number == a.number;
+                if (truthy == (op == 0x11)) {
+                    r.seek(static_cast<size_t>(static_cast<int64_t>(r.pos()) + off));
+                }
+            }
+            continue;
+        }
+        case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
+        case 0x18: case 0x19: case 0x1A: { // compare-and-branch
+            const int32_t off = r.s24();
+            const AbcValue b = pop();
+            const AbcValue a = pop();
+            if (a.type == AbcValue::Type::Number && b.type == AbcValue::Type::Number) {
+                const double x = a.number, y = b.number;
+                bool take = false;
+                switch (op) {
+                case 0x0C: take = !(x < y); break;  // ifnlt
+                case 0x0D: take = !(x <= y); break; // ifnle
+                case 0x0E: take = !(x > y); break;  // ifngt
+                case 0x0F: take = !(x >= y); break; // ifnge
+                case 0x13: case 0x19: take = x == y; break; // ifeq / ifstricteq
+                case 0x14: case 0x1A: take = x != y; break; // ifne / ifstrictne
+                case 0x15: take = x < y; break;     // iflt
+                case 0x16: take = x <= y; break;    // ifle
+                case 0x17: take = x > y; break;     // ifgt
+                case 0x18: take = x >= y; break;    // ifge
+                default: break;
+                }
+                if (take) {
+                    r.seek(static_cast<size_t>(static_cast<int64_t>(r.pos()) + off));
+                }
+            }
+            continue;
+        }
+        case 0x26: v.type = AbcValue::Type::Number; v.number = 1; push(v); continue; // pushtrue
+        case 0x27: v.type = AbcValue::Type::Number; v.number = 0; push(v); continue; // pushfalse
+        case 0x29: pop(); continue;                         // pop
+        case 0x2A: if (!stack.empty()) push(stack.back()); continue; // dup
+        case 0xD1: case 0xD2: case 0xD3: // getlocal1-3: values the obfuscator stored in registers
+            push(locals[op - 0xD0]);
+            continue;
+        case 0x62: { // getlocal
+            const uint32_t reg = r.u30();
+            push(reg < locals.size() ? locals[reg] : AbcValue{});
+            continue;
+        }
+        case 0xD4: case 0xD5: case 0xD6: case 0xD7: // setlocal0-3
+            locals[op - 0xD4] = pop();
+            continue;
+        case 0x63: { // setlocal
+            const uint32_t reg = r.u30();
+            AbcValue value = pop();
+            if (reg < locals.size()) {
+                locals[reg] = std::move(value);
+            }
+            continue;
+        }
+        case 0xD0: case 0x20: case 0x28:
+            push(AbcValue{}); // getlocal0 (this), pushnull, pushnan
+            continue;
+        case 0x5D: case 0x5E: r.u30(); push(AbcValue{}); continue; // findpropstrict / findproperty
+        default: break;
+        }
+        switch (operandsOf(op)) {
+        case U8: r.u8(); break;
+        case U30: r.u30(); break;
+        case U30x2: r.u30(); r.u30(); break;
+        case S24: r.s24(); break;
+        case Switch: {
+            r.s24();
+            const uint32_t cases = r.u30();
+            for (uint32_t i = 0; i <= cases; ++i) {
+                r.s24();
+            }
+            break;
+        }
+        case Debug: r.u8(); r.u30(); r.u8(); r.u30(); break;
+        case None: break;
+        }
+    }
 }
 
 namespace {

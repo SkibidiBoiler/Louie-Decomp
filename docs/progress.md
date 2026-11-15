@@ -69,6 +69,11 @@ them; `draw()` ignores the model's GlowFilter, as Flash does); (4) `CustomerData
 with the stand cycle (`CustomerChar` SKELETON); the DEV camera starts on him. Next: `Character`/`PlayerChar`
 movement, gravity and tile collisions (he starts in the air: the original drops him in from a portal),
 `GameControls`, `GameCam.adjustCamera`.
+(6) importer writes `datamanager.json`: every constant field of `papaGame.data.DataManager` (tile collision /
+thru / grab arrays, slope tile lists, `COLLISION_TILE_NUMBER`...), read from the ABC (scanner now tracks local
+registers); checked against the decompiled source: 55/55 equal. Next: load it in `DataManager`, translate
+`getPropValue`, `MapManager.getTileProperty`/`isWithinBounds`, then `Character.getMyCorners`/`fallChar`/`jumpChar`/
+`moveChar`/`checkForSlopes`, `GameControls.detectKeys`/`keyCheckPlayer`, `CustomerChar` animation, `adjustCamera`.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

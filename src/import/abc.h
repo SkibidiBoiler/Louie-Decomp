@@ -22,7 +22,8 @@ class Abc {
 public:
     bool parse(const uint8_t *data, size_t size);
 
-    // Field values set by the instance initialiser (and slot defaults) of class `ns`.`name`.
+    // Field values set by the instance and class initialisers (and slot defaults) of class `ns`.`name`:
+    // instance fields and static constants together.
     // Empty when the class is not in this ABC block.
     std::map<std::string, AbcValue> instanceFieldConstants(const std::string &ns, const std::string &name) const;
 
@@ -69,6 +70,12 @@ private:
     std::vector<std::pair<uint8_t, uint32_t>> namespaces_;
     std::vector<Multiname> multinames_;
     std::vector<Instance> instances_;
+    struct ClassInfo {
+        uint32_t cinit = 0;
+        std::vector<Trait> traits;
+    };
+    std::vector<ClassInfo> classes_; // statics, same order as instances_
+    void scanInitializer(const std::vector<Trait> &traits, uint32_t method, std::map<std::string, AbcValue> &fields) const;
     std::map<uint32_t, Body> bodies_; // method index -> body
 };
 
