@@ -26,10 +26,21 @@ public:
     // Empty when the class is not in this ABC block.
     std::map<std::string, AbcValue> instanceFieldConstants(const std::string &ns, const std::string &name) const;
 
+    // One recognised statement of a timeline frame script.
+    struct FrameOp {
+        uint16_t frame = 0;      // 0-based frame the script belongs to
+        std::string op;          // "stop", "play", "gotoAndPlay", "gotoAndStop", "child"
+        std::string target;      // label (goto*) or container instance name (child)
+        double number = 0;       // frame number (1-based) for goto*/child, when not a label
+    };
+    // Frame scripts of every class in this block that calls addFrameScript: class name -> statements.
+    // Statements the converter does not recognise are counted in `skipped`.
+    std::map<std::string, std::vector<FrameOp>> frameScripts(size_t &skipped) const;
+
     struct Trait {
         uint32_t name = 0;
         uint8_t kind = 0;
-        uint32_t vindex = 0;
+        uint32_t vindex = 0; // slot default value index, or the method index of a method trait
         uint8_t vkind = 0;
     };
 

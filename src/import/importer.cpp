@@ -235,6 +235,34 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
         SDL_Log("Import: no levels.xml (%s)", note.c_str());
     }
 
+    report(0.43f, "Converting frame scripts");
+    {
+        // Timeline scripts (stop, gotoAndPlay, part poses) become data: <class> <frame> <op> [target] [number].
+        std::string text;
+        size_t skipped = 0;
+        for (const Tag &tag : index.abc) {
+            size_t p = 0;
+            if (tag.code == 82) {
+                p = 4;
+                cstring(tag.body, tag.size, p);
+            }
+            Abc abc;
+            if (!abc.parse(tag.body + p, tag.size - p)) {
+                continue;
+            }
+            for (const auto &[cls, ops] : abc.frameScripts(skipped)) {
+                for (const Abc::FrameOp &op : ops) {
+                    char line[256];
+                    SDL_snprintf(line, sizeof(line), "%s %u %s %s %g\n", cls.c_str(), op.frame, op.op.c_str(),
+                                 op.target.empty() ? "-" : op.target.c_str(), op.number);
+                    text += line;
+                }
+            }
+        }
+        writeFile(out + "/framescripts.txt", text.data(), text.size());
+        SDL_Log("Import: frame scripts converted (%zu statements skipped)", skipped);
+    }
+
     // Vector art at 2x: sharp at the usual window and phone sizes (the stage is 700x416).
     constexpr int kScale = 2;
     Rasterizer raster(swf, index);
