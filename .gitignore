@@ -12,15 +12,15 @@
 *.swc
 *.flv
 *.f4v
-datos-papas/
-game/
-original/
-extracted/
-data/
+/datos-papas/
+/game/
+/original/
+/extracted/
+/data/
 *.sol
 
 # --- Saves ---
-saves/
+/saves/
 *.sav
 
 # --- Android build outputs ---
