@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 namespace engine {
@@ -15,6 +16,7 @@ constexpr uint64_t kMaxCatchUpFrames = 5;
 
 App::~App()
 {
+    game_.reset();
     viewerClip_.reset();
     textures_.clear(); // release textures before the renderer
     sheets_.clear();
@@ -63,6 +65,16 @@ SDL_AppResult App::init(int argc, char *argv[])
     for (int i = 1; i + 1 < argc; ++i) {
         if (std::strcmp(argv[i], "--capture") == 0) {
             capturePath_ = argv[i + 1];
+        } else if (std::strcmp(argv[i], "--room") == 0 && game_) { // DEV: start in room N (0-based)
+            switchRoom(std::atoi(argv[i + 1]) - static_cast<int>(game_->obf_AQ->currentScreen));
+        } else if (std::strcmp(argv[i], "--cam") == 0 && game_) { // DEV: camera "x,y", clamped like a pan
+            double x = 0, y = 0;
+            if (std::sscanf(argv[i + 1], "%lf,%lf", &x, &y) == 2) {
+                auto &cam = *game_->obf_3Y;
+                cam.x = std::clamp(x, cam.min_x, std::max(cam.min_x, cam.max_x));
+                cam.y = std::clamp(y, cam.min_y, std::max(cam.min_y, cam.max_y));
+                cam.savePrevious();
+            }
         }
     }
 
@@ -112,6 +124,53 @@ void App::loadGame(const std::string &game)
     auto start = std::find_if(viewerList_.begin(), viewerList_.end(),
                               [](const auto &e) { return e.first == "enemysheet_sarge"; });
     showSymbol(start == viewerList_.end() ? 0 : static_cast<int>(start - viewerList_.begin()));
+
+    game_ = std::make_unique<obf_9G::obf_4R>(renderer_, &sheets_);
+    if (game_->loadLevelData(dir)) {
+        game_->obf_6V(0);
+        SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
+                game_->obf_AQ->currentScreens.size());
+    } else {
+        game_.reset();
+        mode_ = Mode::BlitDemo;
+    }
+}
+
+void App::nextMode()
+{
+    switch (mode_) {
+    case Mode::Level: mode_ = Mode::BlitDemo; break;
+    case Mode::BlitDemo: mode_ = Mode::Viewer; break;
+    case Mode::Viewer: mode_ = game_ ? Mode::Level : Mode::BlitDemo; break;
+    }
+}
+
+void App::switchRoom(int delta)
+{
+    if (!game_ || game_->obf_AQ->currentScreens.empty()) {
+        return;
+    }
+    const int n = static_cast<int>(game_->obf_AQ->currentScreens.size());
+    const int room = ((static_cast<int>(game_->obf_AQ->currentScreen) + delta) % n + n) % n;
+    game_->obf_4X(room);
+}
+
+void App::tickLevel()
+{
+    // DEV: free camera (arrow keys / drag) clamped to the GameCam bounds, until the player drives it.
+    papaGame::display::GameCam &cam = *game_->obf_3Y;
+    cam.savePrevious();
+    game_->obf_71->advanceFrame();
+    const bool *keys = SDL_GetKeyboardState(nullptr);
+    constexpr double kPan = 12.0;
+    double dx = -static_cast<double>(dragX_), dy = -static_cast<double>(dragY_);
+    dragX_ = dragY_ = 0.0f;
+    if (keys[SDL_SCANCODE_LEFT]) dx -= kPan;
+    if (keys[SDL_SCANCODE_RIGHT]) dx += kPan;
+    if (keys[SDL_SCANCODE_UP]) dy -= kPan;
+    if (keys[SDL_SCANCODE_DOWN]) dy += kPan;
+    cam.x = std::clamp(cam.x + dx, cam.min_x, std::max(cam.min_x, cam.max_x));
+    cam.y = std::clamp(cam.y + dy, cam.min_y, std::max(cam.min_y, cam.max_y));
 }
 
 void App::showSymbol(int index)
@@ -152,7 +211,13 @@ SDL_AppResult App::event(const SDL_Event &ev)
         case SDLK_AC_BACK:
             return SDL_APP_SUCCESS;
         case SDLK_TAB:
-            blitDemo_ = !blitDemo_;
+            nextMode();
+            break;
+        case SDLK_LEFTBRACKET:
+            switchRoom(-1);
+            break;
+        case SDLK_RIGHTBRACKET:
+            switchRoom(1);
             break;
         case SDLK_F:
             settings_.nextFpsCap(originalRate);
@@ -164,29 +229,56 @@ SDL_AppResult App::event(const SDL_Event &ev)
             break;
         case SDLK_RIGHT:
         case SDLK_SPACE:
-            showSymbol(viewerIndex_ + 1);
+            if (mode_ == Mode::Viewer) {
+                showSymbol(viewerIndex_ + 1);
+            }
             break;
         case SDLK_LEFT:
-            showSymbol(viewerIndex_ - 1);
+            if (mode_ == Mode::Viewer) {
+                showSymbol(viewerIndex_ - 1);
+            }
             break;
         default:
             break;
         }
         break;
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        dragging_ = false;
+        break;
+    case SDL_EVENT_MOUSE_MOTION:
+        if (mode_ == Mode::Level && (ev.motion.state & SDL_BUTTON_LMASK)) {
+            // Window pixels -> stage pixels.
+            int w = 0, h = 0;
+            SDL_GetWindowSize(window_, &w, &h);
+            const float k = std::max(static_cast<float>(stage_.width) / static_cast<float>(w),
+                                     static_cast<float>(stage_.height) / static_cast<float>(h));
+            dragX_ += ev.motion.xrel * k;
+            dragY_ += ev.motion.yrel * k;
+            if (std::fabs(ev.motion.xrel) + std::fabs(ev.motion.yrel) > 0.0f) {
+                dragging_ = true;
+            }
+        }
+        break;
     case SDL_EVENT_MOUSE_BUTTON_UP: { // touches arrive here too (SDL synthesises mouse events)
+        if (dragging_) {
+            dragging_ = false;
+            break;
+        }
         int w = 0, h = 0;
         SDL_GetWindowSize(window_, &w, &h);
         const float fx = ev.button.x / static_cast<float>(w), fy = ev.button.y / static_cast<float>(h);
-        if (fy < 0.2f) { // top band: switch demo/viewer
-            blitDemo_ = !blitDemo_;
+        if (fy < 0.2f) { // top band: next mode
+            nextMode();
         } else if (fy > 0.8f && fx < 0.33f) { // bottom-left: FPS cap
             settings_.nextFpsCap(originalRate);
             settings_.save();
         } else if (fy > 0.8f && fx > 0.67f) { // bottom-right: interpolation
             settings_.interpolation = !settings_.interpolation;
             settings_.save();
-        } else if (!blitDemo_) {
+        } else if (mode_ == Mode::Viewer) {
             showSymbol(viewerIndex_ + (fx >= 0.5f ? 1 : -1));
+        } else if (mode_ == Mode::Level) {
+            switchRoom(fx >= 0.5f ? 1 : -1);
         }
         break;
     }
@@ -239,6 +331,9 @@ SDL_AppResult App::iterate()
 void App::tick()
 {
     ++frame_;
+    if (game_ && game_->obf_AQ->currentScreenData) {
+        tickLevel();
+    }
     if (viewerClip_) {
         viewerClip_->advance();
     }
@@ -263,9 +358,11 @@ void App::render(float alpha)
     }
     SDL_RenderClear(renderer_);
 
-    if (blitDemo_ && hasData_) {
+    if (mode_ == Mode::Level && game_ && game_->obf_AQ->currentScreenData) {
+        game_->obf_71->redrawScreen(alpha, settings_.interpolation);
+    } else if (mode_ == Mode::BlitDemo && hasData_) {
         renderBlitDemo(alpha);
-    } else if (viewerClip_) {
+    } else if (mode_ == Mode::Viewer && viewerClip_) {
         RenderContext ctx{renderer_, &symbols_, &textures_};
         ctx.interpolate = settings_.interpolation;
         ctx.alpha = alpha;
@@ -324,6 +421,18 @@ void App::renderOverlay()
     SDL_RenderFillRect(renderer_, &box);
     SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
     SDL_RenderDebugText(renderer_, 4, 4, line);
+
+    if (mode_ == Mode::Level && game_ && game_->obf_AQ->currentScreenData) {
+        const auto &dm = *game_->obf_AQ;
+        const auto &cam = *game_->obf_3Y;
+        std::snprintf(line, sizeof(line), "level %.0f room %.0f/%zu (id %.0f) cam %.0f,%.0f", dm.currentLevel,
+                      dm.currentScreen + 1, dm.currentScreens.size(), dm.currentScreenData->roomID, cam.x, cam.y);
+        const SDL_FRect box2{2, 16, static_cast<float>(std::strlen(line) * 8 + 4), 12};
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 160);
+        SDL_RenderFillRect(renderer_, &box2);
+        SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+        SDL_RenderDebugText(renderer_, 4, 18, line);
+    }
 }
 
 } // namespace engine

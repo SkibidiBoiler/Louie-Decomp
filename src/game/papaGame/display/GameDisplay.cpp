@@ -1,0 +1,295 @@
+#include "game/papaGame/display/GameDisplay.h"
+
+#include <algorithm>
+#include <cmath>
+
+#include "game/as3.h"
+#include "game/obf_9G/obf_4R.h"
+
+namespace papaGame::display {
+
+// AS: GameDisplay.GameDisplay
+GameDisplay::GameDisplay(obf_9G::obf_4R *gameObj_) : gameObj(gameObj_)
+{
+    centerXtile = std::ceil(screenTileWidth / 2);
+    centerYtile = std::ceil(screenTileHeight / 2);
+    currentLevel = gameObj->obf_AQ->currentLevel;
+}
+
+GameDisplay::~GameDisplay()
+{
+    if (tileLayer_) {
+        SDL_DestroyTexture(tileLayer_);
+    }
+}
+
+// AS: GameDisplay.getCamera
+void GameDisplay::getCamera(GameCam *cam)
+{
+    camObj = cam;
+}
+
+// AS: GameDisplay.setupPreBlit
+void GameDisplay::setupPreBlit()
+{
+    data::DataManager *manager = gameObj->obf_AQ.get();
+    managers::BitmapManager *bitmaps = gameObj->bitmapManager.get();
+    const data::ScreenData *screen = manager->currentScreenData;
+    const double whichTileset = manager->currentTileset; // QUIRK: the original overwrites screen.whichTileset with this
+    // blitLevelTiles(): the original pre-renders the room into screen.tileBMP, wrapped into strips of 90 tiles
+    // (2880 px, the Flash bitmap limit). The port only keeps its size bookkeeping and draws the visible tiles
+    // in reblitTiles, which gives the same pixels.
+    tileSheet = bitmaps->getTilesheetBitmap(whichTileset);
+    const auto &tiles = screen->tileArray;
+    levelPxWidth = static_cast<double>(tiles[0].size()) * tileWidth;
+    levelPxHeight = static_cast<double>(tiles.size()) * tileWidth;
+    levelTileWidth = static_cast<double>(tiles[0].size());
+    levelTileHeight = static_cast<double>(tiles.size());
+    createBackground(whichTileset);
+    currentXcoord = 0;
+    currentYcoord = 0;
+    showLightning = false;
+}
+
+// AS: GameDisplay.createBackground
+double GameDisplay::createBackground(double whichTileset)
+{
+    managers::BitmapManager *bitmaps = gameObj->bitmapManager.get();
+    if (bgSheet == nullptr) {
+        bgSheet = bitmaps->getBackgroundBitmap(whichTileset);
+    }
+    if (mgSheet == nullptr) {
+        mgSheet = bitmaps->getMiddlegroundBitmap(whichTileset);
+    }
+    return 0;
+}
+
+// AS: GameDisplay.defineScreenBounds
+void GameDisplay::defineScreenBounds()
+{
+    const double tw = tileWidth;
+    double left = camObj->x - std::floor(screenTileWidth / 2) * tileWidth;
+    double top = camObj->y - std::floor(screenTileHeight / 2) * tileWidth;
+    if (smooth_) {
+        // Port: redrawScreen with smooth camera uses the interpolated, unsnapped position.
+        left = drawCamX_ - std::floor(screenTileWidth / 2) * tileWidth;
+        top = drawCamY_ - std::floor(screenTileHeight / 2) * tileWidth;
+    } else {
+        left = std::floor(left);
+        top = std::floor(top);
+    }
+    currentXtileLeft = std::floor(left / tw);
+    currentXtileRight = currentXtileLeft + screenTileWidth;
+    currentYtileUp = std::floor(top / tw);
+    currentYtileDown = currentYtileUp + screenTileHeight;
+    currentXcoord = left;
+    currentYcoord = top;
+}
+
+void GameDisplay::advanceFrame()
+{
+    prevTrainX_ = trainX;
+    trainX += trainSpeed; // AS: from reblitSky
+}
+
+// AS: GameDisplay.redrawScreen
+void GameDisplay::redrawScreen(float alpha, bool smooth)
+{
+    const double a = static_cast<double>(alpha);
+    drawTrainX_ = prevTrainX_ + (trainX - prevTrainX_) * a;
+    drawCamX_ = camObj->prevX + (camObj->x - camObj->prevX) * a;
+    drawCamY_ = camObj->prevY + (camObj->y - camObj->prevY) * a;
+    if (!smooth) {
+        // Original: integer stage pixels of the latest logic frame.
+        drawCamX_ = camObj->x;
+        drawCamY_ = camObj->y;
+        drawTrainX_ = trainX;
+    }
+    smooth_ = smooth;
+    defineScreenBounds();
+    reblitSky();
+    reblitBackdrop();
+    reblitTiles();
+    smooth_ = false;
+    // SKELETON: items, effects, objects, enemies, bullets, player, overlays and transitions come later.
+}
+
+void GameDisplay::blit(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx,
+                       double dy) const
+{
+    gameObj->bitmapManager->sheets->blit(sheet, static_cast<float>(sx), static_cast<float>(sy),
+                                         static_cast<float>(sw), static_cast<float>(sh), static_cast<float>(dx),
+                                         static_cast<float>(dy));
+}
+
+// AS: GameDisplay.reblitSky
+void GameDisplay::reblitSky()
+{
+    const data::DataManager *manager = gameObj->obf_AQ.get();
+    SDL_Renderer *renderer = gameObj->renderer;
+    // screenBMP.fillRect(screenBMP.rect, 0xFFFFCC00)
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xCC, 0x00, 0xFF);
+    const SDL_FRect rect{0, 0, static_cast<float>(screenPxWidth), static_cast<float>(screenPxHeight)};
+    SDL_RenderFillRect(renderer, &rect);
+    if (bgSheet == nullptr) {
+        return;
+    }
+    const engine::Sheet &bg = *bgSheet;
+    double x = currentXcoord;
+    if (manager->isOnTrain() || manager->isAnimatedBackground()) {
+        x += drawTrainX_;
+    }
+    const double w = bg.width;
+    const double h = bg.height;
+    double dx = smooth_ ? x / 8 : as3::round(x / 8);
+    const double dy = 0;
+    if (dx > w) {
+        dx = std::fmod(dx, w);
+    }
+    dx = w - dx;
+    const double rightW = w - dx;
+    const double drawH = h - dy;
+    const double leftW = w - rightW;
+    // Port: copyPixels without mergeAlpha replaces the pixels; the sky art is opaque, so blending is the same.
+    blit(bg, 0, 0, rightW, drawH, dx, dy);
+    if (dx > 0) {
+        blit(bg, rightW, 0, leftW, drawH, 0, dy);
+    }
+    if (showLightning && std::fmod(lightningTimer, 2) == 1) {
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderFillRect(renderer, &rect);
+    }
+}
+
+// AS: GameDisplay.reblitBackdrop
+void GameDisplay::reblitBackdrop()
+{
+    if (mgSheet == nullptr) {
+        return;
+    }
+    const engine::Sheet &mg = *mgSheet;
+    const data::DataManager *manager = gameObj->obf_AQ.get();
+    const double mgW = mg.width;
+    const double mgH = mg.height;
+    double x = currentXcoord;
+    const double y = currentYcoord;
+    if (manager->isOnTrain() || manager->isAnimatedBackground()) {
+        x += drawTrainX_;
+    }
+    const auto snap = [this](double v) { return smooth_ ? v : as3::round(v); };
+    if (bgScrollType == "static") {
+        blit(mg, 0, 0, mgW, mgH, 0, 0);
+        return;
+    }
+    if (bgScrollType != "attached" && bgScrollType != "scroll") {
+        return;
+    }
+    double dx = 0;
+    double dy = 0;
+    if (bgScrollType == "attached") {
+        dx = mgW - std::fmod(x, mgW);
+        dy = mgH - std::fmod(y, mgH);
+    } else {
+        dx = snap(x / bgScrollSpeedX);
+        dy = snap(y / bgScrollSpeedY);
+        if (dx > mgW) {
+            dx = std::fmod(dx, mgW);
+        }
+        if (dy > mgH) {
+            dy = std::fmod(dy, mgH);
+        }
+        dx = mgW - dx;
+        dy = mgH - dy;
+        if (bgScrollSpeedX == 0) {
+            dx = mgW - std::fmod(x, mgW);
+        }
+        if (bgScrollSpeedY == 0) {
+            dy = mgH - std::fmod(y, mgH);
+        }
+    }
+    // The backdrop's vertical position follows how far down the level the camera is.
+    double range = levelPxHeight - screenPxHeight;
+    if (range < screenPxHeight) {
+        range = screenPxHeight;
+    }
+    const double t = std::min(1.0, y / range);
+    const double travel = levelPxHeight - mgH;
+    dy = t * travel - y;
+    if (!smooth_) {
+        dy = std::floor(dy);
+    }
+    const double rightW = mgW - dx;
+    const double bottomH = mgH - dy;
+    const double leftW = mgW - rightW;
+    const double topH = mgH - bottomH;
+    blit(mg, 0, 0, rightW, bottomH, dx, dy);
+    if (dx > 0) {
+        blit(mg, rightW, 0, leftW, bottomH, 0, dy);
+    }
+    if (dy > 0) {
+        blit(mg, 0, bottomH, rightW, topH, dx, 0);
+        if (dx > 0) {
+            blit(mg, rightW, bottomH, leftW, topH, 0, 0);
+        }
+    }
+}
+
+// AS: GameDisplay.reblitTiles
+void GameDisplay::reblitTiles()
+{
+    // The original copies the visible 700x416 window out of the pre-rendered tileBMP (see setupPreBlit).
+    // Drawing the cells under that window, each layer in order with mergeAlpha, is the same picture.
+    if (tileSheet == nullptr) {
+        return;
+    }
+    const auto &tiles = gameObj->obf_AQ->currentScreenData->tileArray;
+    SDL_Renderer *renderer = gameObj->renderer;
+    const float s = tileSheet->scale;
+    // Port: tiles are drawn at whole stage pixels into tileLayer_ with nearest sampling (no bleeding from
+    // neighbouring cells of the tilesheet), then the layer is placed at the sub-pixel camera offset.
+    if (tileLayer_ == nullptr || tileLayerScale_ != s) {
+        if (tileLayer_) {
+            SDL_DestroyTexture(tileLayer_);
+        }
+        tileLayer_ = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
+                                       static_cast<int>((screenPxWidth + 2) * s),
+                                       static_cast<int>((screenPxHeight + 2) * s));
+        if (tileLayer_ == nullptr) {
+            return;
+        }
+        SDL_SetTextureBlendMode(tileLayer_, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+        SDL_SetTextureScaleMode(tileLayer_, SDL_SCALEMODE_LINEAR);
+        tileLayerScale_ = s;
+    }
+    const double x0 = std::floor(currentXcoord), y0 = std::floor(currentYcoord);
+    SDL_Texture *screen = SDL_GetRenderTarget(renderer);
+    SDL_SetRenderTarget(renderer, tileLayer_);
+    SDL_SetRenderScale(renderer, s, s);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
+    SDL_SetTextureScaleMode(tileSheet->texture, SDL_SCALEMODE_NEAREST);
+    const auto rowFirst = static_cast<long>(std::floor(y0 / tileWidth));
+    const auto rowLast = static_cast<long>(std::floor((y0 + screenPxHeight - 1) / tileWidth));
+    const auto colFirst = static_cast<long>(std::floor(x0 / tileWidth));
+    const auto colLast = static_cast<long>(std::floor((x0 + screenPxWidth - 1) / tileWidth));
+    for (long r = std::max(rowFirst, 0L); r <= rowLast && r < static_cast<long>(tiles.size()); ++r) {
+        const auto &row = tiles[static_cast<size_t>(r)];
+        for (long c = std::max(colFirst, 0L); c <= colLast && c < static_cast<long>(row.size()); ++c) {
+            for (const double v : row[static_cast<size_t>(c)]) {
+                // AS: blitLevelTiles — tile v sits at cell (v mod 62, floor(v / 62)) of the tilesheet.
+                const double sx = (v - std::floor(v / tileSheetWidth) * tileSheetWidth) * tileWidth;
+                const double sy = std::floor(v / tileSheetWidth) * tileWidth;
+                blit(*tileSheet, sx, sy, tileWidth, tileWidth, static_cast<double>(c) * tileWidth - x0,
+                     static_cast<double>(r) * tileWidth - y0);
+            }
+        }
+    }
+    SDL_SetTextureScaleMode(tileSheet->texture, SDL_SCALEMODE_LINEAR);
+    SDL_SetRenderTarget(renderer, screen);
+    const SDL_FRect src{0, 0, static_cast<float>(screenPxWidth + 1) * s, static_cast<float>(screenPxHeight + 1) * s};
+    const SDL_FRect dst{static_cast<float>(x0 - currentXcoord), static_cast<float>(y0 - currentYcoord),
+                        static_cast<float>(screenPxWidth + 1), static_cast<float>(screenPxHeight + 1)};
+    SDL_RenderTexture(renderer, tileLayer_, &src, &dst);
+}
+
+} // namespace papaGame::display

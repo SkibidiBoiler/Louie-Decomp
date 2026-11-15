@@ -27,9 +27,14 @@ set(PL_SOURCES
     src/engine/sheets.cpp
     src/engine/settings.cpp
     src/engine/xml.cpp
+    src/game/obf_9G/obf_4R.cpp
+    src/game/papaGame/data/DataManager.cpp
     src/game/papaGame/data/LevelData.cpp
     src/game/papaGame/data/ScreenData.cpp
     src/game/papaGame/data/WorldData.cpp
+    src/game/papaGame/display/GameCam.cpp
+    src/game/papaGame/display/GameDisplay.cpp
+    src/game/papaGame/managers/BitmapManager.cpp
 )
 
 if(ANDROID)

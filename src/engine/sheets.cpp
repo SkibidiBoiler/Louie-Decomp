@@ -54,9 +54,10 @@ bool SheetLibrary::init(SDL_Renderer *renderer, const std::string &gameDir, int 
         pos = end + 1;
         char name[256] = {};
         char type[16] = {};
-        float ox = 0.0f, oy = 0.0f;
-        if (std::sscanf(line.c_str(), "%255s %f %f %15s", name, &ox, &oy, type) == 4) {
-            index_[name] = Entry{ox, oy, std::string(type) == "bitmap"};
+        float ox = 0.0f, oy = 0.0f, w = 0.0f, h = 0.0f;
+        // <name> <originX> <originY> vector|bitmap [<width> <height>]
+        if (std::sscanf(line.c_str(), "%255s %f %f %15s %f %f", name, &ox, &oy, type, &w, &h) >= 4) {
+            index_[name] = Entry{ox, oy, w, h, std::string(type) == "bitmap"};
         }
     }
     SDL_Log("Sheets: %zu in index, vector scale %dx", index_.size(), scale_);
@@ -96,6 +97,14 @@ const Sheet *SheetLibrary::get(const std::string &name)
         }
         sheet.originX = e.originX;
         sheet.originY = e.originY;
+        sheet.width = e.width;
+        sheet.height = e.height;
+        if (sheet.texture && (sheet.width <= 0.0f || sheet.height <= 0.0f)) {
+            float tw = 0.0f, th = 0.0f;
+            SDL_GetTextureSize(sheet.texture, &tw, &th);
+            sheet.width = tw / sheet.scale;
+            sheet.height = th / sheet.scale;
+        }
     }
     if (!sheet.texture) {
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Sheet '%s' not available", name.c_str());
@@ -114,6 +123,8 @@ const Sheet *SheetLibrary::composeTilesheet(const std::string &name)
     const float s = static_cast<float>(scale_);
     Sheet out;
     out.scale = s;
+    out.width = kTilesheetWidth;
+    out.height = kTilesheetHeight;
     out.premultiplied = true; // straight-alpha parts blended onto a transparent target
     out.texture = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
                                     static_cast<int>(kTilesheetWidth * s), static_cast<int>(kTilesheetHeight * s));
@@ -168,9 +179,23 @@ void SheetLibrary::blit(const Sheet &sheet, float sx, float sy, float sw, float 
     // Source rect in texture pixels; sheet unit (u, v) lives at ((u - origin) * scale) in the texture.
     float tw = 0.0f, th = 0.0f;
     SDL_GetTextureSize(sheet.texture, &tw, &th);
+    // copyPixels clips the source rect to the source BitmapData (0..width x 0..height).
+    if (sheet.width > 0.0f && sheet.height > 0.0f) {
+        const float ux0 = std::max(sx, 0.0f), uy0 = std::max(sy, 0.0f);
+        const float ux1 = std::min(sx + sw, sheet.width), uy1 = std::min(sy + sh, sheet.height);
+        dx += ux0 - sx;
+        dy += uy0 - sy;
+        sx = ux0;
+        sy = uy0;
+        sw = ux1 - ux0;
+        sh = uy1 - uy0;
+        if (sw <= 0.0f || sh <= 0.0f) {
+            return;
+        }
+    }
     float x0 = (sx - sheet.originX) * sheet.scale, y0 = (sy - sheet.originY) * sheet.scale;
     float x1 = x0 + sw * sheet.scale, y1 = y0 + sh * sheet.scale;
-    // Clip to the texture like copyPixels clips to the source bitmap; shift the destination to match.
+    // Then to the texture (art outside the baked bounds is transparent); shift the destination to match.
     const float cx0 = std::max(x0, 0.0f), cy0 = std::max(y0, 0.0f);
     const float cx1 = std::min(x1, tw), cy1 = std::min(y1, th);
     if (cx1 <= cx0 || cy1 <= cy0) {

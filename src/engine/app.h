@@ -11,6 +11,7 @@
 #include "engine/stage.h"
 #include "engine/symbols.h"
 #include "engine/textures.h"
+#include "game/obf_9G/obf_4R.h"
 
 namespace engine {
 
@@ -35,6 +36,9 @@ private:
     void loadGame(const std::string &game);
     void showSymbol(int index);
     void renderBlitDemo(float alpha);
+    void nextMode();
+    void switchRoom(int delta);
+    void tickLevel();
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -64,7 +68,13 @@ private:
     std::unique_ptr<MovieClip> viewerClip_;
     Affine viewerFit_;
     SheetLibrary sheets_;
-    bool blitDemo_ = true;
+
+    // DEV: what the app shows until the menus are ported. Level = PL2 level 0 with a free camera.
+    enum class Mode { Level, BlitDemo, Viewer };
+    Mode mode_ = Mode::Level;
+    std::unique_ptr<obf_9G::obf_4R> game_;
+    float dragX_ = 0.0f, dragY_ = 0.0f; // pending camera pan from mouse/touch drags, applied in tick
+    bool dragging_ = false;
 
     // DEV: Enemy35 walking back and forth in the blit demo.
     double sargeX_ = 200.0;
