@@ -9,6 +9,20 @@ namespace {
 
 float clamp01(float v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); }
 
+float lerp(float a, float b, float t) { return a + (b - a) * t; }
+
+Affine lerp(const Affine &p, const Affine &q, float t)
+{
+    return {lerp(p.a, q.a, t), lerp(p.b, q.b, t), lerp(p.c, q.c, t),
+            lerp(p.d, q.d, t), lerp(p.tx, q.tx, t), lerp(p.ty, q.ty, t)};
+}
+
+ColorTransform lerp(const ColorTransform &p, const ColorTransform &q, float t)
+{
+    return {lerp(p.mr, q.mr, t), lerp(p.mg, q.mg, t), lerp(p.mb, q.mb, t), lerp(p.ma, q.ma, t),
+            lerp(p.ar, q.ar, t), lerp(p.ag, q.ag, t), lerp(p.ab, q.ab, t), lerp(p.aa, q.aa, t)};
+}
+
 void drawShape(const RenderContext &ctx, uint16_t id, const Affine &m, const ColorTransform &color)
 {
     const ShapeBounds *bounds = ctx.symbols->shape(id);
@@ -46,13 +60,19 @@ MovieClip::MovieClip(const SymbolLibrary &symbols, const Timeline &timeline)
 void MovieClip::gotoFrame(int frame)
 {
     frame_ = std::clamp(frame, 0, timeline_->frameCount - 1);
+    prevFrame_ = -1;
     syncChildren(false);
 }
 
 void MovieClip::advance()
 {
+    prevFrame_ = frame_;
     if (playing_ && timeline_->frameCount > 1) {
-        frame_ = (frame_ + 1) % timeline_->frameCount;
+        frame_ = frame_ + 1;
+        if (frame_ >= timeline_->frameCount) {
+            frame_ = 0;
+            prevFrame_ = -1; // looping is a jump: don't tween from the last frame back to the first
+        }
     }
     syncChildren(true);
 }
@@ -97,8 +117,18 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
             continue;
         }
         const TimelineKey &key = track.keyAt(frame_);
-        const Affine m = parent * key.matrix;
-        const ColorTransform color = key.hasColor ? parentColor * key.color : parentColor;
+        Affine local = key.matrix;
+        ColorTransform localColor = key.hasColor ? key.color : ColorTransform{};
+        // Tween from the previous frame when this same instance was already on stage there.
+        if (ctx.interpolate && prevFrame_ >= 0 && prevFrame_ != frame_ && track.aliveAt(prevFrame_)) {
+            const TimelineKey &prev = track.keyAt(prevFrame_);
+            if (&prev != &key) {
+                local = lerp(prev.matrix, key.matrix, ctx.alpha);
+                localColor = lerp(prev.hasColor ? prev.color : ColorTransform{}, localColor, ctx.alpha);
+            }
+        }
+        const Affine m = parent * local;
+        const ColorTransform color = parentColor * localColor;
         if (color.ma <= 0.0f && color.aa <= 0.0f) {
             continue;
         }

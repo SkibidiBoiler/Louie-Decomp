@@ -15,6 +15,9 @@ struct RenderContext {
     SDL_Renderer *renderer = nullptr;
     const SymbolLibrary *symbols = nullptr;
     ShapeTextures *textures = nullptr;
+    // Interpolation between the previous and the current logic step (0 = previous, 1 = current).
+    bool interpolate = false;
+    float alpha = 1.0f;
 };
 
 class MovieClip {
@@ -47,6 +50,7 @@ private:
     const SymbolLibrary *symbols_;
     const Timeline *timeline_;
     int frame_ = 0;
+    int prevFrame_ = -1; // frame shown one logic step ago, -1 after a jump/loop or on creation
     bool playing_ = true;
     std::vector<Child> children_; // sorted by depth
 };

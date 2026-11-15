@@ -25,6 +25,7 @@ set(PL_SOURCES
     src/engine/textures.cpp
     src/engine/movieclip.cpp
     src/engine/sheets.cpp
+    src/engine/settings.cpp
 )
 
 if(ANDROID)

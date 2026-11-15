@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "engine/movieclip.h"
+#include "engine/settings.h"
 #include "engine/sheets.h"
 #include "engine/stage.h"
 #include "engine/symbols.h"
@@ -14,7 +15,8 @@
 namespace engine {
 
 // Owns the window and renderer and drives the fixed-timestep loop.
-// Game logic advances exactly once per Flash frame (Stage::frameRate), whatever the display refresh rate.
+// Game logic advances exactly once per Flash frame (Stage::frameRate), whatever the display refresh rate;
+// rendering runs at Settings::fpsCap and interpolates between logic steps when enabled.
 class App {
 public:
     ~App();
@@ -25,16 +27,18 @@ public:
 
 private:
     void tick();
-    void render(double alpha);
+    void render(float alpha);
+    void renderOverlay();
 
     // DEV: symbol viewer and blit demo, used until the first game screen is ported.
     void loadGame(const std::string &game);
     void showSymbol(int index);
-    void renderBlitDemo();
+    void renderBlitDemo(float alpha);
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
     Stage stage_;
+    Settings settings_;
     std::string dataDir_;
     bool hasData_ = false;
 
@@ -42,6 +46,12 @@ private:
     uint64_t lastNs_ = 0;
     uint64_t accumulatorNs_ = 0;
     uint64_t frame_ = 0;
+
+    uint64_t lastRenderNs_ = 0;
+    uint64_t fpsWindowStartNs_ = 0;
+    int fpsFrames_ = 0;
+    float measuredFps_ = 0.0f;
+    float displayHz_ = 0.0f;
 
     SymbolLibrary symbols_;
     ShapeTextures textures_;
@@ -51,6 +61,12 @@ private:
     Affine viewerFit_;
     SheetLibrary sheets_;
     bool blitDemo_ = true;
+
+    // DEV: Enemy35 walking back and forth in the blit demo.
+    double sargeX_ = 200.0;
+    double sargePrevX_ = 200.0;
+    int sargeDir_ = 1;
+    int sargeCycle_ = 0;
 };
 
 } // namespace engine
