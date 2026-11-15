@@ -1,13 +1,13 @@
 #pragma once
-// Flash stage parameters. The real values come from the SWF header (tools/swf_info.py);
-// these are placeholders until the owner's copy has been inspected.
+// Flash stage parameters, from the SWF headers (tools/swf_info.py).
+// Defaults are Papa Louie 2 / 3 (700x416 @ 30 fps); Papa Louie 1 uses 550x400 @ 24 fps.
 
 namespace engine {
 
 struct Stage {
-    int width = 640;      // SKELETON: replace with the SWF frame size (twips / 20)
-    int height = 480;     // SKELETON: replace with the SWF frame size (twips / 20)
-    double frameRate = 30.0; // SKELETON: replace with the SWF frame rate
+    int width = 700;
+    int height = 416;
+    double frameRate = 30.0;
 };
 
 } // namespace engine

@@ -8,6 +8,43 @@ cualquier skill** (`orchestrator`, `matcher`, `decomp-code-rules`, `native-platf
 Port **nativo** (C++20 + SDL3) de un juego Flash de Papa Louie a **Windows** y **Android**, reconstruido a partir
 de la copia privada del juego del propietario. No es un emulador de Flash.
 
+## Los juegos
+
+Copias del propietario en `C:\Users\alfre\Proyectos\datos-papas\` (fuera del repo):
+
+| juego | archivo | AS | escenario | FPS | código del juego (deofuscado) | sha256 (inicio) |
+|---|---|---|---|---|---|---|
+| Papa Louie 2: When Burgers Attack! | `PapaLouie2.swf` | AS3 | 700×416 | 30 | `papaGame.*`: 229 clases, ~42,7K líneas | `8b3ac80fe6dbbaac` |
+| Papa Louie 3: When Sundaes Attack! | `PapaLouie3.swf` | AS3 | 700×416 | 30 | `papaGame.*`: 330 clases, ~57,7K líneas | `3a349ecf7b874b89` |
+| Papa Louie: When Pizzas Attack! | `papalouie.swf` | AS2 | 550×400 | 24 | ~10,8K líneas en 660 scripts de línea de tiempo | `666e2e935ccecbc7` |
+
+**Orden del port: PL2 → PL3 → PL1.** PL2 y PL3 comparten el motor `papaGame` (179 clases comunes; el 74 % de
+las líneas de PL3 en esas clases es idéntico a PL2), así que el motor C++ se diseña para ambos con las
+diferencias por juego aisladas. PL1 es otro motor (AS2, programado sobre la línea de tiempo) y va al final.
+
+**Se descarta del port:** sistema de anuncios y API de Flipline (`adsystem_*`, `failsafe_*`, `flipline.api`,
+`FliplineAPI_and_Branding_fla`), Mochi (`mochi.*`) y Playtomic (`Playtomic.*`): son servicios en línea
+desaparecidos. Las clases `*_fla.*` y `customer*MC` son scripts de línea de tiempo (animación): se convierten
+en datos de animación, no en código C++.
+
+### Descompilación y ofuscación
+
+PL2 y PL3 están ofuscados (control de flujo con predicados opacos + renombrado parcial de identificadores).
+El código de juego conserva casi todos sus nombres reales. **Usar siempre el deofuscador de FFDec:**
+
+```bash
+J="/c/Program Files/Microsoft/jdk-21.0.13.21-hotspot/bin/java"
+FF="C:/Users/alfre/Proyectos/tools/ffdec/app/ffdec-cli.jar"   # JPEXS FFDec 26.4.0, local, fuera del repo
+D="C:/Users/alfre/Proyectos/datos-papas"
+"$J" -Xmx4g -jar "$FF" -config autoDeobfuscate=1,simplifyExpressions=1 -export script "$D/extracted/pl2-deob" "$D/PapaLouie2.swf"
+```
+
+- Salida en `datos-papas/extracted/<juego>-deob/` (fuera del repo; **nunca copiar código descompilado al repo**).
+- Quedan ~120 identificadores ofuscados por juego (`§_-94§`). Se nombran en C++ como `obf_94` hasta tener
+  evidencia de su nombre (uso, cadenas, el mismo miembro sin ofuscar en el otro juego). Nunca inventar un nombre.
+- Restos de `§§push/§§pop/§§goto` (4 archivos en PL2, 2 en PL3): traducir desde el P-code
+  (`-format script:pcode`), no adivinar.
+
 ## Reglas duras
 
 1. **Los archivos del juego nunca entran en el repo ni en un APK/ejecutable.** El `.swf` original vive en
