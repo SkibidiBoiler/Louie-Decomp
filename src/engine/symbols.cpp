@@ -1,5 +1,7 @@
 #include "engine/symbols.h"
 
+#include <cstdio>
+
 #include <SDL3/SDL.h>
 #include <cstring>
 
@@ -194,6 +196,66 @@ int SymbolLibrary::findClass(std::string_view name) const
 {
     auto it = classIndex_.find(std::string(name));
     return it == classIndex_.end() ? -1 : it->second;
+}
+
+void SymbolLibrary::loadFrameScripts(const std::string &path)
+{
+    scripts_.clear();
+    size_t size = 0;
+    char *raw = static_cast<char *>(SDL_LoadFile(path.c_str(), &size));
+    if (!raw) {
+        return;
+    }
+    const std::string text(raw, size);
+    SDL_free(raw);
+    size_t pos = 0, count = 0;
+    while (pos < text.size()) {
+        size_t eol = text.find('\n', pos);
+        if (eol == std::string::npos) {
+            eol = text.size();
+        }
+        char cls[256] = {}, op[32] = {}, target[256] = {};
+        unsigned frame = 0;
+        double number = 0;
+        const std::string line = text.substr(pos, eol - pos);
+        pos = eol + 1;
+        if (std::sscanf(line.c_str(), "%255s %u %31s %255s %lf", cls, &frame, op, target, &number) != 5) {
+            continue;
+        }
+        const int id = findClass(cls);
+        if (id < 0) {
+            continue;
+        }
+        FrameScriptOp s;
+        const std::string o = op;
+        if (o == "stop") s.op = FrameScriptOp::Op::Stop;
+        else if (o == "play") s.op = FrameScriptOp::Op::Play;
+        else if (o == "gotoAndPlay") s.op = FrameScriptOp::Op::GotoAndPlay;
+        else if (o == "gotoAndStop") s.op = FrameScriptOp::Op::GotoAndStop;
+        else if (o == "child") s.op = FrameScriptOp::Op::Child;
+        else continue;
+        s.target = std::string(target) == "-" ? std::string() : std::string(target);
+        s.number = static_cast<int>(number);
+        scripts_[(static_cast<uint32_t>(id) << 16) | (frame & 0xFFFFu)].push_back(std::move(s));
+        ++count;
+    }
+    SDL_Log("Frame scripts: %zu statements", count);
+}
+
+const std::vector<FrameScriptOp> *SymbolLibrary::frameScript(uint16_t id, int frame) const
+{
+    auto it = scripts_.find((static_cast<uint32_t>(id) << 16) | (static_cast<uint32_t>(frame) & 0xFFFFu));
+    return it == scripts_.end() ? nullptr : &it->second;
+}
+
+int SymbolLibrary::labelFrame(const Timeline &tl, std::string_view label)
+{
+    for (const auto &l : tl.labels) {
+        if (l.first == label) {
+            return l.second;
+        }
+    }
+    return -1;
 }
 
 } // namespace engine

@@ -62,7 +62,11 @@ Findings (PL2 `papaGame.managers.CharacterBlitter`, `customer*MC`):
 - Default character: `UserData.selectedCharacter` 0 = Marty (`CustomerMarty`: clip "Marty", weapon "spatula",
   swing1, no skill), style 1.
 
-Steps: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
+Done: (1) importer writes `framescripts.txt`; (2) `MovieClip` named/attached children, visibility, scripts;
+(3) `CharacterBlitter` draws Marty's torso/foot sheets into render targets (`--player-sheet <prefix>` saves
+them; `draw()` ignores the model's GlowFilter, as Flash does); (4) `CustomerData` with Marty and Rita.
+Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
+Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with
 the outline; (4) `CustomerData`/`CustomerDataFile`/`CustomerMarty`; (5) `reblitMultispritePlayer` + standing
 player at the room's `startPoint`; then `Character`/`PlayerChar`/`CustomerChar` movement and collisions,

@@ -1,5 +1,6 @@
 #include "engine/app.h"
 #include "engine/paths.h"
+#include "game/papaGame/managers/CharacterBlitter.h"
 
 #include <algorithm>
 #include <cmath>
@@ -69,6 +70,26 @@ SDL_AppResult App::init(int argc, char *argv[])
     for (int i = 1; i + 1 < argc; ++i) {
         if (std::strcmp(argv[i], "--capture") == 0) {
             capturePath_ = argv[i + 1];
+        } else if (std::strcmp(argv[i], "--player-sheet") == 0 && game_) { // DEV: save the player's torso sheet
+            papaGame::managers::CharacterBlitter blitter(game_.get());
+            blitter.createPlayerSprite();
+            for (auto [sheet, suffix] : {std::pair{&blitter.torsoSheet, "torso"}, std::pair{&blitter.frontFootSheet, "front"},
+                                         std::pair{&blitter.backFootSheet, "back"}}) {
+                if (!sheet->texture) {
+                    continue;
+                }
+                SDL_Texture *previous = SDL_GetRenderTarget(renderer_);
+                SDL_SetRenderTarget(renderer_, sheet->texture);
+                SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
+                SDL_SetRenderTarget(renderer_, previous);
+                const std::string path = std::string(argv[i + 1]) + "_" + suffix + ".png";
+                if (shot) {
+                    SDL_SavePNG(shot, path.c_str());
+                    SDL_DestroySurface(shot);
+                }
+                SDL_Log("Player sheet %s: %gx%g cells, %g per row", path.c_str(), blitter.spriteWidth, blitter.spriteHeight,
+                        blitter.spritesPerRow);
+            }
         } else if (std::strcmp(argv[i], "--room") == 0 && game_) { // DEV: start in room N (0-based)
             switchRoom(std::atoi(argv[i + 1]) - static_cast<int>(game_->obf_AQ->currentScreen));
         } else if (std::strcmp(argv[i], "--cam") == 0 && game_) { // DEV: camera "x,y", clamped like a pan
@@ -135,7 +156,8 @@ void App::loadGame(const std::string &game)
                               [](const auto &e) { return e.first == "enemysheet_sarge"; });
     showSymbol(start == viewerList_.end() ? 0 : static_cast<int>(start - viewerList_.begin()));
 
-    game_ = std::make_unique<obf_9G::obf_4R>(renderer_, &sheets_);
+    symbols_.loadFrameScripts(dir + "/framescripts.txt");
+    game_ = std::make_unique<obf_9G::obf_4R>(renderer_, &sheets_, &symbols_, &textures_);
     mode_ = Mode::Level;
     if (game_->loadLevelData(dir)) {
         game_->obf_6V(0);

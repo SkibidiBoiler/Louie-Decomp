@@ -67,6 +67,7 @@ void MovieClip::gotoFrame(int frame)
 void MovieClip::advance()
 {
     prevFrame_ = frame_;
+    const int before = frame_;
     if (playing_ && timeline_->frameCount > 1) {
         frame_ = frame_ + 1;
         if (frame_ >= timeline_->frameCount) {
@@ -75,6 +76,122 @@ void MovieClip::advance()
         }
     }
     syncChildren(true);
+    for (Attached &a : attached_) {
+        a.clip->advance();
+    }
+    if (frame_ != before) {
+        runScript(0);
+    }
+}
+
+void MovieClip::goTo(int frame, bool play)
+{
+    const int target = std::clamp(frame, 0, timeline_->frameCount - 1);
+    playing_ = play;
+    if (target == frame_) {
+        return; // Flash does not re-run the script of the frame it is already on
+    }
+    frame_ = target;
+    prevFrame_ = -1;
+    syncChildren(false);
+    runScript(0);
+}
+
+bool MovieClip::gotoLabel(std::string_view label, bool play)
+{
+    const int frame = SymbolLibrary::labelFrame(*timeline_, label);
+    if (frame < 0) {
+        return false;
+    }
+    goTo(frame, play);
+    return true;
+}
+
+void MovieClip::runScript(int depth)
+{
+    const auto *ops = symbols_->frameScript(timeline_->id, frame_);
+    if (!ops || depth > 8) {
+        return;
+    }
+    const int frame = frame_;
+    for (const FrameScriptOp &op : *ops) {
+        switch (op.op) {
+        case FrameScriptOp::Op::Stop: playing_ = false; break;
+        case FrameScriptOp::Op::Play: playing_ = true; break;
+        case FrameScriptOp::Op::GotoAndPlay:
+        case FrameScriptOp::Op::GotoAndStop: {
+            const bool play = op.op == FrameScriptOp::Op::GotoAndPlay;
+            const int target = op.target.empty() ? op.number - 1 : SymbolLibrary::labelFrame(*timeline_, op.target);
+            if (target >= 0) {
+                goTo(target, play);
+            }
+            return; // the rest of this frame's script belongs to a frame we left
+        }
+        case FrameScriptOp::Op::Child: {
+            // MovieClip(this.<target>.getChildAt(0)).gotoAndStop(n), inside the script's try block.
+            MovieClip *container = findChild(op.target);
+            MovieClip *part = container ? container->firstChildClip() : nullptr;
+            if (!part) {
+                return; // AS3 throws; the catch ends the try block, which holds the whole script
+            }
+            part->gotoAndStop(op.number);
+            break;
+        }
+        }
+        if (frame_ != frame) {
+            return;
+        }
+    }
+}
+
+MovieClip *MovieClip::findChild(std::string_view name)
+{
+    for (Child &c : children_) {
+        if (c.clip && c.track->name >= 0 &&
+            static_cast<size_t>(c.track->name) < symbols_->strings().size() &&
+            symbols_->strings()[static_cast<size_t>(c.track->name)] == name) {
+            return c.clip.get();
+        }
+    }
+    return nullptr;
+}
+
+bool MovieClip::childMatrix(std::string_view name, Affine &out) const
+{
+    for (const Child &c : children_) {
+        if (c.track->name >= 0 && static_cast<size_t>(c.track->name) < symbols_->strings().size() &&
+            symbols_->strings()[static_cast<size_t>(c.track->name)] == name) {
+            out = c.track->keyAt(frame_).matrix;
+            return true;
+        }
+    }
+    return false;
+}
+
+void MovieClip::forEachChild(const std::function<void(const std::string &, MovieClip &)> &fn)
+{
+    static const std::string kUnnamed;
+    for (Child &c : children_) {
+        if (!c.clip) {
+            continue;
+        }
+        const bool named = c.track->name >= 0 && static_cast<size_t>(c.track->name) < symbols_->strings().size();
+        fn(named ? symbols_->strings()[static_cast<size_t>(c.track->name)] : kUnnamed, *c.clip);
+    }
+}
+
+MovieClip &MovieClip::addChild(std::unique_ptr<MovieClip> clip, std::string name)
+{
+    attached_.push_back(Attached{std::move(name), std::move(clip)});
+    return *attached_.back().clip;
+}
+
+MovieClip *MovieClip::firstChildClip()
+{
+    if (!children_.empty()) {
+        return children_.front().clip.get(); // a shape at index 0 is not a MovieClip
+    }
+    return attached_.empty() ? nullptr : attached_.front().clip.get();
 }
 
 void MovieClip::syncChildren(bool advanceSurvivors)
@@ -133,11 +250,18 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
             continue;
         }
         if (child.clip) {
-            child.clip->render(ctx, m, color);
+            if (child.clip->visible_) {
+                child.clip->render(ctx, m, color);
+            }
         } else if (ctx.symbols->kind(track.charId) == CharKind::Shape) {
             drawShape(ctx, track.charId, m, color);
         }
         // TODO: morph shapes, static/edit text and buttons are not drawn yet.
+    }
+    for (const Attached &a : attached_) {
+        if (a.clip->visible_) {
+            a.clip->render(ctx, parent, parentColor);
+        }
     }
 }
 
@@ -154,7 +278,9 @@ void MovieClip::accumulateBounds(const Affine &parent, float &minX, float &minY,
         }
         const Affine m = parent * key.matrix;
         if (child.clip) {
-            child.clip->accumulateBounds(m, minX, minY, maxX, maxY);
+            if (child.clip->visible_) {
+                child.clip->accumulateBounds(m, minX, minY, maxX, maxY);
+            }
         } else if (const ShapeBounds *b = symbols_->shape(track.charId)) {
             const float xs[2] = {b->x, b->x + b->w};
             const float ys[2] = {b->y, b->y + b->h};
@@ -168,6 +294,11 @@ void MovieClip::accumulateBounds(const Affine &parent, float &minX, float &minY,
                     maxY = std::max(maxY, py);
                 }
             }
+        }
+    }
+    for (const Attached &a : attached_) {
+        if (a.clip->visible_) {
+            a.clip->accumulateBounds(parent, minX, minY, maxX, maxY);
         }
     }
 }

@@ -2,8 +2,12 @@
 
 namespace obf_9G {
 
-obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets) : renderer(renderer_)
+obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engine::SymbolLibrary *symbols_,
+               engine::ShapeTextures *textures_)
+    : renderer(renderer_), symbols(symbols_), textures(textures_)
 {
+    obf_51 = std::make_unique<papaGame::data::UserData>(this);
+    obf_3A = std::make_unique<papaGame::data::CustomerData>(this);
     // Same order as the original (§_-AP§ creates the DataManager, §_-9k§ the rest).
     obf_AQ = std::make_unique<papaGame::data::DataManager>(this);
     bitmapManager = std::make_unique<papaGame::managers::BitmapManager>(this, sheets);

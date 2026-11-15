@@ -59,6 +59,7 @@ set(PL_SOURCES
     src/import/swf.cpp
     src/import/symbols_export.cpp
     src/game/obf_9G/obf_4R.cpp
+    src/game/papaGame/data/CustomerData.cpp
     src/game/papaGame/data/DataManager.cpp
     src/game/papaGame/data/LevelData.cpp
     src/game/papaGame/data/ScreenData.cpp
@@ -66,6 +67,7 @@ set(PL_SOURCES
     src/game/papaGame/display/GameCam.cpp
     src/game/papaGame/display/GameDisplay.cpp
     src/game/papaGame/managers/BitmapManager.cpp
+    src/game/papaGame/managers/CharacterBlitter.cpp
 )
 
 if(ANDROID)

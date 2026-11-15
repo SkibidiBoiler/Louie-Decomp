@@ -6,6 +6,10 @@
 #include <string>
 
 #include "engine/sheets.h"
+#include "engine/symbols.h"
+#include "engine/textures.h"
+#include "game/papaGame/data/CustomerData.h"
+#include "game/papaGame/data/UserData.h"
 #include "game/papaGame/data/DataManager.h"
 #include "game/papaGame/display/GameCam.h"
 #include "game/papaGame/display/GameDisplay.h"
@@ -16,7 +20,8 @@ namespace obf_9G {
 class obf_4R {
 public:
     // Port: the engine services the translated code draws with.
-    obf_4R(SDL_Renderer *renderer, engine::SheetLibrary *sheets);
+    obf_4R(SDL_Renderer *renderer, engine::SheetLibrary *sheets, const engine::SymbolLibrary *symbols,
+           engine::ShapeTextures *textures);
 
     // Port: replaces the level-data loading screen; reads <gameDir>/levels.xml.
     bool loadLevelData(const std::string &gameDir);
@@ -27,6 +32,10 @@ public:
     void obf_4X(double whichRoom);
 
     SDL_Renderer *renderer = nullptr; // port
+    const engine::SymbolLibrary *symbols = nullptr; // port
+    engine::ShapeTextures *textures = nullptr; // port
+    std::unique_ptr<papaGame::data::UserData> obf_51;
+    std::unique_ptr<papaGame::data::CustomerData> obf_3A;
     std::unique_ptr<papaGame::data::DataManager> obf_AQ;
     std::unique_ptr<papaGame::managers::BitmapManager> bitmapManager;
     std::unique_ptr<papaGame::display::GameDisplay> obf_71;
