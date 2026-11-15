@@ -31,6 +31,7 @@ public:
 
     // AS: §_-4R§.§_-6V§ — start level `whichLevel` (so far: rooms, pre-blit and camera bounds).
     void obf_6V(double whichLevel);
+    void obf_52();
     // AS: §_-4R§.§_-4X§ — the room-switch part of entering a door (no player or objects yet).
     void obf_4X(double whichRoom);
 

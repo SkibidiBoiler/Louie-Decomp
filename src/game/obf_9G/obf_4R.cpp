@@ -47,7 +47,18 @@ void obf_4R::obf_6V(double whichLevel)
     if (start.size() >= 3) {
         playerObj->startupPlayer(start[1], start[2], true);
     }
-    // SKELETON: HUD, challenges and §_-52§ (start level: adjustCamera, music, transition) come later.
+    // SKELETON: HUD, challenges and the level intro; the original reaches §_-52§ after the intro transition.
+    obf_52();
+}
+
+// AS: §_-4R§.§_-52§ (start level)
+void obf_4R::obf_52()
+{
+    obf_3Y->adjustCamera(playerObj->x, playerObj->y, true, true);
+    obf_71->currentXcoord = 0;
+    obf_71->currentYcoord = 0;
+    obf_3Y->savePrevious(); // port: no interpolation across the snap
+    // SKELETON: initializeScreenObjects, level music and the portal sound.
 }
 
 // AS: §_-4R§.§_-4X§

@@ -79,6 +79,7 @@ private:
     std::unique_ptr<ImportScreen> importScreen_;
     float dragX_ = 0.0f, dragY_ = 0.0f; // pending camera pan from mouse/touch drags, applied in tick
     bool dragging_ = false;
+    bool freeCam_ = false; // DEV: the camera stays where --cam / a room switch put it until the player moves
     Input input_;
     int walkTest_ = -1; // DEV: --walk-test frame counter
 

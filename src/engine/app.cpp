@@ -109,6 +109,7 @@ SDL_AppResult App::init(int argc, char *argv[])
                 cam.x = std::clamp(x, cam.min_x, std::max(cam.min_x, cam.max_x));
                 cam.y = std::clamp(y, cam.min_y, std::max(cam.min_y, cam.max_y));
                 cam.savePrevious();
+                freeCam_ = true;
             }
         }
     }
@@ -171,11 +172,6 @@ void App::loadGame(const std::string &game)
     mode_ = Mode::Level;
     if (game_->loadLevelData(dir)) {
         game_->obf_6V(0);
-        // DEV: start with the camera on the player (GameCam.adjustCamera is not translated yet).
-        auto &cam = *game_->obf_3Y;
-        cam.x = std::clamp(game_->playerObj->x, cam.min_x, std::max(cam.min_x, cam.max_x));
-        cam.y = std::clamp(game_->playerObj->y, cam.min_y, std::max(cam.min_y, cam.max_y));
-        cam.savePrevious();
         SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
                 game_->obf_AQ->currentScreens.size());
     } else {
@@ -202,11 +198,11 @@ void App::switchRoom(int delta)
     const int n = static_cast<int>(game_->obf_AQ->currentScreens.size());
     const int room = ((static_cast<int>(game_->obf_AQ->currentScreen) + delta) % n + n) % n;
     game_->obf_4X(room);
+    freeCam_ = true; // the player is not moved to the new room yet (SKELETON in obf_4X)
 }
 
 void App::tickLevel()
 {
-    // DEV: free camera (arrow keys / drag) clamped to the GameCam bounds, until the player drives it.
     papaGame::display::GameCam &cam = *game_->obf_3Y;
     cam.savePrevious();
     game_->obf_71->advanceFrame();
@@ -229,7 +225,8 @@ void App::tickLevel()
     controls.keyPressedAction = actions[Action::Attack];
     player.savePrevious();
     player.fallChar(); // SKELETON: where the original calls fallChar is not traced yet
-    controls.detectKeys();
+    const double heldX = cam.x, heldY = cam.y;
+    controls.detectKeys(); // moves the camera (GameCam.adjustCamera)
     constexpr double kPan = 12.0;
     double dx = -static_cast<double>(dragX_), dy = -static_cast<double>(dragY_);
     dragX_ = dragY_ = 0.0f;
@@ -239,14 +236,14 @@ void App::tickLevel()
         if (keys[SDL_SCANCODE_UP]) dy -= kPan;
         if (keys[SDL_SCANCODE_DOWN]) dy += kPan;
     }
-    // DEV: Shift + arrows (or a mouse drag) pans freely; otherwise the camera follows the player
-    // (GameCam.adjustCamera is not translated yet).
-    if (dx == 0 && dy == 0 && !panning && !dragging_) {
-        dx = player.x - cam.x;
-        dy = player.y - cam.y;
+    // DEV: Shift + arrows (or a mouse drag) pans freely; on release the game camera chases the player again.
+    if (actions[Action::Left] || actions[Action::Right] || actions[Action::Jump] || actions[Action::Down]) {
+        freeCam_ = false;
     }
-    cam.x = std::clamp(cam.x + dx, cam.min_x, std::max(cam.min_x, cam.max_x));
-    cam.y = std::clamp(cam.y + dy, cam.min_y, std::max(cam.min_y, cam.max_y));
+    if (panning || dragging_ || freeCam_) {
+        cam.x = std::clamp(heldX + dx, cam.min_x, std::max(cam.min_x, cam.max_x));
+        cam.y = std::clamp(heldY + dy, cam.min_y, std::max(cam.min_y, cam.max_y));
+    }
 }
 
 void App::showSymbol(int index)

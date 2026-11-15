@@ -83,13 +83,11 @@ pixels: left/right/down bottom-left, jump/attack bottom-right; shown on Android,
 and a SKELETON `CustomerChar::updateObject` (stand/run/jump/fall/turn/duck cycles). DEV taps moved to the top
 band (left FPS, middle mode, right interpolation). `--walk-test` walks and jumps for captures. Marty walks and
 jumps. (9) `Character.checkForSlopes` / `checkForCeilingSlopes` translated (`onSlope` is the slope type 1-10,
-not a flag); Marty walks up and down the hills. In progress: `GameCam.adjustCamera(target, snap)` (GameCam.as 329-542):
-target = (p.x, p.y + clamp(cameraOffset, ±maxCameraOffset 160) - 32) for the player (p.y - 32 otherwise);
-locked/forced-scrolling cameras override; clamp target to min/max; unless `snap`: x += floor(dx / chasesteps 2),
-y += floor(dy / (chasesteps * 2)) for the player (lockchasesteps 8 while locked / just unlocked, wasLockedCamera
-ends when |d| < 5); then clamp x/y to bounds, last_x/y; barge bob and jiggle are SKELETON (levels 9+ only).
-Called each frame at the end of detectKeys with cameraAnchor or the player; §_-52§ (start level) calls it with
-snap = true. Replace the DEV follow camera in App::tickLevel (keep Shift+arrows pan). Next:  `GameControls.detectKeys`/`keyCheckPlayer`, `CustomerChar` animation, `adjustCamera`.
+not a flag); Marty walks up and down the hills. (10) `GameCam.adjustCamera` translated (barge bob left out:
+`isOnBarge()` is always false in PL2; `jiggleCamera` and `cameraAnchor` are SKELETON); called at the end of
+`detectKeys` and with snap from `§_-52§` (start level, reached directly from `obf_6V` until the intro exists).
+DEV: Shift+arrows / mouse drag pan; `--cam` and room switches leave the camera free until the player moves.
+Next: attack (keyPressedAction), ladders, doors and the room switch with the player, `CustomerChar` animation.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

@@ -58,8 +58,10 @@ void GameControls::detectKeys()
         p.moveChar(p.walkingDir, 0, 0);
     }
     p.updateObject();
-    // SKELETON: items, bullets, enemies, effects and objects are processed here; then adjustCamera, the HUD
-    // timer and redrawScreen (the port redraws in its render pass).
+    // SKELETON: items, bullets, enemies, effects and objects are processed here.
+    // SKELETON: cameraAnchor (setCameraAnchor) is not ported; the anchor is always the player (cameraAnchor 0).
+    gameObj->obf_3Y->adjustCamera(p.x, p.y, true);
+    // SKELETON: the HUD timer; redrawScreen comes next in the original (the port redraws in its render pass).
 }
 
 // AS: GameControls.jumpPlayer (without the skill branches: double jump, glide, wall jump)
