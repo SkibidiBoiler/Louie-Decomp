@@ -3,8 +3,8 @@
 namespace obf_9G {
 
 obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engine::SymbolLibrary *symbols_,
-               engine::ShapeTextures *textures_)
-    : renderer(renderer_), symbols(symbols_), textures(textures_)
+               engine::ShapeTextures *textures_, engine::TextLibrary *text_)
+    : renderer(renderer_), symbols(symbols_), textures(textures_), text(text_)
 {
     obf_51 = std::make_unique<papaGame::data::UserData>(this);
     obf_3A = std::make_unique<papaGame::data::CustomerData>(this);

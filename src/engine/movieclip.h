@@ -13,11 +13,13 @@
 namespace engine {
 
 class ShapeTextures;
+class TextLibrary;
 
 struct RenderContext {
     SDL_Renderer *renderer = nullptr;
     const SymbolLibrary *symbols = nullptr;
     ShapeTextures *textures = nullptr;
+    TextLibrary *text = nullptr; // static and edit texts; not drawn when null
     // Interpolation between the previous and the current logic step (0 = previous, 1 = current).
     bool interpolate = false;
     float alpha = 1.0f;
@@ -53,6 +55,8 @@ public:
     MovieClip &addChild(std::unique_ptr<MovieClip> clip, std::string name);
     // getChildAt(0) as a MovieClip; nullptr when that child is not a MovieClip (AS3 would throw).
     MovieClip *firstChildClip();
+    // `<instance>.text` / `.htmlText` of a timeline text field child (HTML when it starts with '<').
+    void setText(std::string_view instance, std::string text);
 
     // One Flash frame: move the playhead (looping), then advance the children that survived.
     void advance();
@@ -83,6 +87,7 @@ private:
         std::unique_ptr<MovieClip> clip;
     };
     std::vector<Attached> attached_;
+    std::vector<std::pair<std::string, std::string>> texts_; // text field instance -> its text
     bool visible_ = true;
     int scriptDepth_ = 0;
 };

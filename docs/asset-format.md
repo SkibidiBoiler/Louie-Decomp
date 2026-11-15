@@ -79,6 +79,25 @@ The same for `papaGame.models.characters.CustomerChar` (the player): its animati
 `"swing_frameRange": [start, end, repeat]`). A `new Rectangle(...)` with constant arguments is written as its
 four numbers.
 
+## text.json and fonts/
+
+`fonts/<N>x/<font id>.png`: every glyph of an embedded font (DefineFont2/3), white on transparent, drawn with a
+64 px em at 1x (128 px at 2x). `text.json`:
+
+```
+{"em": 64, "scale": N,
+ "fonts": {"<id>": {"name", "bold", "italic", "ascent", "descent", "leading",       (em units: px at a 64 px em)
+                    "glyphs": [[code, advance, atlas x, y, w, h, origin x, origin y], ...]}},  (atlas pixels)
+ "texts": {"<id>": {"bounds": [x0, y0, x1, y1], "matrix": [a, b, c, d, tx, ty],
+                    "records": [{"font", "height", "color": [r, g, b, a], "x", "y", "glyphs": [[index, advance]]}]}},
+ "edits": {"<id>": {"bounds", "font", "height", "color", "align", "left", "right", "indent", "leading",
+                    "wordWrap", "multiline", "html", "autoSize", "variable", "text"}}}
+```
+
+Static text records carry absolute positions (DefineText's offsets resolved); edit texts keep their initial text
+(HTML when `html`). The runtime (`engine::TextLibrary`) lays out edit text per line (align, margins, word wrap)
+with the style of its first HTML tags.
+
 ## enemies.json
 
 One object per enemy class, `{"Enemy": {...}, "Enemy1": {...}, ..., "Enemy39": {...}}`, with the same

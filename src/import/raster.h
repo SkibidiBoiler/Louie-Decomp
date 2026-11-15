@@ -43,6 +43,10 @@ public:
     bool exportSheets(const std::string &dir, const std::vector<std::string> &names, int scale,
                       const std::function<bool(size_t, size_t)> &tick);
 
+    // fonts/<scale>x/<font id>.png (each font's glyphs, a 64 px em at 1x) and text.json: the fonts' glyph tables,
+    // the static texts' glyph runs and the edit texts' boxes, styles and initial text.
+    bool exportText(const std::string &dir, int scale);
+
     struct Impl;
 
 private:

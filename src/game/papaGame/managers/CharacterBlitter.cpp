@@ -162,7 +162,7 @@ void CharacterBlitter::drawModel(engine::Sheet &sheet, engine::MovieClip &model,
     SDL_Renderer *renderer = gameObj->renderer;
     SDL_Texture *previous = SDL_GetRenderTarget(renderer);
     SDL_SetRenderTarget(renderer, sheet.texture);
-    engine::RenderContext ctx{renderer, gameObj->symbols, gameObj->textures};
+    engine::RenderContext ctx{renderer, gameObj->symbols, gameObj->textures, gameObj->text};
     model.render(ctx, engine::Affine::scale(sheet.scale) * matrix, engine::ColorTransform{});
     SDL_SetRenderTarget(renderer, previous);
 }

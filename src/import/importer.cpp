@@ -462,6 +462,11 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
             return false;
         }
     }
+    report(0.99f, "Drawing fonts");
+    if (!raster.exportText(out, kScale)) {
+        error_ = "could not write the fonts";
+        return false;
+    }
 
     char manifest[512];
     std::snprintf(manifest, sizeof(manifest),

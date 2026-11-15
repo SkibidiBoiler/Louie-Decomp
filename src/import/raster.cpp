@@ -997,4 +997,330 @@ bool Rasterizer::exportSheets(const std::string &dir, const std::vector<std::str
     return SDL_SaveFile((base + "index.txt").c_str(), indexText.data(), indexText.size());
 }
 
+namespace {
+
+// The edges of one font glyph (a SHAPE without style arrays: fill style 1 on either side).
+std::vector<Edge> parseGlyph(const uint8_t *data, size_t size, size_t pos)
+{
+    std::vector<Edge> edges;
+    Bits b(data, size, pos);
+    const int fillBits = static_cast<int>(b.ub(4));
+    const int lineBits = static_cast<int>(b.ub(4));
+    int32_t x = 0, y = 0;
+    uint32_t fill0 = 0, fill1 = 0;
+    while (b.pos() < size) {
+        if (b.ub(1) == 0) {
+            const uint32_t flags = b.ub(5);
+            if (flags == 0) {
+                break;
+            }
+            if (flags & 0x01) {
+                const int n = static_cast<int>(b.ub(5));
+                x = b.sb(n);
+                y = b.sb(n);
+            }
+            if (flags & 0x02) {
+                fill0 = b.ub(fillBits);
+            }
+            if (flags & 0x04) {
+                fill1 = b.ub(fillBits);
+            }
+            if (flags & 0x08) {
+                b.ub(lineBits);
+            }
+            continue;
+        }
+        Edge e{};
+        e.x0 = x;
+        e.y0 = y;
+        const bool straight = b.ub(1) != 0;
+        const int n = static_cast<int>(b.ub(4)) + 2;
+        if (straight) {
+            int32_t dx = 0, dy = 0;
+            if (b.ub(1)) {
+                dx = b.sb(n);
+                dy = b.sb(n);
+            } else if (b.ub(1)) {
+                dy = b.sb(n);
+            } else {
+                dx = b.sb(n);
+            }
+            e.x1 = x + dx;
+            e.y1 = y + dy;
+            e.cx = (e.x0 + e.x1) / 2;
+            e.cy = (e.y0 + e.y1) / 2;
+        } else {
+            const int32_t cdx = b.sb(n), cdy = b.sb(n), adx = b.sb(n), ady = b.sb(n);
+            e.cx = x + cdx;
+            e.cy = y + cdy;
+            e.x1 = e.cx + adx;
+            e.y1 = e.cy + ady;
+            e.curve = true;
+        }
+        x = e.x1;
+        y = e.y1;
+        if (fill1) {
+            edges.push_back(e);
+        }
+        if (fill0) {
+            edges.push_back(Edge{e.x1, e.y1, e.cx, e.cy, e.x0, e.y0, e.curve});
+        }
+    }
+    return edges;
+}
+
+std::string jsonString(const std::string &s)
+{
+    std::string out = "\"";
+    for (unsigned char c : s) {
+        if (c == '"' || c == '\\') {
+            out += '\\';
+            out += static_cast<char>(c);
+        } else if (c < 0x20) {
+            char buf[8];
+            SDL_snprintf(buf, sizeof(buf), "\\u%04x", c);
+            out += buf;
+        } else {
+            out += static_cast<char>(c);
+        }
+    }
+    return out + "\"";
+}
+
+std::string num(double v)
+{
+    char buf[32];
+    SDL_snprintf(buf, sizeof(buf), "%g", v);
+    return buf;
+}
+
+} // namespace
+
+bool Rasterizer::exportText(const std::string &dir, int scale)
+{
+    constexpr int kEm = 64; // glyphs are drawn with a 64 px em (at 1x), then scaled to each text's size
+    const std::string fontDir = dir + "/fonts/" + std::to_string(scale) + "x/";
+    SDL_CreateDirectory((dir + "/fonts").c_str());
+    SDL_CreateDirectory(fontDir.c_str());
+    std::string fonts, texts, edits;
+    for (const auto &[id, kind] : impl_->index.chars) {
+        auto def = impl_->index.defs.find(id);
+        if (def == impl_->index.defs.end()) {
+            continue;
+        }
+        const Tag &tag = def->second;
+        const uint8_t *d = tag.body;
+        const size_t n = tag.size;
+        if (kind == KindFont && (tag.code == 48 || tag.code == 75) && n > 6) {
+            // DefineFont2 / DefineFont3: glyph shapes, character codes and (optionally) the layout.
+            size_t p = 2;
+            const uint8_t flags = d[p++];
+            ++p; // language
+            const uint8_t nameLen = d[p++];
+            std::string name(reinterpret_cast<const char *>(d + p), std::min<size_t>(nameLen, n - p));
+            while (!name.empty() && name.back() == '\0') {
+                name.pop_back();
+            }
+            p += nameLen;
+            const uint16_t count = u16(d + p);
+            p += 2;
+            const bool wideOffsets = flags & 0x08, wideCodes = flags & 0x04;
+            const size_t table = p;
+            std::vector<uint32_t> offsets(count + 1u);
+            for (uint32_t i = 0; i <= count; ++i) {
+                offsets[i] = wideOffsets ? u32(d + p) : u16(d + p);
+                p += wideOffsets ? 4 : 2;
+            }
+            const size_t codes = table + offsets[count];
+            p = codes + static_cast<size_t>(count) * (wideCodes ? 2 : 1);
+            const double units = tag.code == 75 ? 20480.0 : 1024.0; // em size in glyph units
+            double ascent = 0, descent = 0, leading = 0;
+            std::vector<double> advances(count, 0.0);
+            if ((flags & 0x80) && p + 6 <= n) {
+                ascent = static_cast<int16_t>(u16(d + p));
+                descent = static_cast<int16_t>(u16(d + p + 2));
+                leading = static_cast<int16_t>(u16(d + p + 4));
+                p += 6;
+                for (uint32_t i = 0; i < count && p + 2 <= n; ++i, p += 2) {
+                    advances[i] = static_cast<int16_t>(u16(d + p));
+                }
+            }
+            // Twips -> pixels is /20 in drawShape, so glyph units are scaled to a kEm-pixel em at `scale`.
+            const float k = static_cast<float>(kEm * scale * 20.0 / units);
+            struct Cell {
+                int x = 0, y = 0, w = 0, h = 0;
+                float ox = 0, oy = 0;
+                std::vector<Edge> edges;
+            };
+            std::vector<Cell> cells(count);
+            int atlasW = 1024 * scale, penX = 1, penY = 1, rowH = 0;
+            for (uint32_t i = 0; i < count; ++i) {
+                Cell &c = cells[i];
+                c.edges = parseGlyph(d, n, table + offsets[i]);
+                Bounds bb;
+                for (const Edge &e : c.edges) {
+                    bb.add(e.x0 * k / 20, e.y0 * k / 20);
+                    bb.add(e.x1 * k / 20, e.y1 * k / 20);
+                    bb.add(e.cx * k / 20, e.cy * k / 20);
+                }
+                if (bb.empty()) {
+                    continue;
+                }
+                c.w = static_cast<int>(std::ceil(bb.x1) - std::floor(bb.x0)) + 2;
+                c.h = static_cast<int>(std::ceil(bb.y1) - std::floor(bb.y0)) + 2;
+                c.ox = -std::floor(bb.x0) + 1; // glyph origin inside the cell
+                c.oy = -std::floor(bb.y0) + 1;
+                if (penX + c.w + 1 > atlasW) {
+                    penX = 1;
+                    penY += rowH + 1;
+                    rowH = 0;
+                }
+                c.x = penX;
+                c.y = penY;
+                penX += c.w + 1;
+                rowH = std::max(rowH, c.h);
+            }
+            const int atlasH = std::max(1, penY + rowH + 1);
+            plutovg_surface_t *surface = plutovg_surface_create(atlasW, atlasH);
+            plutovg_canvas_t *cv = plutovg_canvas_create(surface);
+            std::string glyphs;
+            for (uint32_t i = 0; i < count; ++i) {
+                const Cell &c = cells[i];
+                const uint32_t code = wideCodes ? u16(d + codes + i * 2) : d[codes + i];
+                if (c.w > 0) {
+                    Shape glyph;
+                    glyph.layers.emplace_back();
+                    Layer &layer = glyph.layers.back();
+                    FillStyle white;
+                    white.color = {1, 1, 1, 1};
+                    layer.fills.push_back(white);
+                    layer.fillEdges.push_back(c.edges);
+                    layer.linePaths.emplace_back();
+                    impl_->drawShape(cv, glyph, Xform{k, 0, 0, k, c.x + c.ox, c.y + c.oy}, ColorX{});
+                }
+                glyphs += std::string(glyphs.empty() ? "" : ",") + "[" + num(code) + "," +
+                          num(advances[i] / units * kEm) + "," + num(c.x) + "," + num(c.y) + "," + num(c.w) + "," +
+                          num(c.h) + "," + num(c.ox) + "," + num(c.oy) + "]";
+            }
+            plutovg_canvas_destroy(cv);
+            savePng(surface, fontDir + std::to_string(id) + ".png");
+            plutovg_surface_destroy(surface);
+            fonts += std::string(fonts.empty() ? "" : ",\n") + "\"" + std::to_string(id) + "\": {\"name\": " +
+                     jsonString(name) + ", \"bold\": " + ((flags & 1) ? "true" : "false") + ", \"italic\": " +
+                     ((flags & 2) ? "true" : "false") + ", \"ascent\": " + num(ascent / units * kEm) +
+                     ", \"descent\": " + num(descent / units * kEm) + ", \"leading\": " +
+                     num(leading / units * kEm) + ", \"glyphs\": [" + glyphs + "]}";
+        } else if (kind == KindText && n > 4) {
+            // DefineText / DefineText2: runs of glyphs (font, height, colour, position).
+            size_t p = 2;
+            const Rect r = readRect(d, n, p);
+            const Matrix m = readMatrix(d, n, p);
+            const int glyphBits = d[p++], advanceBits = d[p++];
+            const bool alpha = tag.code == 33;
+            std::string records;
+            double font = 0, height = 0, x = 0, y = 0;
+            float color[4] = {0, 0, 0, 1};
+            while (p < n && d[p] != 0) {
+                const uint8_t f = d[p++];
+                if (f & 0x08) {
+                    font = u16(d + p);
+                    p += 2;
+                }
+                if (f & 0x04) {
+                    for (int c = 0; c < (alpha ? 4 : 3); ++c) {
+                        color[c] = d[p++] / 255.0f;
+                    }
+                }
+                if (f & 0x01) {
+                    x = static_cast<int16_t>(u16(d + p)) / 20.0;
+                    p += 2;
+                }
+                if (f & 0x02) {
+                    y = static_cast<int16_t>(u16(d + p)) / 20.0;
+                    p += 2;
+                }
+                if (f & 0x08) {
+                    height = u16(d + p) / 20.0;
+                    p += 2;
+                }
+                const int count = d[p++];
+                Bits b(d, n, p);
+                std::string glyphs;
+                const double startX = x;
+                for (int i = 0; i < count; ++i) {
+                    const uint32_t index = b.ub(glyphBits);
+                    const double advance = b.sb(advanceBits) / 20.0;
+                    glyphs += std::string(i ? "," : "") + "[" + num(index) + "," + num(advance) + "]";
+                    x += advance;
+                }
+                p = b.align();
+                records += std::string(records.empty() ? "" : ",") + "{\"font\": " + num(font) + ", \"height\": " +
+                           num(height) + ", \"color\": [" + num(color[0]) + "," + num(color[1]) + "," +
+                           num(color[2]) + "," + num(color[3]) + "], \"x\": " + num(startX) + ", \"y\": " + num(y) +
+                           ", \"glyphs\": [" + glyphs + "]}";
+            }
+            texts += std::string(texts.empty() ? "" : ",\n") + "\"" + std::to_string(id) + "\": {\"bounds\": [" +
+                     num(r.xmin / 20.0) + "," + num(r.ymin / 20.0) + "," + num(r.xmax / 20.0) + "," +
+                     num(r.ymax / 20.0) + "], \"matrix\": [" + num(m.a) + "," + num(m.b) + "," + num(m.c) + "," +
+                     num(m.d) + "," + num(m.tx) + "," + num(m.ty) + "], \"records\": [" + records + "]}";
+        } else if (kind == KindEditText && n > 4) {
+            // DefineEditText: a text field's box, font, colour, layout and initial text.
+            size_t p = 2;
+            const Rect r = readRect(d, n, p);
+            const uint8_t f1 = d[p++], f2 = d[p++];
+            double font = 0, height = 12, align = 0, left = 0, right = 0, indent = 0, leading = 0;
+            float color[4] = {0, 0, 0, 1};
+            if (f1 & 0x01) {
+                font = u16(d + p);
+                p += 2;
+            }
+            if (f2 & 0x80) {
+                cstring(d, n, p); // font class
+            }
+            if (f1 & 0x01) {
+                height = u16(d + p) / 20.0;
+                p += 2;
+            }
+            if (f1 & 0x04) {
+                for (int c = 0; c < 4; ++c) {
+                    color[c] = d[p++] / 255.0f;
+                }
+            }
+            if (f1 & 0x02) {
+                p += 2; // max length
+            }
+            if (f2 & 0x20) {
+                align = d[p++];
+                left = u16(d + p) / 20.0;
+                right = u16(d + p + 2) / 20.0;
+                indent = u16(d + p + 4) / 20.0;
+                leading = static_cast<int16_t>(u16(d + p + 6)) / 20.0;
+                p += 8;
+            }
+            const std::string variable = cstring(d, n, p);
+            const std::string text = (f1 & 0x80) ? cstring(d, n, p) : std::string();
+            edits += std::string(edits.empty() ? "" : ",\n") + "\"" + std::to_string(id) + "\": {\"bounds\": [" +
+                     num(r.xmin / 20.0) + "," + num(r.ymin / 20.0) + "," + num(r.xmax / 20.0) + "," +
+                     num(r.ymax / 20.0) + "], \"font\": " + num(font) + ", \"height\": " + num(height) +
+                     ", \"color\": [" + num(color[0]) + "," + num(color[1]) + "," + num(color[2]) + "," +
+                     num(color[3]) + "], \"align\": " + num(align) + ", \"left\": " + num(left) + ", \"right\": " +
+                     num(right) + ", \"indent\": " + num(indent) + ", \"leading\": " + num(leading) +
+                     ", \"wordWrap\": " + ((f1 & 0x40) ? "true" : "false") + ", \"multiline\": " +
+                     ((f1 & 0x20) ? "true" : "false") + ", \"html\": " + ((f2 & 0x02) ? "true" : "false") +
+                     ", \"autoSize\": " + ((f2 & 0x40) ? "true" : "false") + ", \"variable\": " +
+                     jsonString(variable) + ", \"text\": " + jsonString(text) + "}";
+        }
+    }
+    const std::string json = "{\n\"em\": " + std::to_string(kEm) + ", \"scale\": " + std::to_string(scale) +
+                             ",\n\"fonts\": {\n" + fonts + "\n},\n\"texts\": {\n" + texts + "\n},\n\"edits\": {\n" +
+                             edits + "\n}\n}\n";
+    SDL_IOStream *io = SDL_IOFromFile((dir + "/text.json").c_str(), "wb");
+    if (!io) {
+        return false;
+    }
+    const bool ok = SDL_WriteIO(io, json.data(), json.size()) == json.size();
+    SDL_CloseIO(io);
+    return ok;
+}
+
 } // namespace swfimport

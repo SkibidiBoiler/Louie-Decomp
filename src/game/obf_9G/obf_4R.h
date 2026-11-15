@@ -7,6 +7,7 @@
 
 #include "engine/sheets.h"
 #include "engine/symbols.h"
+#include "engine/text.h"
 #include "engine/textures.h"
 #include "game/papaGame/data/CustomerData.h"
 #include "game/papaGame/data/UserData.h"
@@ -28,7 +29,7 @@ class obf_4R {
 public:
     // Port: the engine services the translated code draws with.
     obf_4R(SDL_Renderer *renderer, engine::SheetLibrary *sheets, const engine::SymbolLibrary *symbols,
-           engine::ShapeTextures *textures);
+           engine::ShapeTextures *textures, engine::TextLibrary *text);
 
     // Port: replaces the level-data loading screen; reads <gameDir>/levels.xml.
     bool loadLevelData(const std::string &gameDir);
@@ -42,6 +43,7 @@ public:
     SDL_Renderer *renderer = nullptr; // port
     const engine::SymbolLibrary *symbols = nullptr; // port
     engine::ShapeTextures *textures = nullptr; // port
+    engine::TextLibrary *text = nullptr; // port
     std::unique_ptr<papaGame::data::UserData> obf_51;
     std::unique_ptr<papaGame::data::CustomerData> obf_3A;
     std::unique_ptr<papaGame::data::DataManager> obf_AQ;

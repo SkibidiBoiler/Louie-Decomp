@@ -48,6 +48,7 @@ set(PL_SOURCES
     src/engine/input.cpp
     src/engine/paths.cpp
     src/engine/symbols.cpp
+    src/engine/text.cpp
     src/engine/textures.cpp
     src/engine/movieclip.cpp
     src/engine/sheets.cpp

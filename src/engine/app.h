@@ -67,6 +67,7 @@ private:
 
     SymbolLibrary symbols_;
     ShapeTextures textures_;
+    TextLibrary text_;
     std::vector<std::pair<std::string, uint16_t>> viewerList_;
     int viewerIndex_ = 0;
     std::unique_ptr<MovieClip> viewerClip_;

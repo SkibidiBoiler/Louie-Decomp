@@ -147,7 +147,11 @@ pick-ups (`§_-AF§.§_-AJ§` quadratic easing = `obf_AJ`). Cycle tables from `e
 interpolated render (effects and objects were drawn from a stale position).
 Bullets (task 6) wait for the shooting enemies and the gun customers.
 SKELETON: the other 34 effect classes.
-Next: HUD, then sound.
+(18) Text: the importer bakes every embedded font into a glyph atlas and writes the static/edit texts to
+`text.json` (`Rasterizer::exportText`); `engine::TextLibrary` draws them, `MovieClip` draws Text/EditText
+children and `MovieClip::setText(instance, text)` sets a field (`.text` / `.htmlText`). DEV `--view <class>`
+shows a symbol in the viewer (`--view hudMC` shows the HUD with its real fonts).
+Next: GameHUD, then sound.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

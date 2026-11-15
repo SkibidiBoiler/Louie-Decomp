@@ -1,4 +1,6 @@
 #include "engine/movieclip.h"
+
+#include "engine/text.h"
 #include "engine/textures.h"
 
 #include <algorithm>
@@ -224,6 +226,17 @@ void MovieClip::syncChildren(bool advanceSurvivors)
     children_ = std::move(next);
 }
 
+void MovieClip::setText(std::string_view instance, std::string text)
+{
+    for (auto &[name, value] : texts_) {
+        if (name == instance) {
+            value = std::move(text);
+            return;
+        }
+    }
+    texts_.emplace_back(std::string(instance), std::move(text));
+}
+
 void MovieClip::render(const RenderContext &ctx, const Affine &parent, const ColorTransform &parentColor) const
 {
     for (const Child &child : children_) {
@@ -255,8 +268,21 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
             }
         } else if (ctx.symbols->kind(track.charId) == CharKind::Shape) {
             drawShape(ctx, track.charId, m, color);
+        } else if (ctx.text && ctx.symbols->kind(track.charId) == CharKind::Text) {
+            ctx.text->drawStatic(track.charId, m, color);
+        } else if (ctx.text && ctx.symbols->kind(track.charId) == CharKind::EditText) {
+            const std::string *text = nullptr;
+            if (track.name >= 0 && static_cast<size_t>(track.name) < symbols_->strings().size()) {
+                const std::string &instance = symbols_->strings()[static_cast<size_t>(track.name)];
+                for (const auto &[name, value] : texts_) {
+                    if (name == instance) {
+                        text = &value;
+                    }
+                }
+            }
+            ctx.text->drawEdit(track.charId, text, m, color);
         }
-        // TODO: morph shapes, static/edit text and buttons are not drawn yet.
+        // TODO: morph shapes and buttons are not drawn yet.
     }
     for (const Attached &a : attached_) {
         if (a.clip->visible_) {

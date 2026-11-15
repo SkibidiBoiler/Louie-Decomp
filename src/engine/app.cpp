@@ -23,6 +23,7 @@ App::~App()
     game_.reset();
     viewerClip_.reset();
     textures_.clear(); // release textures before the renderer
+    text_.clear();
     sheets_.clear();
     if (renderer_) {
         SDL_DestroyRenderer(renderer_);
@@ -109,6 +110,13 @@ SDL_AppResult App::init(int argc, char *argv[])
                 SDL_Log("Player sheet %s: %gx%g cells, %g per row", path.c_str(), blitter.spriteWidth, blitter.spriteHeight,
                         blitter.spritesPerRow);
             }
+        } else if (std::strcmp(argv[i], "--view") == 0 && !viewerList_.empty()) { // DEV: show a symbol by class
+            for (size_t k = 0; k < viewerList_.size(); ++k) {
+                if (viewerList_[k].first == argv[i + 1]) {
+                    mode_ = Mode::Viewer;
+                    showSymbol(static_cast<int>(k));
+                }
+            }
         } else if (std::strcmp(argv[i], "--level") == 0 && game_) { // DEV: start level N (0-based)
             game_->obf_6V(std::atof(argv[i + 1]));
         } else if (std::strcmp(argv[i], "--room") == 0 && game_) { // DEV: start in room N (0-based)
@@ -165,6 +173,7 @@ void App::loadGame(const std::string &game)
         }
     }
     textures_.init(renderer_, dir, scale);
+    text_.init(renderer_, dir);
     sheets_.init(renderer_, dir, scale);
     SDL_Log("Shapes at %dx (display needs %.2fx)", scale, static_cast<double>(wanted));
 
@@ -179,7 +188,7 @@ void App::loadGame(const std::string &game)
     showSymbol(start == viewerList_.end() ? 0 : static_cast<int>(start - viewerList_.begin()));
 
     symbols_.loadFrameScripts(dir + "/framescripts.txt");
-    game_ = std::make_unique<obf_9G::obf_4R>(renderer_, &sheets_, &symbols_, &textures_);
+    game_ = std::make_unique<obf_9G::obf_4R>(renderer_, &sheets_, &symbols_, &textures_, &text_);
     mode_ = Mode::Level;
     if (game_->loadLevelData(dir)) {
         game_->obf_6V(0);
@@ -580,7 +589,7 @@ void App::render(float alpha)
     } else if (mode_ == Mode::BlitDemo && hasData_) {
         renderBlitDemo(alpha);
     } else if (mode_ == Mode::Viewer && viewerClip_) {
-        RenderContext ctx{renderer_, &symbols_, &textures_};
+        RenderContext ctx{renderer_, &symbols_, &textures_, &text_};
         ctx.interpolate = settings_.interpolation;
         ctx.alpha = alpha;
         viewerClip_->render(ctx, viewerFit_, ColorTransform{});
