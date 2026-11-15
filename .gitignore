@@ -1,0 +1,58 @@
+# --- Claude Code ---
+# Third-party skills (upstream has no license; installed locally only)
+.claude/skills/
+.claude/worktrees/
+.claude/settings.local.json
+
+# --- Original game files (private, never commit) ---
+*.swf
+*.spl
+*.fla
+*.xfl
+*.swc
+*.flv
+*.f4v
+/datos-papas/
+/game/
+/original/
+/extracted/
+/data/
+*.sol
+
+# --- Saves ---
+/saves/
+*.sav
+
+# --- Android build outputs ---
+*.apk
+*.aab
+*.apks
+*.idsig
+*.dex
+*.keystore
+*.jks
+.gradle/
+local.properties
+.cxx/
+.externalNativeBuild/
+captures/
+
+# --- Build folders ---
+build/
+out/
+bin/
+obj/
+dist/
+target/
+
+# --- IDE / OS ---
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Python ---
+__pycache__/
+*.pyc
