@@ -159,7 +159,12 @@ reads object literals, `new Class(args)` (as {"new", "args"}) and static constan
 (`Challenge.RESCUE`); bogus values it used to pick up from unread getproperty results are gone.
 `MovieClip::setChildAlpha` for `.alpha` on text fields. SKELETON: HUD buttons (menu, mute, pause), portrait,
 challenge bubbles, the challenge recording.
-Next: sound (task 9), then the level start/end (task 10).
+Sound (task 9) is BLOCKED: every DefineSound in PL2 is MP3 (94 at 22 kHz, 21 at 11 kHz, 5 at 44 kHz, 1.5 MB) and
+the project has no MP3 decoder (SDL3 and stb have none). Adding one (minimp3 or dr_mp3, public domain) means
+downloading third-party code: waiting for the owner's permission. Then: importer decodes DefineSound to WAV/PCM
+(sounds/<name>.wav), `SoundManager` (§_-7C§: playSound with volume/pan, playTrack, crossfade, endMusic, mute)
+on SDL3 audio streams. Until then every playSound call is a `// SKELETON:` comment.
+Next: the level start/end (task 10).
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with
