@@ -38,8 +38,8 @@ Notes:
 
 ## Next
 
-1. Test the importer on the POCO (copy the `.swf` to the phone, import from the app). The adb-pushed data was
-   moved to `files/data/pl2_adb_old`.
+1. Importer verified on the POCO (2026-11-14): PL2 imported from Download in about 45 s, level runs at 120 FPS.
+   The old adb-pushed data is in `files/data/pl2_adb_old` (can be deleted).
 2. Milestone B (below).
 
 ## Milestone B — the player
