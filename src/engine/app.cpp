@@ -268,11 +268,18 @@ void App::tickLevel()
     controls.keyPressedJump = actions[Action::Jump];
     controls.keyPressedAction = actions[Action::Attack];
     player.savePrevious();
-    for (papaGame::models::Enemy *e : game_->obf_E->enemies) {
-        if (e) {
-            e->savePrevious();
+    // Port: every moving thing remembers where it was, for the interpolated render.
+    auto savePrevious = [](const auto &list) {
+        for (auto *c : list) {
+            if (c) {
+                c->savePrevious();
+            }
         }
-    }
+    };
+    savePrevious(game_->obf_E->enemies);
+    savePrevious(game_->obf_7u->objects);
+    savePrevious(game_->obf_3Z->items);
+    savePrevious(game_->obf_V->effects);
     const double heldX = cam.x, heldY = cam.y;
     controls.detectKeys(); // moves the camera (GameCam.adjustCamera)
     if (trace_ && scriptFrame_ == 1) {
@@ -318,6 +325,18 @@ void App::tickLevel()
         }
         if (!enemies.empty()) {
             SDL_Log("E%s", enemies.c_str());
+        }
+        // DEV: the effects: id:type x,y.
+        std::string effects;
+        for (const papaGame::models::Effect *fx : game_->obf_V->effects) {
+            if (fx) {
+                char buf[96];
+                SDL_snprintf(buf, sizeof(buf), " %.0f:%s %.0f,%.0f", fx->id, fx->effectType.c_str(), fx->x, fx->y);
+                effects += buf;
+            }
+        }
+        if (!effects.empty()) {
+            SDL_Log("FX%s", effects.c_str());
         }
     }
     if (quitAfterFrames_ >= 0 && --quitAfterFrames_ == 0) {

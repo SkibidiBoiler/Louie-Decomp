@@ -6,6 +6,7 @@
 #include "game/as3.h"
 #include "game/obf_9G/obf_4R.h"
 #include "game/obf_AF/obf_1n.h"
+#include "game/papaGame/models/effects/DizzyEffect.h"
 
 using obf_AF::obf_1n;
 using papaGame::data::CustomerData;
@@ -141,6 +142,7 @@ void CustomerChar::startupPlayer(double tileX, double tileY, bool newLevel, bool
     isDead = false;
     isHit = false;
     fellOffTrain = false;
+    stunStarIDs.clear();
     if (!keepFacing) {
         statAttack = 1;
     }
@@ -154,7 +156,10 @@ void CustomerChar::startupPlayer(double tileX, double tileY, bool newLevel, bool
     }
     if (isInvincible) {
         isInvincible = false;
-        invincibleFXID = -1; // SKELETON: removeEffect(invincibleFXID)
+        if (invincibleFXID > -1) {
+            gameObj->obf_V->removeEffect(invincibleFXID);
+            invincibleFXID = -1;
+        }
     }
     if (newLevel) {
         isFinishingLevel = false;
@@ -164,7 +169,10 @@ void CustomerChar::startupPlayer(double tileX, double tileY, bool newLevel, bool
     if (!keepFacing) {
         currentHealth = maxHealth; // SKELETON: GameHUD.updatePlayerHealth
     }
-    // SKELETON: the EndPortalEffect on a new level and the skill tutorials (§_-6n§).
+    if (newLevel) {
+        gameObj->obf_V->addEffect(x, y - 64, "EndPortalEffect", "startup");
+    }
+    // SKELETON: the skill tutorials (§_-6n§).
     fallChar();
     prevX = x;
     prevY = y;
@@ -1020,7 +1028,15 @@ void CustomerChar::updateObject()
                 isStunned = false;
             }
         }
-        // SKELETON: the stun star effects stop here.
+        if (!isStunned && !isHit && !stunStarIDs.empty()) {
+            for (double starID : stunStarIDs) {
+                Effect *star = gameObj->obf_V->getEffect(starID);
+                if (star && star->effectType == "DizzyEffect") {
+                    static_cast<effects::DizzyEffect *>(star)->stopStun();
+                }
+            }
+            stunStarIDs.clear();
+        }
         if (isAttackLunging) {
             ++lungeTimer;
             if (std::fmod(lungeTimer, lungeTimerInterval) == 0) {
@@ -1077,7 +1093,26 @@ void CustomerChar::updateObject()
         dirx = facingDir;
         // SKELETON: the end portal opens over the player after falling or crawling to death.
     }
-    // SKELETON: dust effects and the landing / turning / sliding sounds.
+    managers::EffectManager &fx = *gameObj->obf_V;
+    if (wasJumping && !jump && !isGrabbing && !isRidingObject && !isInQuicksand) {
+        fx.addEffect(x, y + 18, "DustEffect", "anim", false, -1, 0);
+        fx.addEffect(x, y + 18, "DustEffect", "anim", false, 1, 0);
+        // SKELETON: the jumpland sound.
+    }
+    if (!wasTurning && isTurning && !jump && !isGrabbing && !isCrawling) {
+        if (dirx == -1) {
+            fx.addEffect(x + 8, y + 18, "DustEffect", "anim", false, 1, 0);
+            fx.addEffect(x + 4, y + 18, "DustEffect", "anim", false, 1, -1);
+        } else if (dirx == 1) {
+            fx.addEffect(x - 8, y + 18, "DustEffect", "anim", false, -1, 0);
+            fx.addEffect(x - 4, y + 18, "DustEffect", "anim", false, -1, -1);
+        }
+    } else if (isSliding && std::fmod(gameObj->obf_8o->gameplayTimer, 2) == 0) {
+        fx.addEffect(x - 6 * facingDir, y + 13, "DustEffect");
+    } else if (isAttackLunging && !jump && std::fmod(gameObj->obf_8o->gameplayTimer, 3) == 0 && lungeSpeed > 4) {
+        fx.addEffect(x - 6 * facingDir, y + 13, "DustEffect");
+    }
+    // SKELETON: the turning and sliding sounds.
     wasJumping = jump;
     wasTurning = isTurning;
     playerLastX = x;
@@ -1148,7 +1183,11 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
         hasPowerup = false;
         isInvincible = false;
         isWalking = false;
-        invincibleFXID = -1; // SKELETON: removeEffect(invincibleFXID) and player_died.wav
+        if (invincibleFXID > -1) {
+            gameObj->obf_V->removeEffect(invincibleFXID);
+            invincibleFXID = -1;
+        }
+        // SKELETON: player_died.wav.
         controls.stopHurtControls = true;
     } else {
         // SKELETON: GameCam.setCameraJiggle(6, 8).
@@ -1167,7 +1206,8 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
         cancelAttack();
         controls.stopHurtControls = true;
         isStunned = true;
-        // SKELETON: the DizzyEffect over the head (y offset -72, or -32 crawling) and player_hurt.wav.
+        stunStarIDs.push_back(gameObj->obf_V->addEffect(x, y, "DizzyEffect", "faceRight", true, 0, isCrawling ? -32 : -72));
+        // SKELETON: player_hurt.wav.
     }
     // SKELETON: GameHUD.updatePlayerHealth, throwCarriedObject(0).
 }
@@ -1219,7 +1259,6 @@ void CustomerChar::updateStunTime()
         ++stunStartTime;
         if (stunStartTime >= stunDuration) {
             isStunned = false;
-            // SKELETON: the stun stars (stunStarIDs) are removed here.
         }
     }
     if (isShoved) {
@@ -1358,7 +1397,7 @@ bool CustomerChar::checkForHittingObjects()
             if (o->checkSpriteCollision(attack) && o->acceptsDamage("weapon", "punch")) {
                 o->getHit();
                 hit = true;
-                // SKELETON: the hit effect a little above the object, toward the player (effects).
+                // AS: it then computes a random spot above the object that nothing uses.
             }
         }
         if (i < manager.objects.size() && manager.objects[i] == o && o->isPushable && o->checkPushingObject()) {

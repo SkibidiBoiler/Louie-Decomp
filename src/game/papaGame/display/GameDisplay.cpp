@@ -113,7 +113,7 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitBackdrop();
     reblitTiles();
     reblitItems(true, false);
-    // SKELETON: reblitEffects(false).
+    reblitEffects(false);
     reblitObjects(false);
     reblitItems(false, false);
     reblitEnemies(false);
@@ -123,7 +123,7 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitObjects(true);
     // SKELETON: the player on a foreground moving tile is drawn here.
     reblitEnemies(true);
-    // SKELETON: reblitEffects(true).
+    reblitEffects(true);
     reblitItems(false, true);
     // SKELETON: bullets and overlays.
     drawTransition();
@@ -586,6 +586,32 @@ void GameDisplay::reblitItems(bool background, bool foreground)
         const auto index = static_cast<size_t>(it->sheetIndex);
         if (it->sheetIndex >= 0 && index < manager.objectSheets.size() && manager.objectSheets[index]) {
             blit(*manager.objectSheets[index], sx, sy, w, h, dx, dy);
+        }
+    }
+}
+
+// AS: GameDisplay.reblitEffects (SKELETON: NumberEffect / PopocaEffect draw from their own sheet; PL3 only)
+void GameDisplay::reblitEffects(bool foreground)
+{
+    managers::EffectManager &manager = *gameObj->obf_V;
+    for (models::Effect *e : manager.effects) {
+        if (!e || e->foreground != foreground || !e->checkOnScreen()) {
+            continue;
+        }
+        const double frame = e->animationFrame;
+        const double w = e->spritewidth, h = e->spriteheight;
+        const double sx = (frame - std::floor(frame / e->sheetWidth) * e->sheetWidth) * w;
+        const double sy = std::floor(frame / e->sheetWidth) * h + e->flipBlitOffset;
+        const double ex = e->prevX + (e->x - e->prevX) * drawAlpha_;
+        const double ey = e->prevY + (e->y - e->prevY) * drawAlpha_;
+        double dx = ex - (e->spriteTargetX - e->spriteCenterX) - currentXcoord - w / 2;
+        double dy = ey - (e->spriteTargetY - e->spriteCenterY) - currentYcoord - h / 2;
+        if (!smooth_) {
+            dx = std::floor(dx);
+            dy = std::floor(dy);
+        }
+        if (const engine::Sheet *sheet = e->getSheet()) {
+            blit(*sheet, sx, sy, w, h, dx, dy);
         }
     }
 }

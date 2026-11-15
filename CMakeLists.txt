@@ -71,11 +71,29 @@ set(PL_SOURCES
     src/game/papaGame/display/GameDisplay.cpp
     src/game/papaGame/managers/BitmapManager.cpp
     src/game/papaGame/managers/CharacterBlitter.cpp
+    src/game/papaGame/managers/EffectManager.cpp
     src/game/papaGame/managers/EnemyManager.cpp
     src/game/papaGame/managers/ItemManager.cpp
     src/game/papaGame/managers/MapManager.cpp
     src/game/papaGame/managers/ObjectManager.cpp
     src/game/papaGame/models/Character.cpp
+    src/game/papaGame/models/Effect.cpp
+    src/game/papaGame/models/effects/CrackerBreakEffect.cpp
+    src/game/papaGame/models/effects/DizzyEffect.cpp
+    src/game/papaGame/models/effects/DustEffect.cpp
+    src/game/papaGame/models/effects/EndPortalEffect.cpp
+    src/game/papaGame/models/effects/ItemBalloonEffect.cpp
+    src/game/papaGame/models/effects/ItemCoinEffect.cpp
+    src/game/papaGame/models/effects/ItemDaisyEffect.cpp
+    src/game/papaGame/models/effects/ItemFizzoCanEffect.cpp
+    src/game/papaGame/models/effects/ItemGummyWormEffect.cpp
+    src/game/papaGame/models/effects/ItemHeartEffect.cpp
+    src/game/papaGame/models/effects/ItemPapaCoinEffect.cpp
+    src/game/papaGame/models/effects/ItemRadishCoinEffect.cpp
+    src/game/papaGame/models/effects/ItemSargeCoinEffect.cpp
+    src/game/papaGame/models/effects/PlayerCheckpointEffect.cpp
+    src/game/papaGame/models/effects/StarburstEffect.cpp
+    src/game/papaGame/models/effects/ZillaPartsEffect.cpp
     src/game/papaGame/models/Enemy.cpp
     src/game/papaGame/models/GameItem.cpp
     src/game/papaGame/models/GameObject.cpp

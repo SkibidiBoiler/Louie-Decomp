@@ -348,6 +348,65 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
             fieldConstantsJson(index, "papaGame.managers", "ItemManager") + ",\n\"GameItem\": " +
             fieldConstantsJson(index, "papaGame.models", "GameItem") + "\n}\n";
         writeFile(out + "/items.json", items.data(), items.size());
+        static const char *const effectClasses[] = {
+            "BBQBitEffect",
+            "BeakerGlassEffect",
+            "BlueberryBitEffect",
+            "BlueberrySplatEffect",
+            "BossEscapeEffect",
+            "BossPropellerEffect",
+            "CageBackBarsEffect",
+            "CageCustomerEffect",
+            "CageFrontBarsEffect",
+            "CageSpinnerEffect",
+            "CheeseBitEffect",
+            "CheeseSplatEffect",
+            "ChiliBitEffect",
+            "ChiliSplatEffect",
+            "CookieBitEffect",
+            "CrackerBreakEffect",
+            "DizzyEffect",
+            "DoorFrontEffect",
+            "DustEffect",
+            "EndPortalEffect",
+            "ExplosionEffect",
+            "FeatherEffect",
+            "FoodiniBalloonEffect",
+            "FoodiniGlideEffect",
+            "ItemBalloonEffect",
+            "ItemCoinEffect",
+            "ItemDaisyEffect",
+            "ItemFizzoCanEffect",
+            "ItemGlowEffect",
+            "ItemGoldHelmetEffect",
+            "ItemGummyWormEffect",
+            "ItemHeartEffect",
+            "ItemPapaCoinEffect",
+            "ItemRadishCoinEffect",
+            "ItemSargeCoinEffect",
+            "LaughEffect",
+            "PlayerCheckpointEffect",
+            "PlayerStunSparkleEffect",
+            "RadishDirtEffect",
+            "RainbowBitEffect",
+            "RomanSparkEffect",
+            "RomanTrailEffect",
+            "SauceBitEffect",
+            "SauceSplatEffect",
+            "SmokeRingEffect",
+            "StarEffect",
+            "StarburstEffect",
+            "StuckCheeseEffect",
+            "WarpCoinEffect",
+            "ZillaPartsEffect",
+        };
+        std::string effects = "{";
+        for (const char *name : effectClasses) {
+            effects += std::string(effects.size() > 1 ? ",\n\"" : "\n\"") + name + "\": " +
+                       fieldConstantsJson(index, "papaGame.models.effects", name);
+        }
+        effects += "\n}\n";
+        writeFile(out + "/effects.json", effects.data(), effects.size());
     }
     report(0.43f, "Converting frame scripts");
     {

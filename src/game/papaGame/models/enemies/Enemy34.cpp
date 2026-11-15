@@ -120,7 +120,8 @@ bool Enemy34::getHit(double damage, double dir, bool unused, const std::string &
         dirx = dir;
     }
     if (isHit && canDropParts) {
-        // SKELETON: ZillaPartsEffect "piece" + max(1, min(4, currentHealth + 1)) at (x, y) (effects).
+        gameObj->obf_V->addEffect(x, y, "ZillaPartsEffect",
+                                  "piece" + as3::String(std::max(1.0, std::min(4.0, currentHealth + 1))));
         if (isDead) {
             canDropParts = false;
         }
@@ -189,7 +190,7 @@ void Enemy34::updateObject()
         jumpChar(false);
         moveChar(dirx, 0, 0, false, false, false);
         if (dizzyFXID != -1) {
-            // SKELETON: EffectManager.removeEffect(dizzyFXID) (effects).
+            gameObj->obf_V->removeEffect(dizzyFXID);
             dizzyFXID = -1;
         }
         updateSprite();

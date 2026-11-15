@@ -81,7 +81,8 @@ void GameObject21::getHit(double damage)
         }
         // SKELETON: papow.wav when broken, impact_2.wav otherwise.
     }
-    // SKELETON: two CrackerBreakEffect crumbs ("piece5" at x - 5, y - 5 and "piece6" at x + 12, y + 2).
+    gameObj->obf_V->addEffect(x - 5, y - 5, "CrackerBreakEffect", "piece5");
+    gameObj->obf_V->addEffect(x + 12, y + 2, "CrackerBreakEffect", "piece6");
     if (currentHealth <= 0) {
         canBeShot = false;
         canBeMeleed = false;
@@ -100,7 +101,13 @@ void GameObject21::getHit(double damage)
 // AS: GameObject21.addBreakEffects
 void GameObject21::addBreakEffects()
 {
-    // SKELETON: six CrackerBreakEffect pieces around the block (effects).
+    managers::EffectManager &fx = *gameObj->obf_V;
+    fx.addEffect(x - 8, y - 8, "CrackerBreakEffect", "piece1");
+    fx.addEffect(x + 8, y - 8, "CrackerBreakEffect", "piece2");
+    fx.addEffect(x - 8, y + 8, "CrackerBreakEffect", "piece3");
+    fx.addEffect(x + 8, y + 8, "CrackerBreakEffect", "piece4");
+    fx.addEffect(x - 7, y + 3, "CrackerBreakEffect", "piece5");
+    fx.addEffect(x + 4, y - 2, "CrackerBreakEffect", "piece6");
 }
 
 // AS: GameObject21.checkOnScreen

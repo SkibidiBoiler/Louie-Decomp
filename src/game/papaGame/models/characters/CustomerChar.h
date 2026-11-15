@@ -101,6 +101,8 @@ public:
     bool hitByBlast = false, hasPowerup = false;
     double statAttack = 1, invincibleTimer = 0, invincibleFXID = -1, shoveTimer = 0, shoveTimerMax = 6;
     double defaultHealth = 3;
+    std::vector<double> stunStarIDs;
+    bool finishAddedPortal = false;
     Rect standCollRect, jumpCollRect, duckCollRect, stomp_collRect, pound_collRect;
     std::string hasWeaponType = "unknown";
     Rect attackRect;

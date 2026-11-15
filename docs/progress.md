@@ -138,7 +138,16 @@ items) and the nine PL2 items (`GameItem_Coin`, `_PapaCoin`, `_SargeCoin`, `_Rad
 `PlayerChar.getHeart` / `checkForCollectingItems`, `UserData` money / special items, `GameDisplay.reblitItems`.
 The `T` trace line shows health, money and special items. SKELETON: dropMoney (it names PL3 money items),
 dropped weapons, GoldHelmet, the item effects and sounds.
-Next: bullets, effects, HUD.
+(17) Effects: `EffectManager` (§_-V§: addEffect, processEffects, clearEffects, removeEffect, getEffect), `Effect`
+and 16 effect classes: `DizzyEffect` (stunned enemies and the hurt player, who keeps `stunStarIDs`),
+`StarburstEffect` (enemy hit), `DustEffect` (landing, turning, sliding, lunging), `CrackerBreakEffect`,
+`ZillaPartsEffect`, `PlayerCheckpointEffect`, `EndPortalEffect` (start of a level) and the nine `Item*Effect`
+pick-ups (`§_-AF§.§_-AJ§` quadratic easing = `obf_AJ`). Cycle tables from `effects.json` (all 50 effect classes).
+`GameDisplay.reblitEffects`; `--trace` adds an `FX` line. Every entity now saves its previous position for the
+interpolated render (effects and objects were drawn from a stale position).
+Bullets (task 6) wait for the shooting enemies and the gun customers.
+SKELETON: the other 34 effect classes.
+Next: HUD, then sound.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

@@ -149,7 +149,7 @@ void Enemy6::updateObject()
         jumpChar(false);
         moveChar(dirx, 0, 0, false, false, false);
         if (dizzyFXID != -1) {
-            // SKELETON: EffectManager.removeEffect(dizzyFXID) (effects).
+            gameObj->obf_V->removeEffect(dizzyFXID);
             dizzyFXID = -1;
         }
         updateSprite();
@@ -196,7 +196,12 @@ void Enemy6::updateObject()
             isReactingToHurt = false;
         }
         updateSprite();
-        // SKELETON: the DizzyEffect while stunned (effects).
+        if (dizzyFXID == -1 && isStunned && cycleFrame == cycleFrames("stunCycleFrames").loopFrame) {
+            dizzyFXID = gameObj->obf_V->addEffect(x, y - 30, "DizzyEffect", facingDir == 1 ? "faceRight" : "faceLeft");
+        } else if (!isStunned && dizzyFXID != -1) {
+            gameObj->obf_V->removeEffect(dizzyFXID);
+            dizzyFXID = -1;
+        }
     }
 }
 

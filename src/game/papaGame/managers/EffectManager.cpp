@@ -1,0 +1,202 @@
+#include "game/papaGame/managers/EffectManager.h"
+
+#include <SDL3/SDL.h>
+
+#include "engine/json.h"
+#include "game/obf_9G/obf_4R.h"
+#include "game/papaGame/models/effects/CrackerBreakEffect.h"
+#include "game/papaGame/models/effects/DizzyEffect.h"
+#include "game/papaGame/models/effects/DustEffect.h"
+#include "game/papaGame/models/effects/EndPortalEffect.h"
+#include "game/papaGame/models/effects/ItemBalloonEffect.h"
+#include "game/papaGame/models/effects/ItemCoinEffect.h"
+#include "game/papaGame/models/effects/ItemDaisyEffect.h"
+#include "game/papaGame/models/effects/ItemFizzoCanEffect.h"
+#include "game/papaGame/models/effects/ItemGummyWormEffect.h"
+#include "game/papaGame/models/effects/ItemHeartEffect.h"
+#include "game/papaGame/models/effects/ItemPapaCoinEffect.h"
+#include "game/papaGame/models/effects/ItemRadishCoinEffect.h"
+#include "game/papaGame/models/effects/ItemSargeCoinEffect.h"
+#include "game/papaGame/models/effects/PlayerCheckpointEffect.h"
+#include "game/papaGame/models/effects/StarburstEffect.h"
+#include "game/papaGame/models/effects/ZillaPartsEffect.h"
+
+namespace papaGame::managers {
+
+namespace {
+
+// Port: getDefinitionByName("papaGame.models.effects." + type).
+std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std::string &type)
+{
+    using namespace models::effects;
+    if (type == "DizzyEffect") {
+        return std::make_unique<DizzyEffect>(gameObj);
+    }
+    if (type == "StarburstEffect") {
+        return std::make_unique<StarburstEffect>(gameObj);
+    }
+    if (type == "DustEffect") {
+        return std::make_unique<DustEffect>(gameObj);
+    }
+    if (type == "CrackerBreakEffect") {
+        return std::make_unique<CrackerBreakEffect>(gameObj);
+    }
+    if (type == "ZillaPartsEffect") {
+        return std::make_unique<ZillaPartsEffect>(gameObj);
+    }
+    if (type == "PlayerCheckpointEffect") {
+        return std::make_unique<PlayerCheckpointEffect>(gameObj);
+    }
+    if (type == "EndPortalEffect") {
+        return std::make_unique<EndPortalEffect>(gameObj);
+    }
+    if (type == "ItemCoinEffect") {
+        return std::make_unique<ItemCoinEffect>(gameObj);
+    }
+    if (type == "ItemHeartEffect") {
+        return std::make_unique<ItemHeartEffect>(gameObj);
+    }
+    if (type == "ItemPapaCoinEffect") {
+        return std::make_unique<ItemPapaCoinEffect>(gameObj);
+    }
+    if (type == "ItemSargeCoinEffect") {
+        return std::make_unique<ItemSargeCoinEffect>(gameObj);
+    }
+    if (type == "ItemRadishCoinEffect") {
+        return std::make_unique<ItemRadishCoinEffect>(gameObj);
+    }
+    if (type == "ItemDaisyEffect") {
+        return std::make_unique<ItemDaisyEffect>(gameObj);
+    }
+    if (type == "ItemBalloonEffect") {
+        return std::make_unique<ItemBalloonEffect>(gameObj);
+    }
+    if (type == "ItemFizzoCanEffect") {
+        return std::make_unique<ItemFizzoCanEffect>(gameObj);
+    }
+    if (type == "ItemGummyWormEffect") {
+        return std::make_unique<ItemGummyWormEffect>(gameObj);
+    }
+    return nullptr; // SKELETON: the other effect classes are not ported yet
+}
+
+} // namespace
+
+EffectManager::EffectManager(obf_9G::obf_4R *gameObj_) : gameObj(gameObj_) {}
+
+EffectManager::~EffectManager() = default;
+
+bool EffectManager::loadTables(const std::string &path)
+{
+    size_t size = 0;
+    char *raw = static_cast<char *>(SDL_LoadFile(path.c_str(), &size));
+    if (!raw) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Cannot read %s (import the game again)", path.c_str());
+        return false;
+    }
+    engine::JsonValue json;
+    const bool ok = engine::parseJson(std::string_view(raw, size), json);
+    SDL_free(raw);
+    if (!ok) {
+        return false;
+    }
+    tables_.clear();
+    for (const auto &[name, fields] : json.fields) {
+        models::parseCycleTable(fields, tables_[name]);
+    }
+    return true;
+}
+
+// AS: EffectManager.addEffect
+double EffectManager::addEffect(double x, double y, const std::string &type, const std::string &subtype,
+                                bool followPlayer, double playerXoffset, double playerYoffset)
+{
+    ++counter;
+    const double effectid = counter;
+    std::unique_ptr<models::Effect> effect = createEffect(gameObj, type);
+    if (!effect) {
+        SDL_Log("ERROR: effect %s does not exist", type.c_str());
+        return -1;
+    }
+    effect->cycleTable = &tables_[type];
+    effect->init(x, y, effectid, subtype, followPlayer, playerXoffset, playerYoffset);
+    models::Effect *e = effect.get();
+    byID_[effectid] = std::move(effect);
+    effects.push_back(e);
+    double sheetIndex = -1;
+    for (size_t i = 0; i < objectTypes.size(); ++i) {
+        if (objectTypes[i] == type) {
+            sheetIndex = static_cast<double>(i);
+            break;
+        }
+    }
+    if (sheetIndex == -1) {
+        objectTypes.push_back(type);
+        objectSheets.push_back(gameObj->bitmapManager->sheets->get(e->sheetname));
+        sheetIndex = static_cast<double>(objectSheets.size()) - 1;
+    }
+    e->setSheetIndex(sheetIndex);
+    return effectid;
+}
+
+// AS: EffectManager.processEffects — last to first.
+void EffectManager::processEffects()
+{
+    graveyard_.clear();
+    for (int i = static_cast<int>(effects.size()) - 1; i >= 0; --i) {
+        if (i < static_cast<int>(effects.size()) && effects[static_cast<size_t>(i)]) {
+            effects[static_cast<size_t>(i)]->updateObject();
+        }
+    }
+}
+
+// AS: EffectManager.clearEffects
+void EffectManager::clearEffects()
+{
+    for (models::Effect *e : effects) {
+        if (e) {
+            e->destroy();
+        }
+    }
+    for (auto &[id, e] : byID_) {
+        graveyard_.push_back(std::move(e));
+    }
+    byID_.clear();
+    counter = 0;
+    effects.clear();
+    objectSheets.clear();
+    objectTypes.clear();
+}
+
+// AS: EffectManager.removeEffect
+void EffectManager::removeEffect(double effectID, bool nosplice)
+{
+    for (size_t i = 0; i < effects.size(); ++i) {
+        if (effects[i] && effects[i]->id == effectID) {
+            effects[i]->destroy();
+            auto it = byID_.find(effectID);
+            if (it != byID_.end()) {
+                graveyard_.push_back(std::move(it->second));
+                byID_.erase(it);
+            }
+            effects[i] = nullptr;
+            if (!nosplice) {
+                effects.erase(effects.begin() + static_cast<std::ptrdiff_t>(i));
+            }
+            return;
+        }
+    }
+}
+
+// AS: EffectManager.getEffect
+models::Effect *EffectManager::getEffect(double effectID) const
+{
+    for (models::Effect *e : effects) {
+        if (e && e->id == effectID) {
+            return e;
+        }
+    }
+    return nullptr;
+}
+
+} // namespace papaGame::managers

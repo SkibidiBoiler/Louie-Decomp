@@ -41,7 +41,8 @@ void GameItem_FizzoCan::collectItem()
 {
     gameObj->obf_51->collectSpecialItem();
     gameObj->obf_51->earnPoints(points);
-    // SKELETON: the ItemFizzoCanEffect over the player and grabitem.wav.
+    gameObj->obf_V->addEffect(0, 0, "ItemFizzoCanEffect", "", true, 0, -50);
+    // SKELETON: grabitem.wav.
     gameObj->obf_3Z->removeItem(id);
 }
 

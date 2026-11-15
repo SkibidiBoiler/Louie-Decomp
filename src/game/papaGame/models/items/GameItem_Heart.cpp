@@ -42,7 +42,8 @@ void GameItem_Heart::collectItem()
     if (!wasCollected) {
         gameObj->playerObj->getHeart();
         gameObj->obf_51->earnPoints(points);
-        // SKELETON: the ItemHeartEffect over the player and getheart.wav.
+        gameObj->obf_V->addEffect(0, 0, "ItemHeartEffect", "", true, 0, -50);
+        // SKELETON: getheart.wav.
         wasCollected = true;
     }
 }
