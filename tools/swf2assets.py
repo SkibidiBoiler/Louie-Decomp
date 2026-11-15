@@ -12,6 +12,7 @@ Usage:
 """
 import argparse
 import json
+import math
 import os
 import re
 import shutil
@@ -19,6 +20,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import zlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -336,7 +338,9 @@ def export_sheets(swf, out, scales, java, ffdec, names, chars, classes):
     """Bake the classes the game rasterises at runtime: sprites (frame 1) at every scale, bitmaps as-is.
 
     Writes sheets/<N>x/<name>.png (vector) or sheets/1x/<name>.png|jpg (bitmap) and sheets/index.txt with one
-    line per sheet: "<name> <origin x> <origin y> vector|bitmap" (origin = top-left of the PNG in symbol units).
+    line per sheet: "<name> <origin x> <origin y> vector|bitmap <width> <height>" (origin = top-left of the PNG in
+    symbol units; width/height = the BitmapData size the original allocates, ceil of the clip's width/height,
+    covering symbol coordinates 0..width x 0..height; 0 0 for bitmaps = the image size).
     """
     log = out / "ffdec.log"
     root = out / "sheets"
@@ -368,7 +372,10 @@ def export_sheets(swf, out, scales, java, ffdec, names, chars, classes):
             head = (d / "1.svg").read_text(encoding="utf-8", errors="replace")[:2000]
             m = re.search(r'<g transform="matrix\(([^)]*)\)"', head)
             vals = [float(v) for v in m.group(1).split(",")] if m else [1, 0, 0, 1, 0, 0]
-            origins[cid] = (-vals[4], -vals[5])
+            mw = re.search(r'width="([0-9.]+)px"', head)
+            mh = re.search(r'height="([0-9.]+)px"', head)
+            size = (math.ceil(float(mw.group(1))) if mw else 0, math.ceil(float(mh.group(1))) if mh else 0)
+            origins[cid] = (-vals[4], -vals[5], size)
     for s in scales:
         dest = root / f"{s}x"
         dest.mkdir(parents=True, exist_ok=True)
@@ -377,7 +384,10 @@ def export_sheets(swf, out, scales, java, ffdec, names, chars, classes):
                                     "-export", "sprite", tmp, str(swf)], log)
             for cid, d in sprite_dirs(tmp).items():
                 shutil.move(str(d / "1.png"), str(dest / f"{by_id[cid]}.png"))
-    lines = [f"{by_id[c]} {origins.get(c, (0, 0))[0] + 0.0:g} {origins.get(c, (0, 0))[1] + 0.0:g} vector" for c in sprite_ids]
+    lines = []
+    for c in sprite_ids:
+        ox, oy, (w, h) = origins.get(c, (0.0, 0.0, (0, 0)))
+        lines.append(f"{by_id[c]} {ox + 0.0:g} {oy + 0.0:g} vector {w} {h}")
     if bitmap_ids:
         dest = root / "1x"
         dest.mkdir(parents=True, exist_ok=True)
@@ -388,9 +398,66 @@ def export_sheets(swf, out, scales, java, ffdec, names, chars, classes):
                     cid = int(f.stem.split("_")[0])
                     if cid in by_id:
                         shutil.move(str(f), str(dest / f"{by_id[cid]}{f.suffix.lower()}"))
-                        lines.append(f"{by_id[cid]} 0 0 bitmap")
+                        lines.append(f"{by_id[cid]} 0 0 bitmap 0 0")
     (root / "index.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"  sheets: {len(sprite_ids)} vector x {len(scales)} scales, {len(bitmap_ids)} bitmaps")
+
+
+def export_levels(swf, out, java, ffdec, chars, classes):
+    """Decode the level XML that the game stores as pixels of a palette bitmap (LevelData.prepareXML).
+
+    The colour -> character tables are read from the owner's SWF (class papaGame.data.LevelData, decompiled
+    by FFDec) at extraction time, so they never live in this repository. Writes levels.xml.
+    """
+    log = out / "ffdec.log"
+    with tempfile.TemporaryDirectory(dir=out) as tmp:
+        run_ffdec(java, ffdec, ["-config", "autoDeobfuscate=1", "-selectclass", "papaGame.data.LevelData",
+                                "-export", "script", tmp, str(swf)], log)
+        found = list(Path(tmp).rglob("LevelData.as"))
+        if not found:
+            print("  levels: papaGame.data.LevelData not found, skipped")
+            return
+        src = found[0].read_text(encoding="utf-8", errors="replace")
+    m_name = re.search(r'encodedBitmapName:String = "([^"]+)"', src)
+    m_colors = re.search(r"colorTable:Array = \[([^\]]*)\]", src)
+    m_texts = re.search(r"textTable:Array = \[(.*?)\];", src)
+    if not (m_name and m_colors and m_texts):
+        print("  levels: LevelData tables not recognised, skipped")
+        return
+    colors = [int(v) for v in m_colors.group(1).split(",")]
+    texts = json.loads("[" + m_texts.group(1).replace("\\'", "'") + "]")
+    cid = classes.get(m_name.group(1))
+    if cid is None or chars.get(cid) != KIND_BITMAP:
+        print(f"  levels: bitmap {m_name.group(1)} not found, skipped")
+        return
+
+    buf = decompress(swf.read_bytes())
+    _, pos = read_rect(buf, 8)
+    pixels = None
+    for code, body in iter_tags(buf, pos + 4, len(buf)):
+        if code in (20, 36) and struct.unpack_from("<H", body, 0)[0] == cid:
+            fmt = body[2]
+            w, h = struct.unpack_from("<HH", body, 3)
+            if fmt == 3:  # palette: RGB(A) table, then row-padded indices
+                n = body[7] + 1
+                raw = zlib.decompress(body[8:])
+                step = 3 if code == 20 else 4
+                pal = [(raw[step * i + (0 if step == 3 else 1)] << 16) | (raw[step * i + (1 if step == 3 else 2)] << 8)
+                       | raw[step * i + (2 if step == 3 else 3)] for i in range(n)]
+                data = raw[step * n:]
+                stride = (w + 3) & ~3
+                pixels = [pal[data[y * stride + x]] for y in range(h) for x in range(w)]
+            elif fmt == 5:  # 32-bit (A)RGB
+                raw = zlib.decompress(body[7:])
+                pixels = [(raw[4 * i + 1] << 16) | (raw[4 * i + 2] << 8) | raw[4 * i + 3] for i in range(w * h)]
+            break
+    if pixels is None:
+        print("  levels: unsupported level bitmap format, skipped")
+        return
+    index = {c: i for i, c in enumerate(colors)}
+    text = "".join(texts[index[p]] for p in pixels if p in index and index[p] < len(texts))
+    (out / "levels.xml").write_text(text, encoding="utf-8")
+    print(f"  levels.xml: {len(text):,} characters")
 
 
 def main():
@@ -419,6 +486,7 @@ def main():
     print(f"symbols.bin: {size:,} bytes; {len(chars)} characters, {len(sprites)} timelines, "
           f"{tracks} tracks, {keys} keys, {len(classes)} classes")
     if not args.skip_ffdec:
+        export_levels(swf, out, args.java, args.ffdec, chars, classes)
         if not args.only_sheets:
             export_media(swf, out, scales, args.java, args.ffdec)
         if args.sheets:

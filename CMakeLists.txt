@@ -26,6 +26,10 @@ set(PL_SOURCES
     src/engine/movieclip.cpp
     src/engine/sheets.cpp
     src/engine/settings.cpp
+    src/engine/xml.cpp
+    src/game/papaGame/data/LevelData.cpp
+    src/game/papaGame/data/ScreenData.cpp
+    src/game/papaGame/data/WorldData.cpp
 )
 
 if(ANDROID)
