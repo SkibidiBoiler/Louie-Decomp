@@ -212,10 +212,11 @@ void App::tickLevel()
     const bool *keys = SDL_GetKeyboardState(nullptr);
     const bool panning = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
     ActionState actions = panning ? ActionState{} : input_.poll();
-    if (walkTest_ >= 0) { // DEV: right until the capture (~3 s), jump at frames 30-45
+    if (walkTest_ >= 0) { // DEV: right until the capture (~3 s), jump at frames 30-45, attack at 82-84
         ++walkTest_;
         actions.held[static_cast<size_t>(Action::Right)] = walkTest_ < 200;
         actions.held[static_cast<size_t>(Action::Jump)] = walkTest_ > 30 && walkTest_ < 45;
+        actions.held[static_cast<size_t>(Action::Attack)] = walkTest_ > 81 && walkTest_ < 85;
     }
     controls.keyPressedLeft = actions[Action::Left];
     controls.keyPressedRight = actions[Action::Right];
@@ -224,7 +225,6 @@ void App::tickLevel()
     controls.keyPressedJump = actions[Action::Jump];
     controls.keyPressedAction = actions[Action::Attack];
     player.savePrevious();
-    player.fallChar(); // SKELETON: where the original calls fallChar is not traced yet
     const double heldX = cam.x, heldY = cam.y;
     controls.detectKeys(); // moves the camera (GameCam.adjustCamera)
     constexpr double kPan = 12.0;

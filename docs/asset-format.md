@@ -70,3 +70,11 @@ recognise are skipped and counted in the import log.
 Constant fields of `papaGame.data.DataManager` (instance initialiser and static constants) as one JSON object,
 `{ "<field>": <number | string | array> }`, read from the game's bytecode by the importer so these tables (tile
 collision and slope lists, special tile numbers, ...) never live in the repository.
+
+## customerchar.json
+
+The same for `papaGame.models.characters.CustomerChar` (the player): its animation cycles
+(`"<name>CycleFrames": [name, type, blitStyle, randomize, loopFrame, [frames]]`, torso and `foot_` cycles),
+`torsoOffsetsX/Y`, and the attack rectangles and frame ranges (`"swing_attackRect": [x, y, width, height]`,
+`"swing_frameRange": [start, end, repeat]`). A `new Rectangle(...)` with constant arguments is written as its
+four numbers.

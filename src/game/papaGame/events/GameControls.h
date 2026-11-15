@@ -26,7 +26,7 @@ public:
     double gameplayTimer = 0;
     double currentLevelTimer = 0;
     bool isPaused = false, stopCycle = false, stopControls = false;
-    bool stopActionControls = false;
+    bool stopActionControls = false, stopHurtControls = false;
 };
 
 } // namespace papaGame::events

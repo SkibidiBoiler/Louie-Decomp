@@ -21,7 +21,7 @@ public:
     void checkIfAtEdge(double speed, double dir);
     bool moveChar(double dirx, double diry, double jumpDir, bool bounceAtWalls = false, bool checkEdges = false,
                   bool collide = true, double fixedSpeed = INT_MAX);
-    void fallChar();
+    virtual void fallChar();
     void jumpChar(bool collide = true);
     void getMyCorners(double px, double py);
     void checkForCeilingSlopes(double dir = -1);

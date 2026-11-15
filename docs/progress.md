@@ -87,7 +87,14 @@ not a flag); Marty walks up and down the hills. (10) `GameCam.adjustCamera` tran
 `isOnBarge()` is always false in PL2; `jiggleCamera` and `cameraAnchor` are SKELETON); called at the end of
 `detectKeys` and with snap from `§_-52§` (start level, reached directly from `obf_6V` until the intro exists).
 DEV: Shift+arrows / mouse drag pan; `--cam` and room switches leave the camera free until the player moves.
-Next: attack (keyPressedAction), ladders, doors and the room switch with the player, `CustomerChar` animation.
+(11) Attack and the real player animation: `CustomerChar.updateObject` translated (skid build-up and decay,
+stun, lunge, walk speed on slopes, `checkIfAttacking`, `fallChar` with `lastSafeTime`; sliding, pounding,
+gliding, wall jumps, hitting enemies/objects, items and doors are SKELETON), `updateSprite` with the torso and
+foot cycles (`grabAnimationCycle` / `grabFootAnimationCycle`, frame sync, `endAnimationCycle`),
+`startAttacking` / `setupAttackRect` / `cancelAttack`, and the attack, skid and lunge parts of `keyCheckPlayer`.
+The cycles and attack tables come from `customerchar.json` (importer; re-import needed for older data).
+`--walk-test` also attacks at frames 82-84.
+Next: ladders, doors and the room switch with the player, then enemies (hitting them with `attackRect`).
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

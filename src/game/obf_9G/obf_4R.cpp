@@ -21,6 +21,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
 bool obf_4R::loadLevelData(const std::string &gameDir)
 {
     obf_AQ->loadTables(gameDir + "/datamanager.json");
+    playerObj->loadTables(gameDir + "/customerchar.json");
     return obf_AQ->prepareLevelData(gameDir + "/levels.xml");
 }
 

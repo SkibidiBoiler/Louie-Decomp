@@ -277,7 +277,7 @@ void Character::fallChar()
 // AS: Character.jumpChar
 void Character::jumpChar(bool collide)
 {
-    const double gameplayTimer = 0; // SKELETON: GameControls.gameplayTimer (only used while gliding / wall sliding)
+    const double gameplayTimer = gameObj->obf_8o->gameplayTimer;
     if (isWallSliding) {
         if (std::fmod(gameplayTimer, 10) == 0) {
             jumpspeed += gravity;

@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -43,6 +44,13 @@ inline std::string String(double v)
     char buf[32];
     std::snprintf(buf, sizeof(buf), "%.15g", v);
     return buf;
+}
+
+// Math.random: uniform in [0, 1).
+inline double random()
+{
+    static std::mt19937 rng{std::random_device{}()};
+    return std::uniform_real_distribution<double>(0.0, 1.0)(rng);
 }
 
 // Math.round: halves round towards +infinity.

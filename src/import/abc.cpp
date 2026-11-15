@@ -379,6 +379,23 @@ void Abc::scanInitializer(const std::vector<Trait> &traits, uint32_t method, std
             push(std::move(v));
             continue;
         }
+        case 0x4A: { // constructprop: new Rectangle(x, y, w, h) with constant arguments becomes [x, y, w, h]
+            const uint32_t mn = r.u30();
+            const uint32_t argc = r.u30();
+            v.type = AbcValue::Type::Array;
+            v.items.resize(argc);
+            bool constant = true;
+            for (uint32_t i = argc; i-- > 0;) {
+                v.items[i] = pop();
+                constant = constant && v.items[i].type == AbcValue::Type::Number;
+            }
+            pop(); // the class object
+            if (!constant || multinameName(mn) != "Rectangle") {
+                v = AbcValue{};
+            }
+            push(std::move(v));
+            continue;
+        }
         case 0x61: case 0x68: { // setproperty / initproperty
             const uint32_t mn = r.u30();
             AbcValue value = pop();

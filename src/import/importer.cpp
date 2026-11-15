@@ -73,6 +73,39 @@ void appendJson(std::string &out, const AbcValue &v)
     }
 }
 
+// Field constants of class `ns`.`name` (from the first ABC block that has it) as a JSON object.
+void writeFieldConstants(const SwfIndex &index, const char *ns, const char *name, const std::string &path)
+{
+    std::map<std::string, AbcValue> fields;
+    for (const Tag &tag : index.abc) {
+        size_t p = 0;
+        if (tag.code == 82) {
+            p = 4;
+            cstring(tag.body, tag.size, p);
+        }
+        Abc abc;
+        if (abc.parse(tag.body + p, tag.size - p)) {
+            fields = abc.instanceFieldConstants(ns, name);
+            if (!fields.empty()) {
+                break;
+            }
+        }
+    }
+    std::string json = "{\n";
+    bool first = true;
+    for (const auto &[field, value] : fields) {
+        if (value.type == AbcValue::Type::Unknown) {
+            continue;
+        }
+        json += first ? "" : ",\n";
+        first = false;
+        json += "\"" + field + "\": ";
+        appendJson(json, value);
+    }
+    json += "\n}\n";
+    writeFile(path, json.data(), json.size());
+}
+
 // Class names of the sheets to bake for a game (tools/sheets/<game>.txt, compiled in).
 std::vector<std::string> sheetList(const std::string &game)
 {
@@ -282,38 +315,11 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
     }
 
     report(0.42f, "Reading game tables");
-    {
-        // Constant tables of papaGame.data.DataManager (tile collision/slope lists, ...), kept out of the repo
-        // like the level tables: datamanager.json, { "field": value, ... }.
-        std::map<std::string, AbcValue> fields;
-        for (const Tag &tag : index.abc) {
-            size_t p = 0;
-            if (tag.code == 82) {
-                p = 4;
-                cstring(tag.body, tag.size, p);
-            }
-            Abc abc;
-            if (abc.parse(tag.body + p, tag.size - p)) {
-                fields = abc.instanceFieldConstants("papaGame.data", "DataManager");
-                if (!fields.empty()) {
-                    break;
-                }
-            }
-        }
-        std::string json = "{\n";
-        bool first = true;
-        for (const auto &[name, value] : fields) {
-            if (value.type == AbcValue::Type::Unknown) {
-                continue;
-            }
-            json += first ? "" : ",\n";
-            first = false;
-            json += "\"" + name + "\": ";
-            appendJson(json, value);
-        }
-        json += "\n}\n";
-        writeFile(out + "/datamanager.json", json.data(), json.size());
-    }
+    // Constant tables of game classes, kept out of the repo like the level tables: { "field": value, ... }.
+    // DataManager: tile collision/slope lists. CustomerChar: the player's animation cycles, torso offsets and
+    // attack rectangles.
+    writeFieldConstants(index, "papaGame.data", "DataManager", out + "/datamanager.json");
+    writeFieldConstants(index, "papaGame.models.characters", "CustomerChar", out + "/customerchar.json");
     report(0.43f, "Converting frame scripts");
     {
         // Timeline scripts (stop, gotoAndPlay, part poses) become data: <class> <frame> <op> [target] [number].
