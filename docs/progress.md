@@ -42,11 +42,31 @@ Notes:
    The old adb-pushed data is in `files/data/pl2_adb_old` (can be deleted).
 2. Milestone B (below).
 
-## Milestone B — the player
+## Milestone B — the player (in progress)
 
-`CharacterBlitter` (compose torso/foot sheets from `customer*MC` at runtime with `MovieClip` into render
-targets), `Character`/`PlayerChar`/`CustomerChar` movement and tile collisions, `GameControls` with an action
-layer (keyboard, gamepad, touch; later the touch-layout editor), `GameCam.adjustCamera` following the player.
+Findings (PL2 `papaGame.managers.CharacterBlitter`, `customer*MC`):
+
+- `createPlayerSprite` builds 5 puppet models (`customerOneSwingMC` etc. by `CustomerData.getCustomerType`,
+  scale 0.27, `GlowFilter(0x000000, 1, 1.3, 1.3, 4.68)` = thin black outline) and dresses them: into the named
+  containers (`body`, `head`, `eyes`, `mouth`, `neck`, `hair`, `back_hair`, `front_shoe`, `back_shoe`,
+  `fronthand`, `backhand`, `front_upperarm`, `back_upperarm`, `front_forearm`, `back_forearm`,
+  `cross_backforearm`, `cross_back_hand`, `weapon`, `cross_back_weap`, `glider`) it adds
+  `customer_<Name>[2|3]_<part>` / `weapon_<clip>` / `glider_<name>` clips named "clip".
+- Three phases (torso, front_shoe, back_shoe) hide other containers and draw `framesNeeded` (e.g.
+  `basicCycles_onehand` + `attackCycles_onehand` + `grabendCycles_onehand` + skill cycles) into sheets: cell =
+  `torso_bounds`/`foot_bounds` size, `floor(8191 / cellWidth)` per row, unflipped rows then flipped rows below
+  (`flipBlitOffset`). `blitFrame` calls `gotoAndStop` 5 times per model (QUIRK: each call runs that frame's
+  script; the last one wins), draws, repeats.
+- Puppet frame scripts only do `MovieClip(this.<part>.getChildAt(0)).gotoAndStop(n)`, `stop()`,
+  `gotoAndPlay("<label>")`: converted to data by the importer (`framescripts.txt`), never to C++.
+- Default character: `UserData.selectedCharacter` 0 = Marty (`CustomerMarty`: clip "Marty", weapon "spatula",
+  swing1, no skill), style 1.
+
+Steps: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
+children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with
+the outline; (4) `CustomerData`/`CustomerDataFile`/`CustomerMarty`; (5) `reblitMultispritePlayer` + standing
+player at the room's `startPoint`; then `Character`/`PlayerChar`/`CustomerChar` movement and collisions,
+`GameControls` (actions: keyboard, gamepad, touch), `GameCam.adjustCamera`.
 
 ## Later
 
