@@ -1,35 +1,33 @@
 #pragma once
 // AS: papaGame.models.characters.CustomerChar (extends PlayerChar extends Character) — the player.
-// SKELETON: only what is needed to show the player standing; Character/PlayerChar movement, collisions and
-// the full animation state machine come next.
+// SKELETON: PlayerChar is folded in for now (startupPlayer only); controls, the animation state machine,
+// attacks, damage and doors come next.
 #include <memory>
 #include <vector>
 
 #include "game/papaGame/managers/CharacterBlitter.h"
-
-namespace obf_9G { class obf_4R; }
+#include "game/papaGame/models/Character.h"
 
 namespace papaGame::models::characters {
 
-class CustomerChar {
+class CustomerChar : public Character {
 public:
     explicit CustomerChar(obf_9G::obf_4R *gameObj);
 
+    void defineVars() override;
     // AS: PlayerChar.startupPlayer (position part) / CustomerChar.startupPlayer
     void startupPlayer(double tileX, double tileY, bool newLevel = false, bool keepFacing = false);
     double getTorsoOffsetX() const { return 0; } // AS: CustomerChar.getTorsoOffsetX (0 unless attacking)
     double getTorsoOffsetY() const { return 0; } // AS: CustomerChar.getTorsoOffsetY
 
-    // SKELETON: one logic frame of the stand cycle (Character.animate is not translated yet).
+    bool isPlayer() const override { return true; }
+
+    // Port: remember the position before a logic step (interpolation), then the SKELETON stand cycle.
+    void savePrevious() { prevX = x; prevY = y; }
     void advanceStandCycle();
 
-    obf_9G::obf_4R *gameObj = nullptr;
     std::unique_ptr<managers::CharacterBlitter> blitter;
-    double x = 0, y = 0;
     double prevX = 0, prevY = 0; // port: interpolation
-    double xtile = 0, ytile = 0;
-    double facingDir = -1;
-    double walkingDir = 1;
     double animationFrame = 0;
     double footAnimationFrame = 0;
     double cycleFrame = 0;

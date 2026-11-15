@@ -73,8 +73,10 @@ movement, gravity and tile collisions (he starts in the air: the original drops 
 thru / grab arrays, slope tile lists, `COLLISION_TILE_NUMBER`...), read from the ABC (scanner now tracks local
 registers); checked against the decompiled source: 55/55 equal. Loaded by `DataManager::loadTables`;
 `getPropValue`, `setupCollisionArrays` and `MapManager` (`getTileProperty` without "door", `isWithinBounds`) are
-translated. Next: `Character.getMyCorners`/`fallChar`/`jumpChar`/
-`moveChar`/`checkForSlopes`, `GameControls.detectKeys`/`keyCheckPlayer`, `CustomerChar` animation, `adjustCamera`.
+translated. (7) `Character`: `getMyCorners`, cloud/ladder/edge checks, `fallChar`, `jumpChar`, `moveChar`
+(slopes, moving tiles, crawl gaps, doors = SKELETON); `CustomerChar` derives from it (`defineVars`); the app tick
+runs the player part of `detectKeys` (fall/jump) and Marty falls and lands on the ground. DEV camera follows him
+(Shift/drag = free pan). Next: `Character.checkForSlopes`/`checkForCeilingSlopes`, `GameControls.detectKeys`/`keyCheckPlayer`, `CustomerChar` animation, `adjustCamera`.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

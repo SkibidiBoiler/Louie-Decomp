@@ -70,6 +70,7 @@ set(PL_SOURCES
     src/game/papaGame/managers/BitmapManager.cpp
     src/game/papaGame/managers/CharacterBlitter.cpp
     src/game/papaGame/managers/MapManager.cpp
+    src/game/papaGame/models/Character.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
 )
 

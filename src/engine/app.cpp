@@ -200,7 +200,14 @@ void App::tickLevel()
     papaGame::display::GameCam &cam = *game_->obf_3Y;
     cam.savePrevious();
     game_->obf_71->advanceFrame();
-    game_->playerObj->advanceStandCycle();
+    // SKELETON: the player part of GameControls.detectKeys until keyCheckPlayer is translated.
+    auto &player = *game_->playerObj;
+    player.savePrevious();
+    player.fallChar();
+    if (player.jump) {
+        player.jumpChar();
+    }
+    player.advanceStandCycle();
     const bool *keys = SDL_GetKeyboardState(nullptr);
     constexpr double kPan = 12.0;
     double dx = -static_cast<double>(dragX_), dy = -static_cast<double>(dragY_);
@@ -209,6 +216,11 @@ void App::tickLevel()
     if (keys[SDL_SCANCODE_RIGHT]) dx += kPan;
     if (keys[SDL_SCANCODE_UP]) dy -= kPan;
     if (keys[SDL_SCANCODE_DOWN]) dy += kPan;
+    // DEV: hold Shift (or drag) to pan freely; otherwise the camera follows the player.
+    if (dx == 0 && dy == 0 && !keys[SDL_SCANCODE_LSHIFT] && !dragging_) {
+        dx = player.x - cam.x;
+        dy = player.y - cam.y;
+    }
     cam.x = std::clamp(cam.x + dx, cam.min_x, std::max(cam.min_x, cam.max_x));
     cam.y = std::clamp(cam.y + dy, cam.min_y, std::max(cam.min_y, cam.max_y));
 }
