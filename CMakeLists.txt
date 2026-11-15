@@ -41,6 +41,7 @@ target_link_libraries(papalouie PRIVATE SDL3::SDL3)
 
 if(MSVC)
     target_compile_options(papalouie PRIVATE /W4 /permissive- /utf-8)
+    target_compile_definitions(papalouie PRIVATE _CRT_SECURE_NO_WARNINGS) # sscanf with bounded %Ns is fine
 else()
     target_compile_options(papalouie PRIVATE -Wall -Wextra -Wconversion)
 endif()

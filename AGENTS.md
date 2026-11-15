@@ -111,10 +111,10 @@ python -I tools/swf_info.py "C:/Users/alfre/Proyectos/datos-papas/<juego>.swf"
 python -I tools/swf2assets.py --swf "C:/Users/alfre/Proyectos/datos-papas/PapaLouie2.swf" \
     --out "C:/Users/alfre/Proyectos/datos-papas/build/pl2" --scales 1,2
 
-# Windows (pendiente: falta instalar MSVC)
-cmake -S . -B build/windows -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build/windows
-build/windows/papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
+# Windows (VS Build Tools 2026 + Ninja/CMake del Android SDK)
+tools\build_windows.bat Debug
+build\windows\papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
+#   --capture <png>: guarda el fotograma a los 3 s y sale (comprobaciones automáticas)
 
 # Android (desde platform/android; JAVA_HOME = JDK 21)
 ./gradlew assembleDebug

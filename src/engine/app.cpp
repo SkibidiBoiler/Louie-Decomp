@@ -60,11 +60,27 @@ SDL_AppResult App::init(int argc, char *argv[])
     if (hasData_) {
         loadGame("pl2");
     }
+    for (int i = 1; i + 1 < argc; ++i) {
+        if (std::strcmp(argv[i], "--capture") == 0) {
+            capturePath_ = argv[i + 1];
+        }
+    }
 
     stepNs_ = static_cast<uint64_t>(1e9 / stage_.frameRate);
     lastNs_ = SDL_GetTicksNS();
     fpsWindowStartNs_ = lastNs_;
+    startNs_ = lastNs_;
     return SDL_APP_CONTINUE;
+}
+
+bool App::captureFrame()
+{
+    // DEV: save the rendered frame (before present) and quit; used for automated checks.
+    SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
+    const bool ok = shot && SDL_SavePNG(shot, capturePath_.c_str());
+    SDL_Log("Capture %s: %s", capturePath_.c_str(), ok ? "saved" : SDL_GetError());
+    SDL_DestroySurface(shot);
+    return ok;
 }
 
 void App::loadGame(const std::string &game)
@@ -207,6 +223,9 @@ SDL_AppResult App::iterate()
     }
 
     render(static_cast<float>(accumulatorNs_) / static_cast<float>(stepNs_));
+    if (quitRequested_) {
+        return SDL_APP_SUCCESS;
+    }
 
     ++fpsFrames_;
     if (now - fpsWindowStartNs_ >= 1000000000ull) {
@@ -253,6 +272,11 @@ void App::render(float alpha)
         viewerClip_->render(ctx, viewerFit_, ColorTransform{});
     }
     renderOverlay();
+    if (!capturePath_.empty() && SDL_GetTicksNS() - startNs_ > 3000000000ull) {
+        captureFrame();
+        capturePath_.clear();
+        quitRequested_ = true;
+    }
     SDL_RenderPresent(renderer_);
 }
 

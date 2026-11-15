@@ -29,6 +29,7 @@ private:
     void tick();
     void render(float alpha);
     void renderOverlay();
+    bool captureFrame();
 
     // DEV: symbol viewer and blit demo, used until the first game screen is ported.
     void loadGame(const std::string &game);
@@ -47,6 +48,9 @@ private:
     uint64_t accumulatorNs_ = 0;
     uint64_t frame_ = 0;
 
+    uint64_t startNs_ = 0;
+    std::string capturePath_; // DEV: --capture <png>
+    bool quitRequested_ = false;
     uint64_t lastRenderNs_ = 0;
     uint64_t fpsWindowStartNs_ = 0;
     int fpsFrames_ = 0;
