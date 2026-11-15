@@ -57,30 +57,7 @@ size_t skipFilters(const uint8_t *d, size_t size, size_t pos, uint8_t &count)
     return pos;
 }
 
-struct Key {
-    uint16_t frame = 0;
-    Matrix matrix;
-    std::optional<CxForm> cx;
-    std::optional<uint16_t> ratio;
-};
-
-struct TrackData {
-    uint16_t depth = 0, charId = 0;
-    std::string name;
-    uint16_t clipDepth = 0;
-    uint8_t blend = 0, filters = 0;
-    int first = 0, last = -1;
-    Matrix matrix;
-    std::optional<CxForm> cx;
-    std::optional<uint16_t> ratio;
-    std::vector<Key> keys;
-};
-
-struct TimelineData {
-    uint16_t frameCount = 0;
-    std::vector<std::pair<std::string, uint16_t>> labels;
-    std::vector<std::unique_ptr<TrackData>> tracks;
-};
+} // namespace
 
 TimelineData parseTimeline(const uint8_t *data, size_t pos, size_t end, uint16_t frameCount)
 {
@@ -216,6 +193,8 @@ TimelineData parseTimeline(const uint8_t *data, size_t pos, size_t end, uint16_t
     }
     return tl;
 }
+
+namespace {
 
 class Writer {
 public:

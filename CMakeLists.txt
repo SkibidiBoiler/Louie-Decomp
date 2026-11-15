@@ -6,8 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/SDL/CMakeLists.txt" OR
-   NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/stb/stb_image.h")
-    message(FATAL_ERROR "SDL3 or stb is missing. Run: git submodule update --init --recursive")
+   NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/stb/stb_image.h" OR
+   NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/plutovg/CMakeLists.txt")
+    message(FATAL_ERROR "A submodule (SDL3, stb, PlutoVG) is missing. Run: git submodule update --init --recursive")
 endif()
 
 # SDL3 as a shared library: SDLActivity loads libSDL3.so on Android; on Windows SDL3.dll sits next to the exe.
@@ -17,6 +18,28 @@ set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
 set(SDL_TESTS OFF CACHE BOOL "" FORCE)
 set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
+
+# PlutoVG (MIT; rasteriser parts under the FreeType licence): the importer's vector rasteriser.
+set(PLUTOVG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory(external/plutovg EXCLUDE_FROM_ALL)
+if(NOT MSVC)
+    # The importer runs on the phone: keep it fast even in debug builds.
+    target_compile_options(plutovg PRIVATE -O2)
+    set_source_files_properties(src/import/raster.cpp src/import/swf.cpp src/import/symbols_export.cpp
+                                PROPERTIES COMPILE_OPTIONS "-O2")
+endif()
+
+# Sheet lists (class names baked into sheets) compiled into the importer.
+set(PL_GENERATED ${CMAKE_CURRENT_BINARY_DIR}/generated)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/tools/sheets/pl2.txt PL_SHEETS_PL2)
+file(WRITE ${PL_GENERATED}/sheet_lists.h.tmp
+     "#pragma once
+// Generated from tools/sheets/*.txt by CMake.
+static const char kSheetsPl2[] = R\"PLSHEETS(${PL_SHEETS_PL2})PLSHEETS\";
+")
+file(COPY_FILE ${PL_GENERATED}/sheet_lists.h.tmp ${PL_GENERATED}/sheet_lists.h ONLY_IF_DIFFERENT)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tools/sheets/pl2.txt)
 
 set(PL_SOURCES
     src/main.cpp
@@ -31,6 +54,7 @@ set(PL_SOURCES
     src/engine/xml.cpp
     src/import/abc.cpp
     src/import/importer.cpp
+    src/import/raster.cpp
     src/import/sha256.cpp
     src/import/swf.cpp
     src/import/symbols_export.cpp
@@ -53,16 +77,16 @@ else()
 endif()
 
 target_include_directories(papalouie PRIVATE src)
-target_include_directories(papalouie SYSTEM PRIVATE external/stb)
-target_link_libraries(papalouie PRIVATE SDL3::SDL3)
+target_include_directories(papalouie SYSTEM PRIVATE external/stb ${PL_GENERATED})
+target_link_libraries(papalouie PRIVATE SDL3::SDL3 plutovg::plutovg)
 
 # Desktop command line for the importer (same conversion the game runs on the device).
 if(NOT ANDROID)
-    add_executable(pl_import src/import/cli.cpp src/import/abc.cpp src/import/importer.cpp src/import/sha256.cpp
-                   src/import/swf.cpp src/import/symbols_export.cpp)
+    add_executable(pl_import src/import/cli.cpp src/import/abc.cpp src/import/importer.cpp src/import/raster.cpp
+                   src/import/sha256.cpp src/import/swf.cpp src/import/symbols_export.cpp)
     target_include_directories(pl_import PRIVATE src)
-    target_include_directories(pl_import SYSTEM PRIVATE external/stb)
-    target_link_libraries(pl_import PRIVATE SDL3::SDL3)
+    target_include_directories(pl_import SYSTEM PRIVATE external/stb ${PL_GENERATED})
+    target_link_libraries(pl_import PRIVATE SDL3::SDL3 plutovg::plutovg)
     if(MSVC)
         target_compile_options(pl_import PRIVATE /W4 /permissive- /utf-8)
         target_compile_definitions(pl_import PRIVATE _CRT_SECURE_NO_WARNINGS)

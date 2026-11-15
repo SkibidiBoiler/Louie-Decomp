@@ -6,9 +6,11 @@
 #include <vector>
 
 #include "import/abc.h"
+#include "import/raster.h"
 #include "import/sha256.h"
 #include "import/swf.h"
 #include "import/symbols_export.h"
+#include "sheet_lists.h"
 
 namespace swfimport {
 
@@ -23,6 +25,30 @@ const GameInfo kGames[] = {
 bool writeFile(const std::string &path, const void *data, size_t size)
 {
     return SDL_SaveFile(path.c_str(), data, size);
+}
+
+// Class names of the sheets to bake for a game (tools/sheets/<game>.txt, compiled in).
+std::vector<std::string> sheetList(const std::string &game)
+{
+    std::vector<std::string> names;
+    if (game != "pl2") {
+        return names; // SKELETON: sheet lists for PL3 and PL1 come with their ports
+    }
+    std::string line;
+    for (const char *c = kSheetsPl2;; ++c) {
+        if (*c == '\n' || *c == '\r' || *c == '\0') {
+            if (!line.empty() && line[0] != '#') {
+                names.push_back(line);
+            }
+            line.clear();
+            if (*c == '\0') {
+                break;
+            }
+        } else if (*c != ' ' && *c != '\t') {
+            line += *c;
+        }
+    }
+    return names;
 }
 
 // Level XML hidden in the pixels of a palette bitmap (papaGame.data.LevelData.prepareXML), decoded with the
@@ -207,6 +233,33 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
         writeFile(out + "/levels.xml", levels.data(), levels.size());
     } else {
         SDL_Log("Import: no levels.xml (%s)", note.c_str());
+    }
+
+    // Vector art at 2x: sharp at the usual window and phone sizes (the stage is 700x416).
+    constexpr int kScale = 2;
+    Rasterizer raster(swf, index);
+    const bool shapesOk = raster.exportShapes(out, kScale, [&](size_t done, size_t total) {
+        if (done % 50 == 0 || done == total) {
+            report(0.45f + 0.40f * static_cast<float>(done) / static_cast<float>(total),
+                   "Drawing shapes " + std::to_string(done) + "/" + std::to_string(total));
+        }
+        return !cancel;
+    });
+    if (!shapesOk) {
+        error_ = cancel ? "cancelled" : "could not write the shapes";
+        return false;
+    }
+    const std::vector<std::string> sheets = sheetList(game->id);
+    if (!sheets.empty()) {
+        const bool sheetsOk = raster.exportSheets(out, sheets, kScale, [&](size_t done, size_t total) {
+            report(0.85f + 0.14f * static_cast<float>(done) / static_cast<float>(total),
+                   "Drawing sheets " + std::to_string(done) + "/" + std::to_string(total));
+            return !cancel;
+        });
+        if (!sheetsOk) {
+            error_ = cancel ? "cancelled" : "could not write the sheets";
+            return false;
+        }
     }
 
     char manifest[512];
