@@ -106,12 +106,17 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
         drawTrainX_ = trainX;
     }
     smooth_ = smooth;
+    drawAlpha_ = smooth ? a : 1.0;
     defineScreenBounds();
     reblitSky();
     reblitBackdrop();
     reblitTiles();
+    // SKELETON: items, effects, objects, enemies and bullets come later (the original draws them here).
+    if (gameObj->playerObj && gameObj->playerObj->blitter) {
+        reblitMultispritePlayer();
+    }
     smooth_ = false;
-    // SKELETON: items, effects, objects, enemies, bullets, player, overlays and transitions come later.
+    // SKELETON: foreground objects/enemies/effects, overlays and transitions come later.
 }
 
 void GameDisplay::blit(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx,
@@ -290,6 +295,63 @@ void GameDisplay::reblitTiles()
     const SDL_FRect dst{static_cast<float>(x0 - currentXcoord), static_cast<float>(y0 - currentYcoord),
                         static_cast<float>(screenPxWidth + 1), static_cast<float>(screenPxHeight + 1)};
     SDL_RenderTexture(renderer, tileLayer_, &src, &dst);
+}
+
+// AS: GameDisplay.reblitMultispritePlayer
+void GameDisplay::reblitMultispritePlayer()
+{
+    const double xcoord = currentXcoord, ycoord = currentYcoord;
+    const models::characters::CustomerChar &p = *gameObj->playerObj;
+    const managers::CharacterBlitter &b = *p.blitter;
+    if (p.isStunned) {
+        if (++spriteFlickerCounter > 1) {
+            spriteFlickerCounter = 0;
+        }
+    } else {
+        spriteFlickerCounter = 0;
+    }
+    // Port: with smooth rendering the player is drawn between its last two logic positions.
+    const double px = p.prevX + (p.x - p.prevX) * drawAlpha_;
+    const double py = p.prevY + (p.y - p.prevY) * drawAlpha_;
+    const double facing = p.facingDir;
+    double x = px - (b.spriteTargetX - b.spriteCenterX);
+    const double y = py - (b.spriteTargetY - b.spriteCenterY);
+    x -= facing == -1 ? b.blitOffsetX : b.blitFlippedOffsetX;
+    double footX = x - xcoord, footY = y - ycoord - b.footSpriteHeight / 2;
+    if (!smooth_) {
+        footX = std::floor(footX);
+        footY = std::floor(footY);
+    }
+    double torsoX = footX, torsoY = footY;
+    if (facing == 1) {
+        torsoX -= b.torsoOffsetFlippedX;
+        torsoY += b.torsoOffsetY;
+        torsoX += p.getTorsoOffsetX();
+        torsoY += p.getTorsoOffsetY();
+    } else if (facing == -1) {
+        torsoX += b.torsoOffsetX;
+        torsoY += b.torsoOffsetY;
+        torsoX -= p.getTorsoOffsetX();
+        torsoY += p.getTorsoOffsetY();
+    }
+    // Cell `frame` of a sheet with `perRow` cells of w x h per row, plus the half offset for the facing.
+    auto cell = [&](const engine::Sheet &sheet, double frame, double w, double h, double perRow, double flipOffset,
+                    double dx, double dy) {
+        if (!sheet.texture) {
+            return;
+        }
+        const double sx = (frame - std::floor(frame / perRow) * perRow) * w;
+        const double sy = std::floor(frame / perRow) * h;
+        blit(sheet, sx, sy + flipOffset, w, h, dx, dy);
+    };
+    const double footFlip = facing == -1 ? b.footFlipBlitOffset : 0;
+    cell(b.backFootSheet, p.footAnimationFrame, b.footSpriteWidth, b.footSpriteHeight, b.footSpritesPerRow, footFlip,
+         footX, footY);
+    cell(b.torsoSheet, p.animationFrame, b.spriteWidth, b.spriteHeight, b.spritesPerRow,
+         facing == -1 ? b.flipBlitOffset : 0, torsoX, torsoY);
+    cell(b.frontFootSheet, p.footAnimationFrame, b.footSpriteWidth, b.footSpriteHeight, b.footSpritesPerRow, footFlip,
+         footX, footY);
+    // SKELETON: blitCollisionArea (debug bounds) is not drawn.
 }
 
 } // namespace papaGame::display

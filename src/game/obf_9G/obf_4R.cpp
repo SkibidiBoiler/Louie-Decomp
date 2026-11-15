@@ -13,6 +13,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     bitmapManager = std::make_unique<papaGame::managers::BitmapManager>(this, sheets);
     obf_71 = std::make_unique<papaGame::display::GameDisplay>(this);
     obf_3Y = std::make_unique<papaGame::display::GameCam>(this);
+    playerObj = std::make_unique<papaGame::models::characters::CustomerChar>(this);
 }
 
 bool obf_4R::loadLevelData(const std::string &gameDir)
@@ -34,7 +35,16 @@ void obf_4R::obf_6V(double whichLevel)
     obf_71->currentXcoord = 0;
     obf_71->currentYcoord = 0;
     obf_3Y->setCameraBounds();
-    // SKELETON: HUD, player start-up and §_-52§ (start level) come with milestone B.
+    if (!playerObj->blitter) {
+        // SKELETON: the original blits the player sprite on the screens before the level starts.
+        playerObj->blitter = std::make_unique<papaGame::managers::CharacterBlitter>(this);
+        playerObj->blitter->createPlayerSprite();
+    }
+    const auto &start = obf_AQ->currentScreenData->startPoint;
+    if (start.size() >= 3) {
+        playerObj->startupPlayer(start[1], start[2], true);
+    }
+    // SKELETON: HUD, challenges and §_-52§ (start level: adjustCamera, music, transition) come later.
 }
 
 // AS: §_-4R§.§_-4X§

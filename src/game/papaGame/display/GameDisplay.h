@@ -35,6 +35,7 @@ public:
     void reblitSky();
     void reblitBackdrop();
     void reblitTiles();
+    void reblitMultispritePlayer();
 
     obf_9G::obf_4R *gameObj = nullptr;
     GameCam *camObj = nullptr;
@@ -69,6 +70,7 @@ public:
     double trainX = 0;
     double trainSpeed = 25;
     bool showLightning = false;
+    double spriteFlickerCounter = 0;
     double lightningTimer = 0;
 
 private:
@@ -78,6 +80,7 @@ private:
     double prevTrainX_ = 0;
     double drawCamX_ = 0, drawCamY_ = 0, drawTrainX_ = 0;
     bool smooth_ = false;
+    double drawAlpha_ = 1;
     // Port: the visible tiles, drawn texel-exact before being placed on screen (stands in for tileBMP).
     SDL_Texture *tileLayer_ = nullptr;
     float tileLayerScale_ = 0.0f;

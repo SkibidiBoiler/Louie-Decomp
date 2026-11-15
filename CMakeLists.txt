@@ -68,6 +68,7 @@ set(PL_SOURCES
     src/game/papaGame/display/GameDisplay.cpp
     src/game/papaGame/managers/BitmapManager.cpp
     src/game/papaGame/managers/CharacterBlitter.cpp
+    src/game/papaGame/models/characters/CustomerChar.cpp
 )
 
 if(ANDROID)

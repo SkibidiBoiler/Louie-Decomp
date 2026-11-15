@@ -161,6 +161,11 @@ void App::loadGame(const std::string &game)
     mode_ = Mode::Level;
     if (game_->loadLevelData(dir)) {
         game_->obf_6V(0);
+        // DEV: start with the camera on the player (GameCam.adjustCamera is not translated yet).
+        auto &cam = *game_->obf_3Y;
+        cam.x = std::clamp(game_->playerObj->x, cam.min_x, std::max(cam.min_x, cam.max_x));
+        cam.y = std::clamp(game_->playerObj->y, cam.min_y, std::max(cam.min_y, cam.max_y));
+        cam.savePrevious();
         SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
                 game_->obf_AQ->currentScreens.size());
     } else {
@@ -195,6 +200,7 @@ void App::tickLevel()
     papaGame::display::GameCam &cam = *game_->obf_3Y;
     cam.savePrevious();
     game_->obf_71->advanceFrame();
+    game_->playerObj->advanceStandCycle();
     const bool *keys = SDL_GetKeyboardState(nullptr);
     constexpr double kPan = 12.0;
     double dx = -static_cast<double>(dragX_), dy = -static_cast<double>(dragY_);
