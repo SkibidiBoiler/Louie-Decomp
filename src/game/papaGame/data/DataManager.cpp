@@ -110,6 +110,7 @@ void DataManager::initializeScreenObjects(double whichScreen)
         gameObj->obf_7u->buildObjects(whichScreen);
         gameObj->obf_E->buildEnemies(whichScreen);
         gameObj->obf_3Z->buildItems(whichScreen);
+        gameObj->obf_7t->loadEvents(whichScreen);
         gameObj->obf_E->preblitSheets();
         gameObj->obf_7u->preblitSheets();
     } else {

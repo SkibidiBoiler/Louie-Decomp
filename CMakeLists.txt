@@ -69,6 +69,7 @@ set(PL_SOURCES
     src/game/papaGame/data/UserData.cpp
     src/game/papaGame/data/WorldData.cpp
     src/game/papaGame/display/GameCam.cpp
+    src/game/papaGame/events/EventManager.cpp
     src/game/papaGame/events/GameControls.cpp
     src/game/papaGame/display/GameDisplay.cpp
     src/game/papaGame/managers/BitmapManager.cpp
@@ -81,6 +82,9 @@ set(PL_SOURCES
     src/game/papaGame/managers/ObjectManager.cpp
     src/game/papaGame/models/Character.cpp
     src/game/papaGame/models/Effect.cpp
+    src/game/papaGame/models/effects/CageBackBarsEffect.cpp
+    src/game/papaGame/models/effects/CageFrontBarsEffect.cpp
+    src/game/papaGame/models/effects/CageSpinnerEffect.cpp
     src/game/papaGame/models/effects/CrackerBreakEffect.cpp
     src/game/papaGame/models/effects/DizzyEffect.cpp
     src/game/papaGame/models/effects/DustEffect.cpp
@@ -111,6 +115,9 @@ set(PL_SOURCES
     src/game/papaGame/models/items/GameItem_RadishCoin.cpp
     src/game/papaGame/models/items/GameItem_SargeCoin.cpp
     src/game/papaGame/models/objects/GameObject3.cpp
+    src/game/papaGame/models/objects/GameObject1.cpp
+    src/game/papaGame/models/objects/GameObject19.cpp
+    src/game/papaGame/models/objects/GameObject20.cpp
     src/game/papaGame/models/objects/GameObject21.cpp
     src/game/papaGame/models/objects/GameObject22.cpp
     src/game/papaGame/models/objects/GameObject23.cpp

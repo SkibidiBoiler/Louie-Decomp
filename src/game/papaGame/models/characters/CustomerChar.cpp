@@ -7,6 +7,7 @@
 #include "game/obf_9G/obf_4R.h"
 #include "game/obf_AF/obf_1n.h"
 #include "game/papaGame/models/effects/DizzyEffect.h"
+#include "game/papaGame/models/effects/EndPortalEffect.h"
 
 using obf_AF::obf_1n;
 using papaGame::data::CustomerData;
@@ -968,7 +969,81 @@ void CustomerChar::updateObject()
     }
     updateSprite();
     if (!isDead) {
-        // SKELETON: finishing the level (walk to the cage, jump, end portal).
+        if (isFinishingLevel) {
+            isSkidding = false;
+            skidSpeed = 0;
+            if (finishType == "cage") {
+                managers::EffectManager &fx = *gameObj->obf_V;
+                if (!jump && !isRidingObject && x != finishTargetX) {
+                    // Walk to the spot beside the cage.
+                    isWalking = true;
+                    speed = walkspeed;
+                    const double dir = finishTargetX > x ? 1 : -1;
+                    facingDir = dir;
+                    walkingDir = dir;
+                    dirx = dir;
+                    moveChar(dirx, 0, 0);
+                    if ((dir == 1 && x > finishTargetX) || (dir == -1 && x < finishTargetX)) {
+                        x = finishTargetX;
+                    }
+                } else if (x == finishTargetX || finishAddedPortal) {
+                    isWalking = false;
+                    if (finishJumps < finishJumpsMax) {
+                        // Jump for joy (the freed customer jumps too).
+                        if (!jump) {
+                            ++finishJumps;
+                            jumpspeed = jumpstart / 2;
+                            jump = true;
+                        } else if (jump && jumpspeed >= 0) {
+                            if (Effect *customer = fx.getEffect(finishCustomerFXIndex)) {
+                                if (!customer->jump) {
+                                    customer->jump = true;
+                                    customer->jumpspeed = jumpstart / 2;
+                                }
+                            }
+                        }
+                    } else if (!jump && !finishAddedPortal) {
+                        finishPortalID = fx.addEffect(x + 54 * facingDir, y - 54, "EndPortalEffect");
+                        finishAddedPortal = true;
+                        // SKELETON: portalsound_spin.wav.
+                    } else if (finishAddedPortal) {
+                        ++finishWaitTimer;
+                        Effect *portal = fx.getEffect(finishPortalID);
+                        if (finishWaitTimer == finishWaitTimerMax - 1) {
+                            if (portal) {
+                                gameObj->obf_71->startMainIrisOut(portal->x, portal->y);
+                            }
+                        } else if (finishWaitTimer == finishWaitTimerMax) {
+                            // SKELETON: the CageCustomerEffect heads for the portal too (portalX / portalY).
+                            gravity = 0;
+                            jumpgravity = 0;
+                            normalgravity = 0;
+                            isWalking = false;
+                            isSkidding = false;
+                            speed = 0;
+                            walkspeed = 0;
+                            isTurning = false;
+                            jump = false;
+                        } else if (finishWaitTimer > finishWaitTimerMax && portal) {
+                            // Fly into the portal.
+                            jump = true;
+                            jumpspeed = 0;
+                            const double distx = portal->x - x, disty = portal->y - y;
+                            x += distx / 3;
+                            y += disty / 3;
+                            if (std::abs(distx) <= 4 && std::abs(disty) <= 4 && !isGone) {
+                                isGone = true;
+                                static_cast<effects::EndPortalEffect *>(portal)->isClosed = true;
+                                gameObj->obf_71->flashPortal = true;
+                                // SKELETON: portalsound_spinfallout.wav.
+                                fx.removeEffect(finishCustomerFXIndex);
+                            }
+                        }
+                    }
+                }
+            }
+            // SKELETON: the "fake" finish (boss levels) and the other finish types.
+        }
         if (onMovingTile) {
             isSkidding = false;
             skidSpeed = 0;
@@ -1074,7 +1149,8 @@ void CustomerChar::updateObject()
         checkForHittingEnemies();
         checkForHittingObjects();
         checkForCollectingItems();
-        // SKELETON: checkForGrabbingTile, checkSteppingOnObjects,
+        checkForGrabbingTile();
+        // SKELETON: checkSteppingOnObjects,
         // adjustCarriedObject.
         checkIfOnDoor();
         updateStunTime();
@@ -1249,10 +1325,9 @@ void CustomerChar::restartPlayer(double lives)
         gameObj->obf_8o->resetKeys();
         startupPlayer(lastSafeX, lastSafeY);
     } else {
-        // "DEAD!" SKELETON: endMusic and GameDisplay.startMainIrisOut, whose end shows the game over screen
-        // (§_-2K§). Until those exist the level starts again.
-        gameObj->obf_51->resetLives();
-        gameObj->obf_6V(gameObj->obf_AQ->currentLevel);
+        // "DEAD!" SKELETON: the analytics event and endMusic.
+        gameObj->obf_8o->stopCycle = true;
+        gameObj->obf_71->startMainIrisOut();
     }
 }
 
@@ -1453,6 +1528,57 @@ void CustomerChar::getHeart()
 void CustomerChar::checkForCollectingItems()
 {
     gameObj->obf_3Z->checkForCollecting({x + collRect.x, y + collRect.y, collRect.width, collRect.height});
+}
+
+// AS: CustomerChar.checkForGrabbingTile — catching a rideable object (the cage pulley) while falling.
+// SKELETON: grabbing "grab" tiles (hanging from bars), which needs the hanging movement in keyCheckPlayer.
+void CustomerChar::checkForGrabbingTile()
+{
+    events::GameControls &controls = *gameObj->obf_8o;
+    if (!(jump && jumpspeed >= 0 && !isGrabbing && !isRidingObject && !isHit && !isShoved && !isCarryingObject &&
+          !controls.keyPressedDown)) {
+        return;
+    }
+    const managers::MapManager &map = *gameObj->obf_4i;
+    const double left = map.getTileProperty(leftX, ytile + grabTileYOffset, "grab");
+    const double right = map.getTileProperty(rightX, ytile + grabTileYOffset, "grab");
+    if (left > 0 || right > 0) {
+        return; // SKELETON: tile grabbing
+    }
+    const Rect reach{x - 20, y - 80, 40, 40};
+    for (GameObject *o : gameObj->obf_7u->objects) {
+        if (o && o->checkOnScreen() && o->isGrabRideable && !o->isGrabRiding && !o->delayRideableUntilPickup &&
+            o->checkSpriteCollision(reach)) {
+            isRidingObject = true;
+            whichObjectRiding = o;
+            skidSpeed = 0;
+            jump = false;
+            const double dir = o->getRideableDirection();
+            ridingObjectDirX = dir;
+            if (dir != 0) {
+                facingDir = dir;
+                walkingDir = facingDir;
+                dirx = facingDir;
+            }
+            cancelAttack();
+            o->grabRideableObject(this);
+            break;
+        }
+    }
+}
+
+// AS: PlayerChar.finishLevel — the controls stop and the finish sequence starts (updateObject).
+void CustomerChar::finishLevel(const std::string &how)
+{
+    gameObj->obf_8o->stopActionControls = true;
+    isFinishingLevel = true;
+    isWalking = false;
+    finishType = how;
+    isGliding = false;
+    isGroundPounding = false;
+    // SKELETON: the fanfare (playTrack / playSound) and ChallengeManager.recordCompletionTime /
+    // checkCustomChallenges when the finish is not "fake".
+    SDL_Log("-- FINISH LEVEL: %s", how.c_str());
 }
 
 } // namespace papaGame::models::characters

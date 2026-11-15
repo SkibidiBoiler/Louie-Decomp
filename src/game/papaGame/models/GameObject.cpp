@@ -1,6 +1,7 @@
 #include "game/papaGame/models/GameObject.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "engine/json.h"
 #include "game/obf_9G/obf_4R.h"
@@ -175,12 +176,115 @@ void GameObject::finishDeactivatingObject()
     }
 }
 
-// AS: GameObject.broadcastTriggered
-void GameObject::broadcastTriggered(double /*amount*/)
+// AS: GameObject.broadcastTriggered — tells the objects and enemies of its event.
+void GameObject::broadcastTriggered(double amount, bool fromGlobal)
 {
-    // SKELETON: the room's events (EventManager.loadEvents) give objects a tellTriggerArray, whose entries call
-    // ObjectManager / EnemyManager.activateObject. Without events no object has one.
-    allowReactions();
+    if (tellTriggerArray.empty()) {
+        allowReactions();
+        return;
+    }
+    for (size_t i = 0; i < tellTriggerArray.size(); ++i) {
+        const auto &t = tellTriggerArray[i];
+        if (t.size() < 2) {
+            continue;
+        }
+        const bool pan = tellTriggerPan != 0 && tellTriggerPanTarget == static_cast<double>(i) + 1;
+        if (t[1] == 1) {
+            gameObj->obf_7u->activateObject(whichScreen, t[0], pan, amount, fromGlobal);
+        } else if (t[1] == 2) {
+            gameObj->obf_E->activateObject(whichScreen, t[0], pan, amount, fromGlobal);
+        }
+    }
+}
+
+// AS: GameObject.sendTriggered — counts the triggers it receives and (de)activates on its receipt method.
+void GameObject::sendTriggered(double amount, bool pan, bool fromGlobal)
+{
+    currentTriggers += amount;
+    if (currentTriggers < 0) {
+        currentTriggers = 0;
+    }
+    if (!canReact) {
+        allowTriggerReactions();
+        return;
+    }
+    auto activate = [&] {
+        if (fromGlobal) {
+            finishActivatingObject();
+        } else if (pan) {
+            setCameraPan("wait", "activate");
+        } else {
+            activateObject();
+        }
+    };
+    auto deactivate = [&] {
+        if (fromGlobal) {
+            finishDeactivatingObject();
+        } else if (pan) {
+            setCameraPan("wait", "deactivate");
+        } else {
+            deactivateObject();
+        }
+    };
+    const bool canActivate = !isActivating && !isActivated;
+    const bool canDeactivate = !isDeactivating && !isDeactivated;
+    if (currentTriggers == necessaryTriggers) {
+        if (canActivate && (broadcastReceiptMethod == 1 || broadcastReceiptMethod == 3)) {
+            activate();
+        } else if (canDeactivate && (broadcastReceiptMethod == 2 || broadcastReceiptMethod == 3)) {
+            deactivate();
+        } else {
+            allowTriggerReactions();
+            // SKELETON: with a pan (not global), the camera pans back to the player here.
+        }
+    } else if (currentTriggers < necessaryTriggers) {
+        if (canDeactivate && (broadcastReceiptMethod == 1 || broadcastReceiptMethod == 3)) {
+            deactivate();
+        } else if (canActivate && (broadcastReceiptMethod == 2 || broadcastReceiptMethod == 3)) {
+            activate();
+        } else {
+            allowTriggerReactions();
+        }
+    } else {
+        if (canDeactivate && broadcastReceiptMethod == 3) {
+            deactivate();
+        } else if (canActivate && broadcastReceiptMethod == 3) {
+            activate();
+        } else {
+            allowTriggerReactions();
+        }
+    }
+}
+
+// AS: GameObject.setCameraPan — SKELETON: the camera pan (GameCam.setCameraPan) is not ported, so the object
+// reacts at once instead of when the camera reaches it.
+void GameObject::setCameraPan(const std::string &wait, const std::string &reaction)
+{
+    if (!wait.empty()) {
+        waitActivate = true;
+        waitType = reaction;
+    }
+    waitActivate = false;
+    if (reaction == "activate") {
+        activateObject();
+    } else {
+        deactivateObject();
+    }
+}
+
+// AS: GameObject.setEventData
+void GameObject::setEventData(const std::vector<std::vector<double>> &triggers, double pan, double panTarget)
+{
+    tellTriggerArray = triggers;
+    tellTriggerPan = pan;
+    tellTriggerPanTarget = panTarget;
+}
+
+// AS: GameObject.setEventTriggers
+void GameObject::setEventTriggers(double necessary, const std::vector<std::vector<double>> &from)
+{
+    necessaryTriggers = std::trunc(necessary);
+    fromTriggerArray = from;
 }
 
 // AS: GameObject.checkOnScreen

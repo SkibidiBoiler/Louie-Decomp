@@ -31,6 +31,13 @@ public:
     void removeEnemy(double enemyID, bool nosplice = false);
     models::Enemy *getEnemy(double screenObjID, double whichScreen) const;
     void addToPreblit(double type, const std::string &sheetName);
+    // The original finds these by `manager["Enemy" + id]`: the enemy id, which equals the screen object id when the
+    // room's enemies are built from a cleared manager.
+    void activateObject(double whichScreen, double enemyID, bool pan, double amount, bool fromGlobal);
+    void setEvent(double whichScreen, double enemyID, const std::vector<std::vector<double>> &triggers, double pan,
+                  double panTarget);
+    void setEventTriggers(double whichScreen, double enemyID, double necessary,
+                          const std::vector<std::vector<double>> &from = {});
     void preblitSheets();
 
     obf_9G::obf_4R *gameObj = nullptr;

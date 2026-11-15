@@ -221,4 +221,33 @@ void EnemyManager::preblitSheets()
     preblitObjectTypes.clear();
 }
 
+// AS: EnemyManager.activateObject
+void EnemyManager::activateObject(double /*whichScreen*/, double enemyID, bool pan, double amount, bool fromGlobal)
+{
+    auto it = byID_.find(enemyID);
+    if (it != byID_.end()) {
+        it->second->sendTriggered(amount, pan, fromGlobal);
+    }
+}
+
+// AS: EnemyManager.setEvent
+void EnemyManager::setEvent(double /*whichScreen*/, double enemyID, const std::vector<std::vector<double>> &triggers,
+                            double pan, double panTarget)
+{
+    auto it = byID_.find(enemyID);
+    if (it != byID_.end()) {
+        it->second->setEventData(triggers, pan, panTarget);
+    }
+}
+
+// AS: EnemyManager.setEventTriggers
+void EnemyManager::setEventTriggers(double /*whichScreen*/, double enemyID, double necessary,
+                                    const std::vector<std::vector<double>> &from)
+{
+    auto it = byID_.find(enemyID);
+    if (it != byID_.end()) {
+        it->second->setEventTriggers(necessary, from);
+    }
+}
+
 } // namespace papaGame::managers

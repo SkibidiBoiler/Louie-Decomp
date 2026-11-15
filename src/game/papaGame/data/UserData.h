@@ -26,6 +26,14 @@ public:
     double totalLives = 0; // the constructor sets it to startingLives
     double livesLost = 0;
     bool gotHurt = false;
+    std::vector<double> customersUnlocked; // from userdata.json (the field's initial array)
+    double savedCharacterIndex = -1;
+    bool savedCharacterWasUnlocked = false;
+
+    // Port: the class's constant tables, which the importer writes to userdata.json.
+    bool loadTables(const std::string &path);
+    bool hasCustomerUnlocked(double index) const; // AS: UserData.hasCustomerUnlocked
+    void unlockCustomer(double index);            // AS: UserData.unlockCustomer
     std::vector<double> enemyKills = std::vector<double>(41, 0);
 
     // AS: UserData.earnPoints / killBurgerzilla / saveEnemyKill (SKELETON: HUD updateDisplay and challenges)

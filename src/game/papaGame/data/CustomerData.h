@@ -38,6 +38,7 @@ public:
     std::string getCustomerSkill(double index) const;
     std::string getWeaponClipName(double index, double style) const;
     const CustomerDataFile *getCustomerData(double index) const;
+    double getTrappedCustomerIndex(double whichWorld, double cageIndex) const;
 
     obf_9G::obf_4R *gameObj = nullptr;
 

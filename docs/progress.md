@@ -164,21 +164,19 @@ the project has no MP3 decoder (SDL3 and stb have none). Adding one (minimp3 or 
 downloading third-party code: waiting for the owner's permission. Then: importer decodes DefineSound to WAV/PCM
 (sounds/<name>.wav), `SoundManager` (§_-7C§: playSound with volume/pan, playTrack, crossfade, endMusic, mute)
 on SDL3 audio streams. Until then every playSound call is a `// SKELETON:` comment.
-Next: the level start/end (task 10). How the original ends a level (read so far):
-1. `GameObject1` (cage pulley, `isGrabRideable`): the player grabs it (`PlayerChar.checkForGrabbingObjects` /
-   `grabRideableObject`), rides it down (`grabYextraOffsets`), it deactivates and `broadcastTriggered`s through
-   the room's events (`EventManager` §_-7t§ `loadEvents` gives objects `tellTriggerArray`) to `GameObject19` cage
-   (`GameObject20` = flipped cage).
-2. `GameObject19.deactivateObject`: opens the cage effects (`CageFrontBars`/`CageBackBars`/`CageSpinner`/
-   `CageCustomerEffect`, the trapped customer drawn as a puppet), unlocks the customer (`UserData.unlockCustomer`,
-   `CustomerData.getTrappedCustomerIndex(§_-8W§, index)`), sets `finishTargetX` and calls
-   `PlayerChar.finishLevel("cage")`.
-3. `CustomerChar.updateObject` finishing branch (CustomerChar.as 1179-1290): walk to `finishTargetX`, jump
-   `finishJumpsMax` times (the customer effect jumps too), `EndPortalEffect` beside him, wait, iris out
-   (`GameDisplay.startMainIrisOut`, a masked clip: needs mask support), fly into the portal, `flashPortal`.
-4. `GameDisplay.redrawScreen`: when the iris clip ends, `gameObj.finishLevel()` (or §_-2K§ game over, §_-99§
-   reset after dying in an elevator, §_-14§ outro after level 99).
-Masks (clip depth) are not drawn yet: needed for the iris and many menus.
+(20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
+objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
+activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects
+(`CustomerChar.checkForGrabbingTile`, rideable part), `GameObject1` cage pulley, `GameObject19` / `GameObject20`
+cage (GameObject20's constructor read from the P-code), `CageFrontBars` / `CageBackBars` / `CageSpinner` effects,
+`PlayerChar.finishLevel` and the finish sequence (walk, four jumps, end portal, iris, fly in, white flash),
+`GameDisplay.startMainIrisOut` (the `deadIrisOut` clip, drawn unmasked) and its end (`§_-4R§.finishLevel`,
+`§_-2K§`), `§_-9k§` (fresh player and managers per level; level changes run at the start of the next logic frame,
+`runPending`), `UserData` customer unlocks (`userdata.json`), `CustomerData.getTrappedCustomerIndex`.
+DEV `--at x,y` puts the player on a tile (`--room 2 --at 12,33` in level 0 drops him on the pulley).
+SKELETON: the level-complete and game-over screens (the next level / the same level starts), CageCustomerEffect
+(the trapped customer's puppet; only Marty and Rita are in the customer list), the boss "fake" finish, grab tiles,
+the camera pan, checkpoints restoring a level (CheckpointData), masks (the iris).
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

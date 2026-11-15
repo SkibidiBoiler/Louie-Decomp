@@ -140,10 +140,19 @@ const AnimationCycle &Enemy::grabAnimationCycle()
     return Character::grabAnimationCycle();
 }
 
-// AS: Enemy.broadcastTriggered
-void Enemy::broadcastTriggered(double /*state*/, bool /*fromGlobal*/)
+// AS: Enemy.broadcastTriggered — a removed enemy tells the objects of its event.
+void Enemy::broadcastTriggered(double state, bool fromGlobal)
 {
-    // SKELETON: tellTriggerArray entries of type 1 call ObjectManager.activateObject (objects).
+    for (size_t i = 0; i < tellTriggerArray.size(); ++i) {
+        const auto &t = tellTriggerArray[i];
+        if (t.size() < 2) {
+            continue;
+        }
+        const bool pan = tellTriggerPan != 0 && tellTriggerPanTarget == static_cast<double>(i) + 1;
+        if (t[1] == 1) {
+            gameObj->obf_7u->activateObject(whichScreen, t[0], pan, state, fromGlobal);
+        }
+    }
 }
 
 // AS: Enemy.sendTriggered

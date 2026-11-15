@@ -356,6 +356,7 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
     writeFieldConstants(index, "papaGame.models.characters", "CustomerChar", out + "/customerchar.json");
     writeEnemyConstants(index, out + "/enemies.json");
     writeFieldConstants(index, "papaGame.managers", "ChallengeManager", out + "/challenges.json");
+    writeFieldConstants(index, "papaGame.data", "UserData", out + "/userdata.json");
     {
         const std::string objects = "{\n\"GameObject\": " +
             fieldConstantsJson(index, "papaGame.models", "GameObject") + "\n}\n";

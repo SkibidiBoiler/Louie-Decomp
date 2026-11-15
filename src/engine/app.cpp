@@ -121,6 +121,13 @@ SDL_AppResult App::init(int argc, char *argv[])
             game_->obf_6V(std::atof(argv[i + 1]));
         } else if (std::strcmp(argv[i], "--room") == 0 && game_) { // DEV: start in room N (0-based)
             switchRoom(std::atoi(argv[i + 1]) - static_cast<int>(game_->obf_AQ->currentScreen));
+        } else if (std::strcmp(argv[i], "--at") == 0 && game_) { // DEV: put the player on tile "x,y"
+            double tx = 0, ty = 0;
+            if (std::sscanf(argv[i + 1], "%lf,%lf", &tx, &ty) == 2) {
+                game_->playerObj->startupPlayer(tx, ty, false, true);
+                game_->obf_3Y->adjustCamera(game_->playerObj->x, game_->playerObj->y, true, true);
+                game_->obf_3Y->savePrevious();
+            }
         } else if (std::strcmp(argv[i], "--cam") == 0 && game_) { // DEV: camera "x,y", clamped like a pan
             double x = 0, y = 0;
             if (std::sscanf(argv[i + 1], "%lf,%lf", &x, &y) == 2) {
@@ -252,6 +259,7 @@ void App::tickLevel()
 {
     papaGame::display::GameCam &cam = *game_->obf_3Y;
     cam.savePrevious();
+    game_->runPending();
     game_->obf_71->advanceFrame();
     // Actions -> GameControls.keyPressed* (the original sets them from key events).
     auto &player = *game_->playerObj;

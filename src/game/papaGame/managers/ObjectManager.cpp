@@ -4,6 +4,9 @@
 
 #include "engine/json.h"
 #include "game/obf_9G/obf_4R.h"
+#include "game/papaGame/models/objects/GameObject1.h"
+#include "game/papaGame/models/objects/GameObject19.h"
+#include "game/papaGame/models/objects/GameObject20.h"
 #include "game/papaGame/models/objects/GameObject21.h"
 #include "game/papaGame/models/objects/GameObject22.h"
 #include "game/papaGame/models/objects/GameObject23.h"
@@ -21,7 +24,10 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
 {
     using namespace models::objects;
     switch (static_cast<int>(type)) {
+    case 1: return std::make_unique<GameObject1>(gameObj);
     case 3: return std::make_unique<GameObject3>(gameObj);
+    case 19: return std::make_unique<GameObject19>(gameObj);
+    case 20: return std::make_unique<GameObject20>(gameObj);
     case 21: return std::make_unique<GameObject21>(gameObj);
     case 22: return std::make_unique<GameObject22>(gameObj);
     case 23: return std::make_unique<GameObject23>(gameObj);
@@ -199,6 +205,32 @@ void ObjectManager::removeObject(double objectID, bool nosplice)
             byID_.erase(it);
             return;
         }
+    }
+}
+
+// AS: ObjectManager.activateObject
+void ObjectManager::activateObject(double whichScreen, double screenObjID, bool pan, double amount, bool fromGlobal)
+{
+    if (models::GameObject *o = getObject(screenObjID, whichScreen)) {
+        o->sendTriggered(amount, pan, fromGlobal);
+    }
+}
+
+// AS: ObjectManager.setEvent
+void ObjectManager::setEvent(double whichScreen, double screenObjID, const std::vector<std::vector<double>> &triggers,
+                             double pan, double panTarget)
+{
+    if (models::GameObject *o = getObject(screenObjID, whichScreen)) {
+        o->setEventData(triggers, pan, panTarget);
+    }
+}
+
+// AS: ObjectManager.setEventTriggers
+void ObjectManager::setEventTriggers(double whichScreen, double screenObjID, double necessary,
+                                     const std::vector<std::vector<double>> &from)
+{
+    if (models::GameObject *o = getObject(screenObjID, whichScreen)) {
+        o->setEventTriggers(necessary, from);
     }
 }
 

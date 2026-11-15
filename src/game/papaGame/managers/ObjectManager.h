@@ -32,6 +32,11 @@ public:
     void buildObjects(double whichScreen);
     void removeObject(double objectID, bool nosplice = false);
     void preblitSheets() {} // AS: ObjectManager.preblitSheets (empty)
+    void activateObject(double whichScreen, double screenObjID, bool pan, double amount, bool fromGlobal);
+    void setEvent(double whichScreen, double screenObjID, const std::vector<std::vector<double>> &triggers, double pan,
+                  double panTarget);
+    void setEventTriggers(double whichScreen, double screenObjID, double necessary,
+                          const std::vector<std::vector<double>> &from = {});
 
     obf_9G::obf_4R *gameObj = nullptr;
     double lastBuildDuration = 0;

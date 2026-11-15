@@ -8,6 +8,7 @@
 
 #include "game/papaGame/managers/CharacterBlitter.h"
 #include "game/papaGame/models/Character.h"
+#include "game/papaGame/models/GameObject.h"
 
 namespace papaGame::data { class CustomerDataFile; }
 
@@ -48,6 +49,8 @@ public:
     void updateStunTime();
     void getHeart();                // AS: PlayerChar.getHeart
     void checkForCollectingItems(); // AS: PlayerChar.checkForCollectingItems
+    void checkForGrabbingTile();    // AS: CustomerChar.checkForGrabbingTile
+    void finishLevel(const std::string &how = "cage"); // AS: PlayerChar.finishLevel
     void dropWeapon() {} // AS: PlayerChar.dropWeapon (empty)
     bool checkForHittingEnemies(bool justChecking = false); // AS: CustomerChar.checkForHittingEnemies
     bool checkForHittingObjects();                          // AS: CustomerChar.checkForHittingObjects
@@ -102,6 +105,12 @@ public:
     double statAttack = 1, invincibleTimer = 0, invincibleFXID = -1, shoveTimer = 0, shoveTimerMax = 6;
     double defaultHealth = 3;
     std::vector<double> stunStarIDs;
+    double finishTargetX = 0, finishJumps = 0, finishJumpsMax = 4, finishCustomerFXIndex = -1;
+    std::string finishType = "cage";
+    double finishWaitTimer = 0, finishWaitTimerMax = 20, finishPortalID = -1;
+    double ridingObjectDirX = 0;
+    double grabTileYOffset = 0;
+    GameObject *whichObjectRiding = nullptr;
     bool finishAddedPortal = false;
     Rect standCollRect, jumpCollRect, duckCollRect, stomp_collRect, pound_collRect;
     std::string hasWeaponType = "unknown";

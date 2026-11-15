@@ -4,6 +4,9 @@
 // Ported so far: screen bounds, sky, backdrop and tiles (the first steps of redrawScreen).
 #include <string>
 
+#include <memory>
+
+#include "engine/movieclip.h"
 #include "engine/sheets.h"
 
 namespace obf_9G { class obf_4R; }
@@ -49,6 +52,9 @@ public:
     void blitTransition();
     void finishTransition();
     void drawTransition();
+    // AS: GameDisplay.startMainIrisOut — the iris closing on (x, y) (the player when -1) at the end of a level or a
+    // life. Its last frame ends the level (or the game) from redrawScreen.
+    void startMainIrisOut(double x = -1, double y = -1);
 
     obf_9G::obf_4R *gameObj = nullptr;
     GameCam *camObj = nullptr;
@@ -90,6 +96,9 @@ public:
     bool isTransitionOut = false;
     double transitionX = 0;
     double transitionSpeed = 64;
+    bool flashPortal = false;
+    std::unique_ptr<engine::MovieClip> deadIrisMC;
+    double deadIrisX = 0, deadIrisY = 0; // AS: deadIrisMC.x / .y
 
 private:
     void blit(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx, double dy) const;

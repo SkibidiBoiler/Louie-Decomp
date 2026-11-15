@@ -33,7 +33,16 @@ public:
     virtual void deactivateObject();
     virtual void finishActivatingObject();
     virtual void finishDeactivatingObject();
-    void broadcastTriggered(double amount);
+    void broadcastTriggered(double amount, bool fromGlobal = false);
+    void sendTriggered(double amount, bool pan, bool fromGlobal = false);
+    void setCameraPan(const std::string &wait, const std::string &reaction);
+    void stopReactions() { canReact = false; }      // AS: GameObject.stopReactions
+    void allowTriggerReactions() {}                  // AS: GameObject.allowTriggerReactions (empty)
+    void setEventData(const std::vector<std::vector<double>> &triggers, double pan, double panTarget);
+    void setEventTriggers(double necessary, const std::vector<std::vector<double>> &from = {});
+    virtual void grabRideableObject(Character *c) { (void)c; isGrabRiding = true; } // AS: GameObject
+    virtual void releaseRideableObject() { isGrabRiding = false; }                  // AS: GameObject
+    virtual double getRideableDirection() const { return 1; }                         // AS: GameObject
     virtual void unregisterSpawn() {}
     virtual bool checkOnScreen();
     virtual void checkAdditionalBlitting(bool /*foreground*/, bool /*before*/ = false) {}
@@ -74,6 +83,18 @@ public:
     bool saveState = false;
     bool canReact = true;
     bool waitPanBack = false;
+    bool waitActivate = false;
+    std::string waitType;
+    std::vector<std::vector<double>> tellTriggerArray;
+    double tellTriggerPan = 0;
+    double tellTriggerPanTarget = 0;
+    std::vector<std::vector<double>> fromTriggerArray;
+    bool isGrabRideable = false;
+    bool isGrabRiding = false;
+    bool delayRideableUntilPickup = false;
+    double rideablePlayerOffsetX = 0;
+    double rideablePlayerOffsetY = 0;
+    bool canJumpFromRideable = true;
     double currentTriggers = 0;
     double necessaryTriggers = 1;
     double broadcastStyle = 1;

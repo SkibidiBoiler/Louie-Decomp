@@ -66,4 +66,17 @@ const CustomerDataFile *CustomerData::getCustomerData(double index) const
     return nullptr;
 }
 
+// AS: CustomerData.getTrappedCustomerIndex — the customer caged in this world's cage `cageIndex`, or -1.
+// SKELETON: only Marty and Rita are in the port's customer list so far, and neither is ever trapped.
+double CustomerData::getTrappedCustomerIndex(double whichWorld, double cageIndex) const
+{
+    for (size_t i = 0; i < customerDataFiles.size(); ++i) {
+        const CustomerDataFile &c = *customerDataFiles[i];
+        if (c.trappedWorld == whichWorld + 1 && c.trappedChar == cageIndex) {
+            return static_cast<double>(i);
+        }
+    }
+    return -1;
+}
+
 } // namespace papaGame::data

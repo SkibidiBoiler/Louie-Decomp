@@ -91,6 +91,50 @@ void GameDisplay::advanceFrame()
     prevTrainX_ = trainX;
     trainX += trainSpeed; // AS: from reblitSky
     blitTransition();
+    if (deadIrisMC) {
+        // AS: redrawScreen — when the iris clip reaches its last frame the level or the life is over.
+        deadIrisMC->advance();
+        if (deadIrisMC->currentFrame() == deadIrisMC->frameCount() - 1) {
+            deadIrisMC.reset();
+            auto &p = *gameObj->playerObj;
+            if (gameObj->obf_AQ->currentLevel == 99 && p.isFinishingLevel) {
+                SDL_Log("Should Show Outro"); // SKELETON: §_-14§ (the ending)
+            } else if (p.isFinishingLevel) {
+                SDL_Log("Should Beat Level:");
+                gameObj->finishLevel();
+            } else {
+                SDL_Log("Should Die"); // SKELETON: §_-99§ when the player died in an elevator
+                gameObj->obf_2K();
+            }
+        }
+    }
+}
+
+// AS: GameDisplay.startMainIrisOut
+void GameDisplay::startMainIrisOut(double x, double y)
+{
+    SDL_Log("Start Main Irising Out");
+    if (deadIrisMC) {
+        return;
+    }
+    const engine::SymbolLibrary &symbols = *gameObj->symbols;
+    for (const auto &[name, id] : symbols.classes()) {
+        if (name == "deadIrisOut") {
+            if (const engine::Timeline *tl = symbols.timeline(id)) {
+                deadIrisMC = std::make_unique<engine::MovieClip>(symbols, *tl);
+            }
+        }
+    }
+    if (!deadIrisMC) {
+        return;
+    }
+    deadIrisX = gameObj->playerObj->x - currentXcoord;
+    deadIrisY = gameObj->playerObj->y - currentYcoord;
+    if (x != -1) {
+        deadIrisX = x - currentXcoord;
+        deadIrisY = y - currentYcoord;
+    }
+    deadIrisMC->gotoAndPlay(1);
 }
 
 // AS: GameDisplay.redrawScreen
@@ -127,7 +171,21 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitItems(false, true);
     // SKELETON: bullets and overlays.
     drawTransition();
-    // Port: the HUD sits above the game display in the original's display list.
+    // AS: blitEffectsOverlay — the white flash when the player enters the end portal.
+    // SKELETON: the rain and lightning of level 11.
+    if (flashPortal) {
+        SDL_SetRenderDrawColor(gameObj->renderer, 255, 255, 255, 255);
+        const SDL_FRect all{0, 0, static_cast<float>(screenPxWidth), static_cast<float>(screenPxHeight)};
+        SDL_RenderFillRect(gameObj->renderer, &all);
+        flashPortal = false;
+    }
+    // Port: the HUD and the iris sit above the game display in the original's display list.
+    // SKELETON: masks are not drawn yet, so the iris shows its unmasked shapes.
+    if (deadIrisMC) {
+        const engine::RenderContext ctx{gameObj->renderer, gameObj->symbols, gameObj->textures, gameObj->text};
+        deadIrisMC->render(ctx, engine::Affine::translate(static_cast<float>(deadIrisX), static_cast<float>(deadIrisY)),
+                           engine::ColorTransform{});
+    }
     if (gameObj->obf_6Z) {
         const engine::RenderContext ctx{gameObj->renderer, gameObj->symbols, gameObj->textures, gameObj->text};
         gameObj->obf_6Z->render(ctx);

@@ -21,10 +21,12 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_3Z = std::make_unique<papaGame::managers::ItemManager>(this);
     obf_V = std::make_unique<papaGame::managers::EffectManager>(this);
     obf_94 = std::make_unique<papaGame::managers::ChallengeManager>(this);
+    obf_7t = std::make_unique<papaGame::events::EventManager>(this);
 }
 
-bool obf_4R::loadLevelData(const std::string &gameDir)
+bool obf_4R::loadLevelData(const std::string &gameDir_)
 {
+    gameDir = gameDir_;
     obf_AQ->loadTables(gameDir + "/datamanager.json");
     playerObj->loadTables(gameDir + "/customerchar.json");
     obf_E->loadTables(gameDir + "/enemies.json");
@@ -32,6 +34,7 @@ bool obf_4R::loadLevelData(const std::string &gameDir)
     obf_3Z->loadTables(gameDir + "/items.json");
     obf_V->loadTables(gameDir + "/effects.json");
     obf_94->loadTables(gameDir + "/challenges.json");
+    obf_51->loadTables(gameDir + "/userdata.json");
     obf_6Z = std::make_unique<papaGame::models::GameHUD>(this);
     return obf_AQ->prepareLevelData(gameDir + "/levels.xml");
 }
@@ -40,6 +43,7 @@ bool obf_4R::loadLevelData(const std::string &gameDir)
 void obf_4R::obf_6V(double whichLevel)
 {
     obf_AQ->currentLevel = whichLevel;
+    obf_8W = whichLevel;
     // SKELETON: lives, tallies and challenges (§_-51§, §_-94§) are not ported yet.
     bitmapManager->whichTileset = -1;
     obf_AQ->setupLevelScreens(whichLevel);
@@ -114,6 +118,56 @@ void obf_4R::obf_4X(double roomID, double doorID, double /*xOffset*/, double /*y
     obf_6Z->showHUD();
     obf_8o->stopCycle = false;
     obf_71->startTransition("in");
+}
+
+// AS: §_-4R§.finishLevel
+void obf_4R::finishLevel()
+{
+    SDL_Log("BEAT LEVEL");
+    obf_8o->stopCycle = true;
+    obf_8o->stopControls = true;
+    obf_AQ->clearCheckpoint();
+    // SKELETON: the analytics call, saving, the level-complete screen with the tallies and challenges.
+    pendingLevel = obf_AQ->currentLevel + 1;
+}
+
+// AS: §_-4R§.§_-2K§
+void obf_4R::obf_2K()
+{
+    // SKELETON: the game over screen (continue from the checkpoint or quit).
+    obf_51->resetLives();
+    pendingLevel = obf_AQ->currentLevel;
+}
+
+// AS: §_-4R§.§_-9k§ (the managers' tables are read again: in the original they are class constants)
+void obf_4R::obf_9k()
+{
+    obf_V = std::make_unique<papaGame::managers::EffectManager>(this);
+    playerObj = std::make_unique<papaGame::models::characters::CustomerChar>(this);
+    obf_4i = std::make_unique<papaGame::managers::MapManager>(this);
+    obf_7u = std::make_unique<papaGame::managers::ObjectManager>(this);
+    obf_E = std::make_unique<papaGame::managers::EnemyManager>(this);
+    obf_3Z = std::make_unique<papaGame::managers::ItemManager>(this);
+    obf_7t = std::make_unique<papaGame::events::EventManager>(this);
+    obf_71 = std::make_unique<papaGame::display::GameDisplay>(this);
+    obf_3Y = std::make_unique<papaGame::display::GameCam>(this);
+    obf_8o = std::make_unique<papaGame::events::GameControls>(this);
+    playerObj->loadTables(gameDir + "/customerchar.json");
+    obf_E->loadTables(gameDir + "/enemies.json");
+    obf_7u->loadTables(gameDir + "/objects.json");
+    obf_3Z->loadTables(gameDir + "/items.json");
+    obf_V->loadTables(gameDir + "/effects.json");
+    obf_6Z = std::make_unique<papaGame::models::GameHUD>(this);
+}
+
+void obf_4R::runPending()
+{
+    if (pendingLevel >= 0) {
+        const double level = pendingLevel;
+        pendingLevel = -1;
+        obf_9k();
+        obf_6V(level);
+    }
 }
 
 } // namespace obf_9G

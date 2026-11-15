@@ -4,6 +4,9 @@
 
 #include "engine/json.h"
 #include "game/obf_9G/obf_4R.h"
+#include "game/papaGame/models/effects/CageBackBarsEffect.h"
+#include "game/papaGame/models/effects/CageFrontBarsEffect.h"
+#include "game/papaGame/models/effects/CageSpinnerEffect.h"
 #include "game/papaGame/models/effects/CrackerBreakEffect.h"
 #include "game/papaGame/models/effects/DizzyEffect.h"
 #include "game/papaGame/models/effects/DustEffect.h"
@@ -77,7 +80,16 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     if (type == "ItemGummyWormEffect") {
         return std::make_unique<ItemGummyWormEffect>(gameObj);
     }
-    return nullptr; // SKELETON: the other effect classes are not ported yet
+    if (type == "CageFrontBarsEffect") {
+        return std::make_unique<CageFrontBarsEffect>(gameObj);
+    }
+    if (type == "CageBackBarsEffect") {
+        return std::make_unique<CageBackBarsEffect>(gameObj);
+    }
+    if (type == "CageSpinnerEffect") {
+        return std::make_unique<CageSpinnerEffect>(gameObj);
+    }
+    return nullptr; // SKELETON: the other effect classes (CageCustomerEffect among them) are not ported yet
 }
 
 } // namespace
