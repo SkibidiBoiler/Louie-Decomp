@@ -26,6 +26,8 @@ with no Flash emulator and no browser.
 - ✅ Sharp graphics at any resolution: the vector art is rasterised again at 2× (or more) instead of stretching
   small bitmaps.
 - ✅ Works offline. No ads, no online services, no tracking.
+- ✅ Imports your own copy inside the app: pick the game, choose its `.swf`, and the app converts it on the
+  phone or the PC (no Java, no extra tools).
 - 🚧 Widescreen, translations into other languages, and an options menu for all of these settings.
 - 🚧 Controller and keyboard support through remappable actions.
 
@@ -62,18 +64,19 @@ If you cloned without `--recursive`, run `git submodule update --init --recursiv
 | Windows | Visual Studio 2022+ or Build Tools (C++ workload, Windows SDK), CMake ≥ 3.24, Ninja |
 | Android | Android SDK (platform 36), NDK, CMake 3.30 from the SDK, JDK 17+ |
 
-### 1. Convert your copy of the game
+### 1. Your copy of the game
 
-The game reads converted assets from a data folder. Keep that folder **outside** the repository.
+Nothing to do before building: the first time the game starts it shows **Import a game**. Pick the game, choose
+your `.swf` with the system file picker, and the app converts it into its data folder (about a minute on a PC, a
+few minutes on a phone). The top band of the screen opens the importer again later.
+
+The same converter runs from the command line on desktop, for checks or to prepare a data folder:
 
 ```bash
-python -I tools/swf2assets.py --swf "path/to/PapaLouie2.swf" --out "path/to/data/pl2" --scales 1,2 \
-    --sheets tools/sheets/pl2.txt
+build/windows/pl_import.exe --swf "path/to/PapaLouie2.swf" --out "path/to/data"
 ```
 
-Pass `--ffdec path/to/ffdec-cli.jar` and `--java path/to/java` if they are not in the default locations
-(see `python tools/swf2assets.py --help`).
-It writes `symbols.bin`, `manifest.json`, `levels.xml`, `shapes/`, `sheets/` and `sounds/`.
+`tools/swf2assets.py` (Python + JPEXS FFDec) is the older reference extractor and is no longer needed.
 
 ### 2. Windows
 
@@ -104,16 +107,9 @@ cd platform/android
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-The APK holds no game data. Copy the converted assets to the app's storage (Git Bash users: run
-`export MSYS_NO_PATHCONV=1` first):
-
-```bash
-R=/sdcard/Android/data/io.github.skibidiboiler.papalouie/files/data/pl2
-adb shell mkdir -p $R/shapes $R/sheets
-adb push path/to/data/pl2/symbols.bin path/to/data/pl2/manifest.json path/to/data/pl2/levels.xml $R/
-adb push path/to/data/pl2/shapes/2x $R/shapes/
-adb push path/to/data/pl2/sheets/2x path/to/data/pl2/sheets/index.txt $R/sheets/
-```
+The APK holds no game data: copy your `.swf` to the phone (for example to *Download*) and import it from the
+app. A data folder converted on a PC can also be copied to
+`/sdcard/Android/data/io.github.skibidiboiler.papalouie/files/data/` with `adb push`.
 
 ## License
 

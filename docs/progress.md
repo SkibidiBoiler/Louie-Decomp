@@ -29,10 +29,17 @@ Notes:
 - Interpolation ON also unsnaps the camera (smooth scrolling); OFF = whole stage pixels, like the original.
 - `trainX` (level 9's moving background) advances once per logic frame (`GameDisplay::advanceFrame`).
 
+- **In-app importer** (`src/import/`, desktop CLI `pl_import`): pick a game, choose its `.swf` (SDL file
+  dialog; Android document picker), convert on a worker thread with progress. Native SWF reading (stb zlib),
+  `symbols.bin` byte-identical to the Python tool, `levels.xml` from the game's own ABC (LevelData tables, scanner
+  follows the obfuscator's jumps/constant branches), shapes + sheets rasterised with PlutoVG (fills, gradients,
+  bitmaps, strokes, masks; shapes on all cores). PL2: 44 s on PC (Release). PL3 levels decode too.
+  Sheet logical sizes come from shape bounds (FFDec's SVG sizes differed by 1-5 px). Sounds not converted yet.
+
 ## Next
 
-1. Check milestone A on the POCO: push `levels.xml` and the re-baked `sheets/` (with `index.txt`), install the
-   new APK.
+1. Test the importer on the POCO (copy the `.swf` to the phone, import from the app). The adb-pushed data was
+   moved to `files/data/pl2_adb_old`.
 2. Milestone B (below).
 
 ## Milestone B — the player
