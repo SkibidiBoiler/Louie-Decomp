@@ -21,6 +21,7 @@ add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 set(PL_SOURCES
     src/main.cpp
     src/engine/app.cpp
+    src/engine/import_screen.cpp
     src/engine/paths.cpp
     src/engine/symbols.cpp
     src/engine/textures.cpp

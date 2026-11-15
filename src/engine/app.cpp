@@ -16,6 +16,7 @@ constexpr uint64_t kMaxCatchUpFrames = 5;
 
 App::~App()
 {
+    importScreen_.reset();
     game_.reset();
     viewerClip_.reset();
     textures_.clear(); // release textures before the renderer
@@ -59,8 +60,11 @@ SDL_AppResult App::init(int argc, char *argv[])
     SDL_Log("Renderer: %s, display %.1f Hz, fps cap %d, interpolation %s", SDL_GetRendererName(renderer_),
             static_cast<double>(displayHz_), settings_.fpsCap, settings_.interpolation ? "on" : "off");
     SDL_Log("Data dir: %s (%s)", dataDir_.c_str(), hasData_ ? "found" : "missing");
-    if (hasData_) {
+    importScreen_ = std::make_unique<ImportScreen>(window_, dataDir_);
+    if (hasData_ && fileExists(dataDir_ + "/pl2/symbols.bin")) {
         loadGame("pl2");
+    } else {
+        mode_ = Mode::Import; // nothing imported yet
     }
     for (int i = 1; i + 1 < argc; ++i) {
         if (std::strcmp(argv[i], "--capture") == 0) {
@@ -98,9 +102,15 @@ bool App::captureFrame()
 void App::loadGame(const std::string &game)
 {
     const std::string dir = dataDir_ + "/" + game;
+    game_.reset();
+    viewerClip_.reset();
+    viewerList_.clear();
+    textures_.clear();
+    sheets_.clear();
     if (!symbols_.load(dir + "/symbols.bin")) {
         return;
     }
+    hasData_ = true;
     // Pick the shape scale closest to the display: the stage is drawn at (window height / stage height).
     int pw = 0, ph = 0;
     SDL_GetWindowSizeInPixels(window_, &pw, &ph);
@@ -126,6 +136,7 @@ void App::loadGame(const std::string &game)
     showSymbol(start == viewerList_.end() ? 0 : static_cast<int>(start - viewerList_.begin()));
 
     game_ = std::make_unique<obf_9G::obf_4R>(renderer_, &sheets_);
+    mode_ = Mode::Level;
     if (game_->loadLevelData(dir)) {
         game_->obf_6V(0);
         SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
@@ -141,7 +152,8 @@ void App::nextMode()
     switch (mode_) {
     case Mode::Level: mode_ = Mode::BlitDemo; break;
     case Mode::BlitDemo: mode_ = Mode::Viewer; break;
-    case Mode::Viewer: mode_ = game_ ? Mode::Level : Mode::BlitDemo; break;
+    case Mode::Viewer: mode_ = Mode::Import; break;
+    case Mode::Import: mode_ = game_ ? Mode::Level : (hasData_ ? Mode::BlitDemo : Mode::Import); break;
     }
 }
 
@@ -269,6 +281,10 @@ SDL_AppResult App::event(const SDL_Event &ev)
         const float fx = ev.button.x / static_cast<float>(w), fy = ev.button.y / static_cast<float>(h);
         if (fy < 0.2f) { // top band: next mode
             nextMode();
+        } else if (mode_ == Mode::Import) {
+            float sx = 0.0f, sy = 0.0f;
+            SDL_RenderCoordinatesFromWindow(renderer_, ev.button.x, ev.button.y, &sx, &sy);
+            importScreen_->tap(sx, sy);
         } else if (fy > 0.8f && fx < 0.33f) { // bottom-left: FPS cap
             settings_.nextFpsCap(originalRate);
             settings_.save();
@@ -314,6 +330,12 @@ SDL_AppResult App::iterate()
         lastRenderNs_ = now;
     }
 
+    if (importScreen_) {
+        const std::string imported = importScreen_->takeFinished();
+        if (imported == "pl2") { // SKELETON: only PL2 is playable so far
+            loadGame(imported);
+        }
+    }
     render(static_cast<float>(accumulatorNs_) / static_cast<float>(stepNs_));
     if (quitRequested_) {
         return SDL_APP_SUCCESS;
@@ -358,7 +380,9 @@ void App::render(float alpha)
     }
     SDL_RenderClear(renderer_);
 
-    if (mode_ == Mode::Level && game_ && game_->obf_AQ->currentScreenData) {
+    if (mode_ == Mode::Import) {
+        importScreen_->render(renderer_, static_cast<float>(stage_.width), static_cast<float>(stage_.height));
+    } else if (mode_ == Mode::Level && game_ && game_->obf_AQ->currentScreenData) {
         game_->obf_71->redrawScreen(alpha, settings_.interpolation);
     } else if (mode_ == Mode::BlitDemo && hasData_) {
         renderBlitDemo(alpha);

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "engine/import_screen.h"
 #include "engine/movieclip.h"
 #include "engine/settings.h"
 #include "engine/sheets.h"
@@ -70,9 +71,10 @@ private:
     SheetLibrary sheets_;
 
     // DEV: what the app shows until the menus are ported. Level = PL2 level 0 with a free camera.
-    enum class Mode { Level, BlitDemo, Viewer };
+    enum class Mode { Level, BlitDemo, Viewer, Import };
     Mode mode_ = Mode::Level;
     std::unique_ptr<obf_9G::obf_4R> game_;
+    std::unique_ptr<ImportScreen> importScreen_;
     float dragX_ = 0.0f, dragY_ = 0.0f; // pending camera pan from mouse/touch drags, applied in tick
     bool dragging_ = false;
 
