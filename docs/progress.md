@@ -151,7 +151,15 @@ SKELETON: the other 34 effect classes.
 `text.json` (`Rasterizer::exportText`); `engine::TextLibrary` draws them, `MovieClip` draws Text/EditText
 children and `MovieClip::setText(instance, text)` sets a field (`.text` / `.htmlText`). DEV `--view <class>`
 shows a symbol in the viewer (`--view hudMC` shows the HUD with its real fonts).
-Next: GameHUD, then sound.
+(19) HUD: `GameHUD` (§_-6Z§: setupHUD with `hudMC`, updateDisplay, updateTimer, show/hideHUD,
+updatePlayerHealth; drawn over the game in stage pixels), `§_-AF§.§_-81§` number/time formatting (`obf_81`),
+`ChallengeManager` (§_-94§) with its `challenges` / `badges` tables from `challenges.json` and
+`getChallengeTargetAmount`; `UserData` refreshes the HUD (UserData.cpp). The importer's initialiser scanner now
+reads object literals, `new Class(args)` (as {"new", "args"}) and static constants of other classes
+(`Challenge.RESCUE`); bogus values it used to pick up from unread getproperty results are gone.
+`MovieClip::setChildAlpha` for `.alpha` on text fields. SKELETON: HUD buttons (menu, mute, pause), portrait,
+challenge bubbles, the challenge recording.
+Next: sound (task 9), then the level start/end (task 10).
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

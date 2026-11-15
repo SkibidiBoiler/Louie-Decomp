@@ -29,22 +29,15 @@ public:
     std::vector<double> enemyKills = std::vector<double>(41, 0);
 
     // AS: UserData.earnPoints / killBurgerzilla / saveEnemyKill (SKELETON: HUD updateDisplay and challenges)
-    void earnPoints(double amount) { points += amount; }
+    void earnPoints(double amount);
     // AS: UserData.earnMoney / collectSpecialItem (SKELETON: HUD updateDisplay, ChallengeManager.recordSpecialItem)
-    void earnMoney(double amount = 1) { money += amount; }
-    void collectSpecialItem(double amount = 1) { specialitems += amount; }
+    void earnMoney(double amount = 1);
+    void collectSpecialItem(double amount = 1);
     // AS: UserData.adjustLives — false when no life is left (SKELETON: HUD updateDisplay).
-    bool adjustLives(double amount)
-    {
-        totalLives += amount;
-        if (amount < 0) {
-            livesLost += -amount;
-        }
-        return totalLives >= 0;
-    }
+    bool adjustLives(double amount);
     // AS: UserData.resetLives
     void resetLives() { totalLives = startingLives; }
-    void killBurgerzilla(double amount = 1) { burgerzillas += amount; }
+    void killBurgerzilla(double amount = 1);
     void saveEnemyKill(double type, const std::string & /*weapon*/ = "none", const std::string & /*category*/ = "")
     {
         ++killsTally;

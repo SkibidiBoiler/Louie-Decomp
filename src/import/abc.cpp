@@ -331,6 +331,21 @@ std::map<std::string, AbcValue> Abc::instanceFieldConstants(const std::string &n
     return fields;
 }
 
+AbcValue Abc::staticConstant(const std::string &cls, const std::string &name) const
+{
+    for (size_t i = 0; i < instances_.size() && i < classes_.size(); ++i) {
+        if (multinameName(instances_[i].name) != cls) {
+            continue;
+        }
+        for (const Trait &t : classes_[i].traits) {
+            if (((t.kind & 0x0F) == 0 || (t.kind & 0x0F) == 6) && t.vindex && multinameName(t.name) == name) {
+                return constant(t.vindex, t.vkind);
+            }
+        }
+    }
+    return {};
+}
+
 void Abc::scanInitializer(const std::vector<Trait> &traits, uint32_t method, std::map<std::string, AbcValue> &fields) const
 {
     for (const Trait &t : traits) {
@@ -390,10 +405,50 @@ void Abc::scanInitializer(const std::vector<Trait> &traits, uint32_t method, std
                 constant = constant && v.items[i].type == AbcValue::Type::Number;
             }
             pop(); // the class object
-            if (!constant || multinameName(mn) != "Rectangle") {
+            if (multinameName(mn) != "Rectangle") {
+                // Any other class: {"new": "Class", "args": [...]} (e.g. ChallengeManager's Challenge list).
+                AbcValue args = std::move(v);
+                v = AbcValue{};
+                v.type = AbcValue::Type::Object;
+                AbcValue cls;
+                cls.type = AbcValue::Type::String;
+                cls.string = multinameName(mn);
+                v.fields.emplace_back("new", std::move(cls));
+                v.fields.emplace_back("args", std::move(args));
+            } else if (!constant) {
                 v = AbcValue{};
             }
             push(std::move(v));
+            continue;
+        }
+        case 0x55: { // newobject: {key: value, ...}
+            const uint32_t count = r.u30();
+            v.type = AbcValue::Type::Object;
+            v.fields.resize(count);
+            for (uint32_t i = count; i-- > 0;) {
+                AbcValue value = pop();
+                v.fields[i] = {pop().string, std::move(value)};
+            }
+            push(std::move(v));
+            continue;
+        }
+        case 0x60: { // getlex: a class, remembered so a following getproperty can read its static constant
+            v.string = "" + multinameName(r.u30());
+            push(std::move(v));
+            continue;
+        }
+        case 0x66: { // getproperty
+            const uint32_t mn = r.u30();
+            const uint8_t kind = mn < multinames_.size() ? multinames_[mn].kind : 0;
+            if (kind == 0x1B || kind == 0x1C) {
+                pop(); // runtime name
+            }
+            const AbcValue object = pop();
+            if (object.type == AbcValue::Type::Unknown && object.string.size() > 1 && object.string[0] == '') {
+                push(staticConstant(object.string.substr(1), multinameName(mn)));
+            } else {
+                push(AbcValue{});
+            }
             continue;
         }
         case 0x61: case 0x68: { // setproperty / initproperty

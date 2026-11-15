@@ -226,6 +226,17 @@ void MovieClip::syncChildren(bool advanceSurvivors)
     children_ = std::move(next);
 }
 
+void MovieClip::setChildAlpha(std::string_view instance, float alpha)
+{
+    for (auto &[name, value] : alphas_) {
+        if (name == instance) {
+            value = alpha;
+            return;
+        }
+    }
+    alphas_.emplace_back(std::string(instance), alpha);
+}
+
 void MovieClip::setText(std::string_view instance, std::string text)
 {
     for (auto &[name, value] : texts_) {
@@ -258,7 +269,15 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
             }
         }
         const Affine m = parent * local;
-        const ColorTransform color = parentColor * localColor;
+        ColorTransform color = parentColor * localColor;
+        if (!alphas_.empty() && track.name >= 0 && static_cast<size_t>(track.name) < symbols_->strings().size()) {
+            for (const auto &[name, value] : alphas_) {
+                if (name == symbols_->strings()[static_cast<size_t>(track.name)]) {
+                    color.ma *= value;
+                    color.aa *= value;
+                }
+            }
+        }
         if (color.ma <= 0.0f && color.aa <= 0.0f) {
             continue;
         }

@@ -67,6 +67,21 @@ void appendJson(std::string &out, const AbcValue &v)
         }
         out += ']';
         break;
+    case AbcValue::Type::Object:
+        out += '{';
+        for (size_t i = 0; i < v.fields.size(); ++i) {
+            if (i) {
+                out += ',';
+            }
+            AbcValue key;
+            key.type = AbcValue::Type::String;
+            key.string = v.fields[i].first;
+            appendJson(out, key);
+            out += ':';
+            appendJson(out, v.fields[i].second);
+        }
+        out += '}';
+        break;
     default:
         out += "null";
         break;
@@ -340,6 +355,7 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
     writeFieldConstants(index, "papaGame.data", "DataManager", out + "/datamanager.json");
     writeFieldConstants(index, "papaGame.models.characters", "CustomerChar", out + "/customerchar.json");
     writeEnemyConstants(index, out + "/enemies.json");
+    writeFieldConstants(index, "papaGame.managers", "ChallengeManager", out + "/challenges.json");
     {
         const std::string objects = "{\n\"GameObject\": " +
             fieldConstantsJson(index, "papaGame.models", "GameObject") + "\n}\n";

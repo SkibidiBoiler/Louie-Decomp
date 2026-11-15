@@ -66,12 +66,14 @@ set(PL_SOURCES
     src/game/papaGame/data/DataManager.cpp
     src/game/papaGame/data/LevelData.cpp
     src/game/papaGame/data/ScreenData.cpp
+    src/game/papaGame/data/UserData.cpp
     src/game/papaGame/data/WorldData.cpp
     src/game/papaGame/display/GameCam.cpp
     src/game/papaGame/events/GameControls.cpp
     src/game/papaGame/display/GameDisplay.cpp
     src/game/papaGame/managers/BitmapManager.cpp
     src/game/papaGame/managers/CharacterBlitter.cpp
+    src/game/papaGame/managers/ChallengeManager.cpp
     src/game/papaGame/managers/EffectManager.cpp
     src/game/papaGame/managers/EnemyManager.cpp
     src/game/papaGame/managers/ItemManager.cpp
@@ -96,6 +98,7 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/StarburstEffect.cpp
     src/game/papaGame/models/effects/ZillaPartsEffect.cpp
     src/game/papaGame/models/Enemy.cpp
+    src/game/papaGame/models/GameHUD.cpp
     src/game/papaGame/models/GameItem.cpp
     src/game/papaGame/models/GameObject.cpp
     src/game/papaGame/models/items/GameItem_Balloon.cpp

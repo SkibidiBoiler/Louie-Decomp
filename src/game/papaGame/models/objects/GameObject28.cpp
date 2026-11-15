@@ -89,7 +89,8 @@ void GameObject28::finishDeactivatingObject()
     GameObject::finishDeactivatingObject();
     gameObj->obf_AQ->saveCheckpoint(xtile, ytile - 1);
     gameObj->playerObj->currentHealth = gameObj->playerObj->maxHealth;
-    // SKELETON: GameHUD.updateDisplay / updatePlayerHealth.
+    gameObj->obf_6Z->updateDisplay();
+    gameObj->obf_6Z->updatePlayerHealth(gameObj->playerObj->currentHealth);
     const auto &p = *gameObj->playerObj;
     for (int i = 1; i <= 6; ++i) {
         gameObj->obf_V->addEffect(p.x, p.y, "PlayerCheckpointEffect", "star" + std::to_string(i), true, 0, -32);

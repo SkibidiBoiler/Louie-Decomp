@@ -20,6 +20,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_7u = std::make_unique<papaGame::managers::ObjectManager>(this);
     obf_3Z = std::make_unique<papaGame::managers::ItemManager>(this);
     obf_V = std::make_unique<papaGame::managers::EffectManager>(this);
+    obf_94 = std::make_unique<papaGame::managers::ChallengeManager>(this);
 }
 
 bool obf_4R::loadLevelData(const std::string &gameDir)
@@ -30,6 +31,8 @@ bool obf_4R::loadLevelData(const std::string &gameDir)
     obf_7u->loadTables(gameDir + "/objects.json");
     obf_3Z->loadTables(gameDir + "/items.json");
     obf_V->loadTables(gameDir + "/effects.json");
+    obf_94->loadTables(gameDir + "/challenges.json");
+    obf_6Z = std::make_unique<papaGame::models::GameHUD>(this);
     return obf_AQ->prepareLevelData(gameDir + "/levels.xml");
 }
 
@@ -56,7 +59,7 @@ void obf_4R::obf_6V(double whichLevel)
     if (start.size() >= 3) {
         playerObj->startupPlayer(start[1], start[2], true);
     }
-    // SKELETON: HUD, challenges and the level intro; the original reaches §_-52§ after the intro transition.
+    // SKELETON: challenges and the level intro; the original reaches §_-52§ after the intro transition.
     obf_52();
 }
 
@@ -69,6 +72,10 @@ void obf_4R::obf_52()
     obf_3Y->savePrevious(); // port: no interpolation across the snap
     obf_AQ->initializeScreenObjects(0);
     // SKELETON: level music and the portal sound.
+    obf_6Z->showHUD();
+    // SKELETON: setupControls, setupCycleCode, handleCheckpointProgress.
+    obf_6Z->updateDisplay();
+    obf_6Z->updatePlayerHealth(playerObj->currentHealth);
 }
 
 // AS: §_-4R§.§_-4X§ — enter room `roomID` through its door `doorID`.
@@ -89,7 +96,8 @@ void obf_4R::obf_4X(double roomID, double doorID, double /*xOffset*/, double /*y
     obf_71->currentXcoord = 0;
     obf_71->currentYcoord = 0;
     obf_3Y->setCameraBounds();
-    // SKELETON: HUD updateDisplay / updateTimer.
+    obf_6Z->updateDisplay();
+    obf_6Z->updateTimer();
     const auto &doors = obf_AQ->currentScreenData->doorArray;
     if (doorID >= 0 && doorID < static_cast<double>(doors.size()) && doors[static_cast<size_t>(doorID)].size() >= 4) {
         const auto &door = doors[static_cast<size_t>(doorID)];
@@ -102,7 +110,8 @@ void obf_4R::obf_4X(double roomID, double doorID, double /*xOffset*/, double /*y
     obf_71->currentXcoord = 0;
     obf_71->currentYcoord = 0;
     obf_AQ->initializeScreenObjects(0);
-    // SKELETON: HUD.
+    obf_6Z->updateDisplay();
+    obf_6Z->showHUD();
     obf_8o->stopCycle = false;
     obf_71->startTransition("in");
 }

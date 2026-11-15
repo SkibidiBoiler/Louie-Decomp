@@ -167,7 +167,10 @@ void CustomerChar::startupPlayer(double tileX, double tileY, bool newLevel, bool
         gameObj->obf_8o->stopActionControls = false;
     }
     if (!keepFacing) {
-        currentHealth = maxHealth; // SKELETON: GameHUD.updatePlayerHealth
+        currentHealth = maxHealth;
+        if (gameObj->obf_6Z) {
+            gameObj->obf_6Z->updatePlayerHealth(currentHealth);
+        }
     }
     if (newLevel) {
         gameObj->obf_V->addEffect(x, y - 64, "EndPortalEffect", "startup");
@@ -1209,7 +1212,8 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
         stunStarIDs.push_back(gameObj->obf_V->addEffect(x, y, "DizzyEffect", "faceRight", true, 0, isCrawling ? -32 : -72));
         // SKELETON: player_hurt.wav.
     }
-    // SKELETON: GameHUD.updatePlayerHealth, throwCarriedObject(0).
+    gameObj->obf_6Z->updatePlayerHealth(currentHealth);
+    // SKELETON: throwCarriedObject(0).
 }
 
 // AS: PlayerChar.shovePlayer — pushed back without damage.
@@ -1436,12 +1440,13 @@ void CustomerChar::checkForPoundingObjects()
     }
 }
 
-// AS: PlayerChar.getHeart (SKELETON: GameHUD.updatePlayerHealth)
+// AS: PlayerChar.getHeart
 void CustomerChar::getHeart()
 {
     if (currentHealth < maxHealth) {
         ++currentHealth;
     }
+    gameObj->obf_6Z->updatePlayerHealth(currentHealth);
 }
 
 // AS: PlayerChar.checkForCollectingItems

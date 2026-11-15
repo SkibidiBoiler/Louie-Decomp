@@ -90,7 +90,8 @@ void GameControls::detectKeys()
     gameObj->obf_7u->processObjects();
     // SKELETON: cameraAnchor (setCameraAnchor) is not ported; the anchor is always the player (cameraAnchor 0).
     gameObj->obf_3Y->adjustCamera(p.x, p.y, true);
-    // SKELETON: the HUD timer; redrawScreen comes next in the original (the port redraws in its render pass).
+    gameObj->obf_6Z->updateTimer();
+    // redrawScreen comes next in the original; the port redraws in its render pass.
 }
 
 // AS: GameControls.jumpPlayer (without the skill branches: double jump, glide, wall jump)

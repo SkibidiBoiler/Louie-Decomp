@@ -127,6 +127,11 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitItems(false, true);
     // SKELETON: bullets and overlays.
     drawTransition();
+    // Port: the HUD sits above the game display in the original's display list.
+    if (gameObj->obf_6Z) {
+        const engine::RenderContext ctx{gameObj->renderer, gameObj->symbols, gameObj->textures, gameObj->text};
+        gameObj->obf_6Z->render(ctx);
+    }
     smooth_ = false;
 }
 

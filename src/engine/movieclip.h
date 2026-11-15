@@ -57,6 +57,8 @@ public:
     MovieClip *firstChildClip();
     // `<instance>.text` / `.htmlText` of a timeline text field child (HTML when it starts with '<').
     void setText(std::string_view instance, std::string text);
+    // `<instance>.alpha` of a timeline child that is not a MovieClip (a text field, a shape).
+    void setChildAlpha(std::string_view instance, float alpha);
 
     // One Flash frame: move the playhead (looping), then advance the children that survived.
     void advance();
@@ -88,6 +90,7 @@ private:
     };
     std::vector<Attached> attached_;
     std::vector<std::pair<std::string, std::string>> texts_; // text field instance -> its text
+    std::vector<std::pair<std::string, float>> alphas_;      // instance -> alpha set from code
     bool visible_ = true;
     int scriptDepth_ = 0;
 };

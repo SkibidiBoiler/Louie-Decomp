@@ -12,10 +12,12 @@ namespace swfimport {
 
 // A constant the scanner can follow: a number, a string, or an array of them.
 struct AbcValue {
-    enum class Type { Unknown, Number, String, Array } type = Type::Unknown;
+    enum class Type { Unknown, Number, String, Array, Object } type = Type::Unknown;
     double number = 0;
     std::string string;
     std::vector<AbcValue> items;
+    std::vector<std::pair<std::string, AbcValue>> fields; // Object: object literals, and `new C(args)` as
+                                                          // {"new": "C", "args": [...]}
 };
 
 class Abc {
@@ -62,6 +64,8 @@ private:
     std::string multinameName(uint32_t index) const;
     std::string multinameNs(uint32_t index) const;
     AbcValue constant(uint32_t index, uint8_t kind) const;
+    // A static constant (slot default) of the class called `cls` in this block.
+    AbcValue staticConstant(const std::string &cls, const std::string &name) const;
 
     std::vector<int32_t> ints_;
     std::vector<uint32_t> uints_;
