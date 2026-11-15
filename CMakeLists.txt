@@ -45,6 +45,7 @@ set(PL_SOURCES
     src/main.cpp
     src/engine/app.cpp
     src/engine/import_screen.cpp
+    src/engine/input.cpp
     src/engine/paths.cpp
     src/engine/symbols.cpp
     src/engine/textures.cpp
@@ -66,6 +67,7 @@ set(PL_SOURCES
     src/game/papaGame/data/ScreenData.cpp
     src/game/papaGame/data/WorldData.cpp
     src/game/papaGame/display/GameCam.cpp
+    src/game/papaGame/events/GameControls.cpp
     src/game/papaGame/display/GameDisplay.cpp
     src/game/papaGame/managers/BitmapManager.cpp
     src/game/papaGame/managers/CharacterBlitter.cpp

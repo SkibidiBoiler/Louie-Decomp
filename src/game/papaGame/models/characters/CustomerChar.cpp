@@ -53,11 +53,60 @@ void CustomerChar::startupPlayer(double tileX, double tileY, bool /*newLevel*/, 
     // SKELETON: the rest of startupPlayer (state flags, effects, projectiles) comes with the controls.
 }
 
-void CustomerChar::advanceStandCycle()
+// AS: PlayerChar.canFudgeJump — a few frames after walking off a ledge a jump still counts.
+bool CustomerChar::canFudgeJump() const
 {
-    cycleFrame = cycleFrame + 1 >= static_cast<double>(standCycle.size()) ? 0 : cycleFrame + 1;
-    animationFrame = standCycle[static_cast<size_t>(cycleFrame)];
-    footAnimationFrame = footStandCycle[static_cast<size_t>(cycleFrame)];
+    return gameObj->obf_8o->gameplayTimer < lastSafeTime + lastSafeTimeBuffer && !duck && !isCrawling && !isDucking &&
+           (!jump || jumpspeed >= 0);
+}
+
+// AS: PlayerChar.startDucking
+void CustomerChar::startDucking()
+{
+    // SKELETON: on a slope the original starts sliding (startSliding) instead.
+    duck = true;
+    isDucking = true;
+    isTurning = false;
+}
+
+void CustomerChar::updateObject()
+{
+    // Cycles: [name, ?, ?, ?, loop mode (0 loops, -1 plays once, 2/4 hold the last frame), frames].
+    static const std::vector<double> stand = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3};
+    static const std::vector<double> run = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+    static const std::vector<double> jumpUp = {26, 27, 28};
+    static const std::vector<double> fall = {29, 30, 31};
+    static const std::vector<double> turnaround = {23, 24, 25, 25, 25};
+    static const std::vector<double> duckDown = {32, 33, 34, 35, 36};
+    if (!jump) {
+        lastSafeTime = gameObj->obf_8o->gameplayTimer; // (CustomerChar sets it while standing on ground)
+    }
+    const std::vector<double> *cycle = &stand;
+    bool loops = true;
+    if (jump) {
+        cycle = jumpspeed < 0 ? &jumpUp : &fall;
+        loops = false;
+    } else if (duck) {
+        cycle = &duckDown;
+        loops = false;
+    } else if (isTurning) {
+        cycle = &turnaround;
+        loops = false;
+    } else if (isWalking) {
+        cycle = &run;
+    }
+    if (cycle != currentCycle) {
+        currentCycle = cycle;
+        cycleFrame = 0;
+    } else if (cycleFrame + 1 < static_cast<double>(cycle->size())) {
+        ++cycleFrame;
+    } else if (loops) {
+        cycleFrame = 0;
+    } else if (cycle == &turnaround) {
+        isTurning = false; // plays once
+    }
+    animationFrame = (*cycle)[static_cast<size_t>(cycleFrame)];
+    footAnimationFrame = animationFrame; // the foot cycles use the same frame numbers for these states
 }
 
 } // namespace papaGame::models::characters

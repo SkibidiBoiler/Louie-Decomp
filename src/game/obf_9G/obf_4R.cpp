@@ -15,6 +15,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_71 = std::make_unique<papaGame::display::GameDisplay>(this);
     obf_3Y = std::make_unique<papaGame::display::GameCam>(this);
     playerObj = std::make_unique<papaGame::models::characters::CustomerChar>(this);
+    obf_8o = std::make_unique<papaGame::events::GameControls>(this);
 }
 
 bool obf_4R::loadLevelData(const std::string &gameDir)

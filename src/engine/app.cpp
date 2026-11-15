@@ -35,11 +35,16 @@ SDL_AppResult App::init(int argc, char *argv[])
     SDL_SetAppMetadata("Papa's Louie Recomp", "0.1.0", "io.github.skibidiboiler.papalouie");
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
+    // Touches are handled as fingers (on-screen buttons, taps); no synthetic mouse events from them.
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
     settings_.load();
+#if defined(SDL_PLATFORM_ANDROID)
+    input_.touch.visible = true;
+#endif
 
     SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 #if defined(SDL_PLATFORM_ANDROID)
@@ -68,6 +73,11 @@ SDL_AppResult App::init(int argc, char *argv[])
         mode_ = Mode::Import; // nothing imported yet
     }
     for (int i = 1; i + 1 < argc; ++i) {
+        if (std::strcmp(argv[i], "--walk-test") == 0) { // DEV: walk right and jump, for --capture checks
+            walkTest_ = 0;
+        } else if (std::strcmp(argv[i], "--touch") == 0) { // DEV: show the on-screen buttons
+            input_.touch.visible = true;
+        }
         if (std::strcmp(argv[i], "--capture") == 0) {
             capturePath_ = argv[i + 1];
         } else if (std::strcmp(argv[i], "--player-sheet") == 0 && game_) { // DEV: save the player's torso sheet
@@ -200,24 +210,38 @@ void App::tickLevel()
     papaGame::display::GameCam &cam = *game_->obf_3Y;
     cam.savePrevious();
     game_->obf_71->advanceFrame();
-    // SKELETON: the player part of GameControls.detectKeys until keyCheckPlayer is translated.
+    // Actions -> GameControls.keyPressed* (the original sets them from key events).
     auto &player = *game_->playerObj;
-    player.savePrevious();
-    player.fallChar();
-    if (player.jump) {
-        player.jumpChar();
-    }
-    player.advanceStandCycle();
+    auto &controls = *game_->obf_8o;
     const bool *keys = SDL_GetKeyboardState(nullptr);
+    const bool panning = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
+    ActionState actions = panning ? ActionState{} : input_.poll();
+    if (walkTest_ >= 0) { // DEV: right for 60 frames, jump at frames 30-45
+        ++walkTest_;
+        actions.held[static_cast<size_t>(Action::Right)] = walkTest_ < 60;
+        actions.held[static_cast<size_t>(Action::Jump)] = walkTest_ > 30 && walkTest_ < 45;
+    }
+    controls.keyPressedLeft = actions[Action::Left];
+    controls.keyPressedRight = actions[Action::Right];
+    controls.keyPressedUp = actions[Action::Up];
+    controls.keyPressedDown = actions[Action::Down];
+    controls.keyPressedJump = actions[Action::Jump];
+    controls.keyPressedAction = actions[Action::Attack];
+    player.savePrevious();
+    player.fallChar(); // SKELETON: where the original calls fallChar is not traced yet
+    controls.detectKeys();
     constexpr double kPan = 12.0;
     double dx = -static_cast<double>(dragX_), dy = -static_cast<double>(dragY_);
     dragX_ = dragY_ = 0.0f;
-    if (keys[SDL_SCANCODE_LEFT]) dx -= kPan;
-    if (keys[SDL_SCANCODE_RIGHT]) dx += kPan;
-    if (keys[SDL_SCANCODE_UP]) dy -= kPan;
-    if (keys[SDL_SCANCODE_DOWN]) dy += kPan;
-    // DEV: hold Shift (or drag) to pan freely; otherwise the camera follows the player.
-    if (dx == 0 && dy == 0 && !keys[SDL_SCANCODE_LSHIFT] && !dragging_) {
+    if (panning) {
+        if (keys[SDL_SCANCODE_LEFT]) dx -= kPan;
+        if (keys[SDL_SCANCODE_RIGHT]) dx += kPan;
+        if (keys[SDL_SCANCODE_UP]) dy -= kPan;
+        if (keys[SDL_SCANCODE_DOWN]) dy += kPan;
+    }
+    // DEV: Shift + arrows (or a mouse drag) pans freely; otherwise the camera follows the player
+    // (GameCam.adjustCamera is not translated yet).
+    if (dx == 0 && dy == 0 && !panning && !dragging_) {
         dx = player.x - cam.x;
         dy = player.y - cam.y;
     }
@@ -253,6 +277,11 @@ void App::showSymbol(int index)
 
 SDL_AppResult App::event(const SDL_Event &ev)
 {
+    input_.event(ev, window_);
+    if ((ev.type == SDL_EVENT_FINGER_DOWN || ev.type == SDL_EVENT_FINGER_UP || ev.type == SDL_EVENT_FINGER_MOTION) &&
+        mode_ == Mode::Level && input_.touch.event(ev, window_)) {
+        return SDL_APP_CONTINUE; // used by an on-screen button
+    }
     const int originalRate = static_cast<int>(std::lround(stage_.frameRate));
     switch (ev.type) {
     case SDL_EVENT_QUIT:
@@ -311,37 +340,49 @@ SDL_AppResult App::event(const SDL_Event &ev)
             }
         }
         break;
-    case SDL_EVENT_MOUSE_BUTTON_UP: { // touches arrive here too (SDL synthesises mouse events)
+    case SDL_EVENT_MOUSE_BUTTON_UP:
         if (dragging_) {
             dragging_ = false;
             break;
         }
+        tap(ev.button.x, ev.button.y);
+        break;
+    case SDL_EVENT_FINGER_UP: {
+        // A touch that did not start on an on-screen button is a tap.
         int w = 0, h = 0;
         SDL_GetWindowSize(window_, &w, &h);
-        const float fx = ev.button.x / static_cast<float>(w), fy = ev.button.y / static_cast<float>(h);
-        if (fy < 0.2f) { // top band: next mode
-            nextMode();
-        } else if (mode_ == Mode::Import) {
-            float sx = 0.0f, sy = 0.0f;
-            SDL_RenderCoordinatesFromWindow(renderer_, ev.button.x, ev.button.y, &sx, &sy);
-            importScreen_->tap(sx, sy);
-        } else if (fy > 0.8f && fx < 0.33f) { // bottom-left: FPS cap
-            settings_.nextFpsCap(originalRate);
-            settings_.save();
-        } else if (fy > 0.8f && fx > 0.67f) { // bottom-right: interpolation
-            settings_.interpolation = !settings_.interpolation;
-            settings_.save();
-        } else if (mode_ == Mode::Viewer) {
-            showSymbol(viewerIndex_ + (fx >= 0.5f ? 1 : -1));
-        } else if (mode_ == Mode::Level) {
-            switchRoom(fx >= 0.5f ? 1 : -1);
-        }
+        tap(ev.tfinger.x * static_cast<float>(w), ev.tfinger.y * static_cast<float>(h));
         break;
     }
     default:
         break;
     }
     return SDL_APP_CONTINUE;
+}
+
+void App::tap(float winX, float winY)
+{
+    int w = 0, h = 0;
+    SDL_GetWindowSize(window_, &w, &h);
+    const float fx = winX / static_cast<float>(w), fy = winY / static_cast<float>(h);
+    const int originalRate = static_cast<int>(std::lround(stage_.frameRate));
+    if (fy < 0.15f) { // DEV top band: FPS cap | next mode | interpolation
+        if (fx < 0.33f) {
+            settings_.nextFpsCap(originalRate);
+            settings_.save();
+        } else if (fx > 0.67f) {
+            settings_.interpolation = !settings_.interpolation;
+            settings_.save();
+        } else {
+            nextMode();
+        }
+    } else if (mode_ == Mode::Import) {
+        float sx = 0.0f, sy = 0.0f;
+        SDL_RenderCoordinatesFromWindow(renderer_, winX, winY, &sx, &sy);
+        importScreen_->tap(sx, sy);
+    } else if (mode_ == Mode::Viewer) {
+        showSymbol(viewerIndex_ + (fx >= 0.5f ? 1 : -1));
+    }
 }
 
 SDL_AppResult App::iterate()
@@ -431,6 +472,17 @@ void App::render(float alpha)
         ctx.interpolate = settings_.interpolation;
         ctx.alpha = alpha;
         viewerClip_->render(ctx, viewerFit_, ColorTransform{});
+    }
+    if (mode_ == Mode::Level) {
+        // The on-screen buttons are drawn in window pixels, anchored to the window corners.
+        int lw = 0, lh = 0;
+        SDL_RendererLogicalPresentation lmode;
+        SDL_GetRenderLogicalPresentation(renderer_, &lw, &lh, &lmode);
+        SDL_SetRenderLogicalPresentation(renderer_, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+        int pw = 0, ph = 0;
+        SDL_GetRenderOutputSize(renderer_, &pw, &ph);
+        input_.touch.render(renderer_, pw, ph);
+        SDL_SetRenderLogicalPresentation(renderer_, lw, lh, lmode);
     }
     renderOverlay();
     if (!capturePath_.empty() && SDL_GetTicksNS() - startNs_ > 3000000000ull) {

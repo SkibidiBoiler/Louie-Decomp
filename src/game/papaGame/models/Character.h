@@ -27,6 +27,7 @@ public:
     void checkForCeilingSlopes(double dir = -1);
     void checkForSlopes(double dirx, double diry);
     virtual bool checkForCrawlGap(double /*dir*/) { return false; }
+    bool checkDropThruCloud() const { return false; } // AS: Character.checkDropThruCloud (always false)
 
     // PlayerChar hooks used by moveChar (overridden by the player).
     virtual void checkGoingThroughDoor(double /*dx*/, double /*dy*/) {}
@@ -42,6 +43,11 @@ public:
     double speed = 7, walkspeed = 7, jumpspeed = 0, jumpstart = -26;
     double gravity = 2, normalgravity = 2, jumpgravity = 2;
     double maxjumpvelocity = INT_MAX;
+    double shortjump = -10;
+    double slopedIntoCeiling = 0;
+    bool jumpedFromSlope = false;
+    double lastx = 0, lasty = 0;
+    bool lastOnSlope = false;
     double facingDir = -1, walkingDir = 1, dirx = 0, diry = 0;
     double jumpedFromX = 0, jumpedFromY = 0;
     bool jump = false, triggerjump = false, triggerjumpx = false;

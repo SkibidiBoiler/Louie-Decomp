@@ -76,7 +76,13 @@ registers); checked against the decompiled source: 55/55 equal. Loaded by `DataM
 translated. (7) `Character`: `getMyCorners`, cloud/ladder/edge checks, `fallChar`, `jumpChar`, `moveChar`
 (slopes, moving tiles, crawl gaps, doors = SKELETON); `CustomerChar` derives from it (`defineVars`); the app tick
 runs the player part of `detectKeys` (fall/jump) and Marty falls and lands on the ground. DEV camera follows him
-(Shift/drag = free pan). Next: `Character.checkForSlopes`/`checkForCeilingSlopes`, `GameControls.detectKeys`/`keyCheckPlayer`, `CustomerChar` animation, `adjustCamera`.
+(Shift/drag = free pan). (8) Controls: `engine::Input` (actions from keyboard: arrows, Up = jump like the
+original, Space = attack, plus WASD/Z/X; gamepad; touch) and `TouchControls` (translucent round buttons in window
+pixels: left/right/down bottom-left, jump/attack bottom-right; shown on Android, `--touch` on PC). `GameControls`
+(`detectKeys` player part, `keyCheckPlayer` walk/turn/duck/air control, `jumpPlayer` jump/short jump/coyote time)
+and a SKELETON `CustomerChar::updateObject` (stand/run/jump/fall/turn/duck cycles). DEV taps moved to the top
+band (left FPS, middle mode, right interpolation). `--walk-test` walks and jumps for captures. Marty walks and
+jumps; slopes still block him (not translated). Next: `Character.checkForSlopes`/`checkForCeilingSlopes`, `GameControls.detectKeys`/`keyCheckPlayer`, `CustomerChar` animation, `adjustCamera`.
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
 children, visibility, `gotoAndStop` running frame-script data; (3) `CharacterBlitter` into render targets with

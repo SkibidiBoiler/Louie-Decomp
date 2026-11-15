@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "engine/import_screen.h"
+#include "engine/input.h"
 #include "engine/movieclip.h"
 #include "engine/settings.h"
 #include "engine/sheets.h"
@@ -40,6 +41,7 @@ private:
     void nextMode();
     void switchRoom(int delta);
     void tickLevel();
+    void tap(float winX, float winY);
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -77,6 +79,8 @@ private:
     std::unique_ptr<ImportScreen> importScreen_;
     float dragX_ = 0.0f, dragY_ = 0.0f; // pending camera pan from mouse/touch drags, applied in tick
     bool dragging_ = false;
+    Input input_;
+    int walkTest_ = -1; // DEV: --walk-test frame counter
 
     // DEV: Enemy35 walking back and forth in the blit demo.
     double sargeX_ = 200.0;

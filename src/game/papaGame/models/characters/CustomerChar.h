@@ -22,9 +22,21 @@ public:
 
     bool isPlayer() const override { return true; }
 
-    // Port: remember the position before a logic step (interpolation), then the SKELETON stand cycle.
+    // Port: remember the position before a logic step (interpolation).
     void savePrevious() { prevX = x; prevY = y; }
-    void advanceStandCycle();
+    // AS: CustomerChar.updateObject — SKELETON: picks the stand/run/jump/fall/turn/duck cycle; the original
+    // state machine (attacks, hurt, skills, sounds) is not translated yet.
+    void updateObject();
+    void setSpeed(double v) { speed = v; }  // AS: PlayerChar.setSpeed
+    bool canFudgeJump() const;              // AS: PlayerChar.canFudgeJump
+    void startDucking();                    // AS: PlayerChar.startDucking (no sliding on slopes yet)
+
+    // PlayerChar / CustomerChar fields used by GameControls.
+    bool canPressJump = true, canPressAction = true, canPressLeft = true, canPressRight = true, canPressDown = true;
+    bool canPressDoubleJump = false, canPressWallJump = true, didDoubleJump = false, isDoubleJumping = false;
+    bool isDucking = false, isTurning = false, isShoved = false;
+    double skidSpeed = 0, lastSafeTime = 0, lastSafeTimeBuffer = 6, whichJumpSound = 1;
+    const std::vector<double> *currentCycle = nullptr;
 
     std::unique_ptr<managers::CharacterBlitter> blitter;
     double prevX = 0, prevY = 0; // port: interpolation
