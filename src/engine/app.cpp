@@ -1,6 +1,8 @@
 #include "engine/app.h"
 #include "engine/paths.h"
 
+#include <algorithm>
+
 namespace engine {
 
 namespace {
@@ -10,6 +12,8 @@ constexpr uint64_t kMaxCatchUpFrames = 5;
 
 App::~App()
 {
+    viewerClip_.reset();
+    textures_.clear(); // release textures before the renderer
     if (renderer_) {
         SDL_DestroyRenderer(renderer_);
     }
@@ -44,10 +48,70 @@ SDL_AppResult App::init(int argc, char *argv[])
     hasData_ = directoryExists(dataDir_);
     SDL_Log("Renderer: %s", SDL_GetRendererName(renderer_));
     SDL_Log("Data dir: %s (%s)", dataDir_.c_str(), hasData_ ? "found" : "missing");
+    if (hasData_) {
+        loadGame("pl2");
+    }
 
     stepNs_ = static_cast<uint64_t>(1e9 / stage_.frameRate);
     lastNs_ = SDL_GetTicksNS();
     return SDL_APP_CONTINUE;
+}
+
+void App::loadGame(const std::string &game)
+{
+    const std::string dir = dataDir_ + "/" + game;
+    if (!symbols_.load(dir + "/symbols.bin")) {
+        return;
+    }
+    // Pick the shape scale closest to the display: the stage is drawn at (window height / stage height).
+    int pw = 0, ph = 0;
+    SDL_GetWindowSizeInPixels(window_, &pw, &ph);
+    const float wanted = static_cast<float>(ph) / static_cast<float>(stage_.height);
+    int scale = 1;
+    for (int s : {2, 3, 4}) {
+        if (wanted > static_cast<float>(s) - 0.75f && directoryExists(dir + "/shapes/" + std::to_string(s) + "x")) {
+            scale = s;
+        }
+    }
+    textures_.init(renderer_, dir, scale);
+    SDL_Log("Shapes at %dx (display needs %.2fx)", scale, static_cast<double>(wanted));
+
+    for (const auto &entry : symbols_.classes()) {
+        if (symbols_.kind(entry.second) == CharKind::Sprite) {
+            viewerList_.push_back(entry);
+        }
+    }
+    std::sort(viewerList_.begin(), viewerList_.end());
+    auto start = std::find_if(viewerList_.begin(), viewerList_.end(),
+                              [](const auto &e) { return e.first == "enemysheet_sarge"; });
+    showSymbol(start == viewerList_.end() ? 0 : static_cast<int>(start - viewerList_.begin()));
+}
+
+void App::showSymbol(int index)
+{
+    if (viewerList_.empty()) {
+        return;
+    }
+    const int n = static_cast<int>(viewerList_.size());
+    viewerIndex_ = ((index % n) + n) % n;
+    const auto &entry = viewerList_[static_cast<size_t>(viewerIndex_)];
+    const Timeline *tl = symbols_.timeline(entry.second);
+    viewerClip_ = tl ? std::make_unique<MovieClip>(symbols_, *tl) : nullptr;
+
+    // Fit the first frame into 90% of the stage.
+    viewerFit_ = Affine::translate(static_cast<float>(stage_.width) * 0.5f, static_cast<float>(stage_.height) * 0.5f);
+    float x0 = 1e30f, y0 = 1e30f, x1 = -1e30f, y1 = -1e30f;
+    if (viewerClip_) {
+        viewerClip_->accumulateBounds(Affine{}, x0, y0, x1, y1);
+    }
+    if (x1 > x0 && y1 > y0) {
+        const float sw = static_cast<float>(stage_.width) * 0.9f, sh = static_cast<float>(stage_.height) * 0.9f;
+        const float s = std::min({sw / (x1 - x0), sh / (y1 - y0), 4.0f});
+        viewerFit_ = viewerFit_ * Affine::scale(s) * Affine::translate(-(x0 + x1) * 0.5f, -(y0 + y1) * 0.5f);
+    }
+    SDL_Log("Viewer %d/%d: %s (id %u, %u frames, bounds %.0f,%.0f..%.0f,%.0f)", viewerIndex_ + 1, n,
+            entry.first.c_str(), entry.second, tl ? tl->frameCount : 0, static_cast<double>(x0),
+            static_cast<double>(y0), static_cast<double>(x1), static_cast<double>(y1));
 }
 
 SDL_AppResult App::event(const SDL_Event &ev)
@@ -59,7 +123,18 @@ SDL_AppResult App::event(const SDL_Event &ev)
         if (ev.key.key == SDLK_ESCAPE || ev.key.key == SDLK_AC_BACK) {
             return SDL_APP_SUCCESS;
         }
+        if (ev.key.key == SDLK_RIGHT || ev.key.key == SDLK_SPACE) {
+            showSymbol(viewerIndex_ + 1);
+        } else if (ev.key.key == SDLK_LEFT) {
+            showSymbol(viewerIndex_ - 1);
+        }
         break;
+    case SDL_EVENT_MOUSE_BUTTON_UP: { // touches arrive here too (SDL synthesises mouse events)
+        int w = 0, h = 0;
+        SDL_GetWindowSize(window_, &w, &h);
+        showSymbol(viewerIndex_ + (ev.button.x >= static_cast<float>(w) * 0.5f ? 1 : -1));
+        break;
+    }
     default:
         break;
     }
@@ -85,30 +160,25 @@ SDL_AppResult App::iterate()
 void App::tick()
 {
     ++frame_;
-    // SKELETON: probe crosses the stage once every 2 seconds of game time.
-    probePrevX_ = probeX_;
-    probeX_ += stage_.width / (2.0 * stage_.frameRate);
-    if (probeX_ >= stage_.width) {
-        probeX_ -= stage_.width;
-        probePrevX_ = probeX_;
+    if (viewerClip_) {
+        viewerClip_->advance();
     }
 }
 
 void App::render(double alpha)
 {
-    // Green background when the data folder was found, red when it is missing.
-    if (hasData_) {
-        SDL_SetRenderDrawColor(renderer_, 24, 96, 48, 255);
+    (void)alpha; // timeline animation is frame-stepped like Flash; interpolation comes with game objects
+    if (!hasData_) {
+        SDL_SetRenderDrawColor(renderer_, 110, 28, 28, 255); // red: data folder missing
     } else {
-        SDL_SetRenderDrawColor(renderer_, 110, 28, 28, 255);
+        SDL_SetRenderDrawColor(renderer_, 200, 200, 210, 255);
     }
     SDL_RenderClear(renderer_);
 
-    const double x = probePrevX_ + (probeX_ - probePrevX_) * alpha;
-    const SDL_FRect probe{static_cast<float>(x), static_cast<float>(stage_.height) * 0.5f - 16.0f, 32.0f, 32.0f};
-    SDL_SetRenderDrawColor(renderer_, 255, 220, 120, 255);
-    SDL_RenderFillRect(renderer_, &probe);
-
+    if (viewerClip_) {
+        const RenderContext ctx{renderer_, &symbols_, &textures_};
+        viewerClip_->render(ctx, viewerFit_, ColorTransform{});
+    }
     SDL_RenderPresent(renderer_);
 }
 

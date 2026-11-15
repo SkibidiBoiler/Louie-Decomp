@@ -107,15 +107,27 @@ Requisitos: CMake ≥ 3.24, Ninja, compilador C++20 (MSVC o clang) para Windows;
 # Inspeccionar la copia del juego (solo lectura, nada sale del equipo)
 python -I tools/swf_info.py "C:/Users/alfre/Proyectos/datos-papas/<juego>.swf"
 
-# Windows
+# Convertir un juego al formato propio (docs/asset-format.md). Salida SIEMPRE fuera del repo.
+python -I tools/swf2assets.py --swf "C:/Users/alfre/Proyectos/datos-papas/PapaLouie2.swf" \
+    --out "C:/Users/alfre/Proyectos/datos-papas/build/pl2" --scales 1,2
+
+# Windows (pendiente: falta instalar MSVC)
 cmake -S . -B build/windows -G Ninja -DCMAKE_BUILD_TYPE=Debug
 cmake --build build/windows
-build/windows/papalouie.exe --data <carpeta-de-recursos>
+build/windows/papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
 
-# Android (desde platform/android)
+# Android (desde platform/android; JAVA_HOME = JDK 21)
 ./gradlew assembleDebug
 adb -s a7e4babe install -r app/build/outputs/apk/debug/app-debug.apk
-adb -s a7e4babe push <carpeta-de-recursos>/. /sdcard/Android/data/io.github.skibidiboiler.papalouie/files/data/
+# En Git Bash: MSYS_NO_PATHCONV=1, o convierte /sdcard en una ruta de Windows.
+export MSYS_NO_PATHCONV=1
+R=/sdcard/Android/data/io.github.skibidiboiler.papalouie/files/data/pl2
+adb -s a7e4babe shell mkdir -p $R/shapes
+adb -s a7e4babe push .../build/pl2/symbols.bin .../build/pl2/manifest.json $R/
+adb -s a7e4babe push .../build/pl2/shapes/2x $R/shapes/
 ```
+
+Visor de símbolos (modo de desarrollo actual): toca la mitad derecha/izquierda de la pantalla (o ←/→) para
+pasar de símbolo; el nombre sale en `adb logcat -s SDL/APP`.
 
 Dispositivo de pruebas: POCO X5 Pro 5G (Snapdragon 778G, Adreno 642L, arm64-v8a), serie `a7e4babe`.

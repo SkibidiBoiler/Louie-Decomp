@@ -1,0 +1,32 @@
+#pragma once
+// Shape textures, loaded on first use from shapes/<scale>x/<id>.png.
+#include <SDL3/SDL.h>
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+
+namespace engine {
+
+class ShapeTextures {
+public:
+    ShapeTextures() = default;
+    ShapeTextures(const ShapeTextures &) = delete;
+    ShapeTextures &operator=(const ShapeTextures &) = delete;
+    ~ShapeTextures() { clear(); }
+
+    // Destroys every cached texture (call before destroying the renderer).
+    void clear();
+    void init(SDL_Renderer *renderer, const std::string &gameDir, int scale);
+    int scale() const { return scale_; }
+
+    // nullptr when the PNG is missing or fails to load (reported once).
+    SDL_Texture *get(uint16_t id);
+
+private:
+    SDL_Renderer *renderer_ = nullptr;
+    std::string dir_;
+    int scale_ = 1;
+    std::unordered_map<uint16_t, SDL_Texture *> cache_;
+};
+
+} // namespace engine

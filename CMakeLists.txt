@@ -21,6 +21,9 @@ set(PL_SOURCES
     src/main.cpp
     src/engine/app.cpp
     src/engine/paths.cpp
+    src/engine/symbols.cpp
+    src/engine/textures.cpp
+    src/engine/movieclip.cpp
 )
 
 if(ANDROID)
