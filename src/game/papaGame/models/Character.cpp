@@ -48,7 +48,7 @@ void Character::checkIfAtEdge(double, double dir)
     getMyCorners(x, y + 1);
     if (isWalking && !jump) {
         if ((!HitDownLeft || dir == 1) && (!HitDownRight || dir == -1) && !checkIfHalfOnCloud(dir) && !checkMovingTiles(1) &&
-            !onSlope) {
+            onSlope == 0) {
             if (map.getTileProperty(xtile + dir, ytile + 1, "slope") == 0 && map.getTileProperty(xtile + dir, ytile, "slope") == 0) {
                 dirx = dir * -1;
             }
@@ -62,7 +62,7 @@ bool Character::moveChar(double dx, double dy, double jumpDir, bool bounceAtWall
 {
     const display::GameDisplay &display = *gameObj->obf_71;
     const double tw = display.tileWidth;
-    double slopeDir = dy;
+    double slopeCheckDir = dy;
     bool landed = false;
     double step = jumpDir != 0 ? jumpspeed * jumpDir : speed;
     if (fixedSpeed < INT_MAX) {
@@ -87,7 +87,7 @@ bool Character::moveChar(double dx, double dy, double jumpDir, bool bounceAtWall
         } else {
             y = (upY + 1) * tw + playerheight;
             jumpspeed = 0;
-            slopeDir = 1;
+            slopeCheckDir = 1;
             if (isFlying) {
                 diry = 1;
             }
@@ -136,7 +136,7 @@ bool Character::moveChar(double dx, double dy, double jumpDir, bool bounceAtWall
     }
     getMyCorners(x + step * dx, y);
     if ((dx == -1 && step > 0) || (dx == 1 && step < 0)) {
-        if ((!HitDownLeft && !HitUpLeft && !HitUpMidLeft && !HitDownMidLeft) || (onSlope && !onSlopeWallLeft)) {
+        if ((!HitDownLeft && !HitUpLeft && !HitUpMidLeft && !HitDownMidLeft) || (onSlope != 0 && !onSlopeWallLeft)) {
             x += step * dx;
             if (!(!isWalking && fixedSpeed < INT_MAX && onMovingTile)) {
                 isWalking = true;
@@ -165,7 +165,7 @@ bool Character::moveChar(double dx, double dy, double jumpDir, bool bounceAtWall
         }
     }
     if ((dx == 1 && step > 0) || (dx == -1 && step < 0)) {
-        if ((!HitUpRight && !HitDownRight && !HitUpMidRight && !HitDownMidRight) || (onSlope && !onSlopeWallRight)) {
+        if ((!HitUpRight && !HitDownRight && !HitUpMidRight && !HitDownMidRight) || (onSlope != 0 && !onSlopeWallRight)) {
             x += step * dx;
             if (!(!isWalking && fixedSpeed < INT_MAX && onMovingTile)) {
                 isWalking = true;
@@ -253,7 +253,7 @@ bool Character::moveChar(double dx, double dy, double jumpDir, bool bounceAtWall
     if (shouldCheckCeilingSlopes) {
         checkForCeilingSlopes();
     }
-    checkForSlopes(dx, slopeDir);
+    checkForSlopes(dx, slopeCheckDir);
     if (checkEdges) {
         checkIfAtEdge(step, dx);
     }
@@ -265,7 +265,7 @@ void Character::fallChar()
 {
     if (!jump && !isFlying) {
         getMyCorners(x, y + 1);
-        if (!HitDownLeft && !HitDownRight && !checkIfOnCloud() && !checkMovingTiles(1) && !onSlope && !isInQuicksand) {
+        if (!HitDownLeft && !HitDownRight && !checkIfOnCloud() && !checkMovingTiles(1) && onSlope == 0 && !isInQuicksand) {
             jumpspeed = 0;
             jump = true;
             jumpedFromX = x;
@@ -356,16 +356,329 @@ void Character::getMyCorners(double px, double py)
     SlopeRight = map.getTileProperty(rightX, downY - 1, "slope");
 }
 
-// AS: Character.checkForCeilingSlopes
-void Character::checkForCeilingSlopes(double)
+// AS: Character.checkForCeilingSlopes — pushes the head down out of a sloped ceiling.
+void Character::checkForCeilingSlopes(double atY)
 {
-    // SKELETON: not translated yet (ceiling slopes).
+    const managers::MapManager &map = *gameObj->obf_4i;
+    const double tw = gameObj->obf_71->tileWidth;
+    if (!jump && atY <= -1) {
+        return;
+    }
+    double head = y - playerheight;
+    if (atY > -1) {
+        head = atY - playerheight;
+    }
+    const double row = std::floor(head / tw);
+    const double col = std::floor(x / tw);
+    const double type = map.getTileProperty(col, row, "ceilingslope");
+    if (type <= 0) {
+        return;
+    }
+    const double ix = x - xtile * tw;
+    double ceiling = head;
+    if (type == 1) {
+        ceiling = row * tw + ix;
+    } else if (type == 2) {
+        ceiling = row * tw + (tw - ix);
+    } else if (type == 3) {
+        ceiling = row * tw + std::floor(ix / 2);
+    } else if (type == 4) {
+        ceiling = row * tw + (tw / 2 + std::floor(ix / 2));
+    } else if (type == 5) {
+        ceiling = row * tw + (tw / 2 + std::floor((tw - ix) / 2));
+    } else if (type == 6) {
+        ceiling = row * tw + std::floor((tw - ix) / 2);
+    } else if (type == 7 || type == 8) {
+        ceiling = ix <= tw / 2 ? row * tw + ix * 2 : row * tw + (ix - tw / 2) * 2;
+    } else if (type == 9 || type == 10) {
+        ceiling = ix < tw / 2 ? row * tw + (tw - ix - tw / 2) * 2 : row * tw + std::floor((tw - ix) * 2);
+    }
+    if (ceiling > head) {
+        const double headroom = y - head;
+        y = std::ceil(ceiling + headroom + 2);
+        ytile = std::floor(y / tw);
+        if (jumpspeed < 0) {
+            jumpspeed = 0;
+        }
+    }
 }
 
-// AS: Character.checkForSlopes
-void Character::checkForSlopes(double, double)
+// AS: Character.checkForSlopes — keeps the character on slope tiles (types 1-10: 45, 22 and 67 degree slopes,
+// split in halves) and handles walking up into a sloped ceiling.
+void Character::checkForSlopes(double dirX, double dirY)
 {
-    // SKELETON: not translated yet; onSlope stays false, so slopes act as empty tiles for now.
+    const managers::MapManager &map = *gameObj->obf_4i;
+    const double tw = gameObj->obf_71->tileWidth;
+    const char *prop = onlyCheckSolidSlopes ? "solidslope" : "slope";
+    double rise = 0;
+    const double savedY = y;
+    const double here = map.getTileProperty(xtile, ytile, prop);
+    const double below = map.getTileProperty(xtile, ytile + 1, prop);
+    const double below2 = map.getTileProperty(xtile, ytile + 2, prop);
+    // Snap down onto a slope just below (walking downhill), or up onto one just above.
+    if (below != 0 && !jump && !isFlying && !onWall && !onCeiling) {
+        if (below != 7 && below != 10) {
+            ytile += 1;
+            y = (ytile + 1) * tw - height;
+            rise = 0;
+        }
+    } else if (here == 0 && below2 > 0 && !jump && (onSlope == 8 || onSlope == 9)) {
+        ytile += 2;
+        y = (ytile + 1) * tw - height;
+        rise = 0;
+    } else if (here == 0 && map.getTileProperty(xtile, ytile + 1, "collision") == 0 &&
+               map.getTileProperty(xtile, ytile + 1, "thrublock") == 0 &&
+               (map.getTileProperty(xtile, ytile + 2, "collision") > 0 || map.getTileProperty(xtile, ytile + 2, "thrublock") > 0) &&
+               !jump && (onSlope == 8 || onSlope == 9)) {
+        ytile += 1;
+        y = (ytile + 1) * tw - height;
+        rise = 0;
+    } else if (map.getTileProperty(xtile, ytile - 1, prop) != 0 && !jump && !isFlying && !onWall && !onCeiling) {
+        const double above = map.getTileProperty(xtile, ytile - 1, prop);
+        if (above != 8 && above != 9) {
+            --ytile;
+            y = (ytile - 1) * tw - height;
+            rise = 0;
+        }
+    }
+    if (map.getTileProperty(xtile, ytile, prop) != 0 && dirY != -1) {
+        if (isFlying) {
+            diry = -1;
+        }
+        const double ix = std::floor(x - xtile * tw);
+        onSlope = map.getTileProperty(xtile, ytile, prop);
+        double target = -1; // y on the slope surface
+        double slopeSide = 0;
+        if (onSlope == 1) {
+            rise = ix;
+            target = (ytile + 1) * tw - height - rise;
+            slopeSide = 1;
+        } else if (onSlope == 2) {
+            rise = tw - ix;
+            target = (ytile + 1) * tw - height - rise;
+            slopeSide = -1;
+        } else if (onSlope == 3) {
+            rise = ix;
+            target = (ytile + 1) * tw - height - std::floor(rise / 2);
+            slopeSide = 1;
+        } else if (onSlope == 4) {
+            rise = ix;
+            target = (ytile + 1) * tw - height - (tw / 2 + std::floor(rise / 2));
+            slopeSide = 1;
+        } else if (onSlope == 5) {
+            rise = tw - ix;
+            target = (ytile + 1) * tw - height - (tw / 2 + std::floor(rise / 2));
+            slopeSide = -1;
+        } else if (onSlope == 6) {
+            rise = tw - ix;
+            target = (ytile + 1) * tw - height - std::floor(rise / 2);
+            slopeSide = -1;
+        } else if (onSlope == 7 || onSlope == 8) {
+            double row = ytile;
+            slopeSide = 1;
+            if (ix <= tw / 2) {
+                if (onSlope == 8) {
+                    if (jump && jumpspeed < 0) {
+                        target = (row + 1) * tw - height;
+                        if (target > y) {
+                            target = y;
+                        }
+                    } else {
+                        row = ytile + 1;
+                        rise = ix * 2;
+                        target = (row + 1) * tw - height - std::floor(rise);
+                    }
+                } else {
+                    rise = ix * 2;
+                    target = (row + 1) * tw - height - std::floor(rise);
+                }
+            } else if (onSlope == 7) {
+                row = ytile - 1;
+                target = (row + 1) * tw - height - (ix - tw / 2) * 2;
+            } else {
+                target = (row + 1) * tw - height - (ix - tw / 2) * 2;
+            }
+        } else if (onSlope == 9 || onSlope == 10) {
+            double row = ytile;
+            slopeSide = -1;
+            if (ix < tw / 2) {
+                if (onSlope == 10) {
+                    row = ytile - 1;
+                }
+                target = (row + 1) * tw - height - (tw - ix - tw / 2) * 2;
+            } else if (onSlope == 9) {
+                if (jump && jumpspeed < 0) {
+                    target = (row + 1) * tw - height;
+                    if (target > y) {
+                        target = y;
+                    }
+                } else {
+                    row = ytile + 1;
+                    rise = (tw - ix) * 2;
+                    target = (row + 1) * tw - height - std::floor(rise);
+                }
+            } else {
+                rise = (tw - ix) * 2;
+                target = (row + 1) * tw - height - std::floor(rise);
+            }
+        }
+        if (target != -1) {
+            if (jump && jumpspeed < 0 && slopeSide != dirX) {
+                // Rising past a slope: only keep the head out of the ceiling.
+                slopedIntoCeiling = 0;
+                getMyCorners(x, target);
+                if (HitUpLeft || HitUpRight || HitUpMidLeft || HitUpMidRight) {
+                    const double minY = (HitUpMidLeft || HitUpMidRight) ? (upmidY + 1) * tw + playerheight + 1
+                                                                       : (upY + 1) * tw + playerheight + 1;
+                    if (y < minY) {
+                        y = minY;
+                    }
+                    ytile = std::floor(y / tw);
+                }
+            } else if (jump && jumpspeed > 0 && y < target) {
+                slopedIntoCeiling = 0; // still falling towards the slope
+            } else {
+                if (jump && jumpspeed < 0 && target > y) {
+                    target = y;
+                }
+                getMyCorners(x, target);
+                const bool blocked = (slopedIntoCeiling == 0 && (HitUpLeft || HitUpRight || HitUpMidLeft || HitUpMidRight)) ||
+                                     (slopedIntoCeiling == 1 && (HitUpRight || HitUpMidRight)) ||
+                                     (slopedIntoCeiling == -1 && (HitUpLeft || HitUpMidLeft));
+                if (blocked) {
+                    // Walking up the slope would put the head into the ceiling.
+                    if (!jump || lastOnSlope != 0 || isGliding) {
+                        x = lastx;
+                        xtile = std::floor(x / tw);
+                        y = lasty;
+                        ytile = std::floor(y / tw);
+                        onSlope = lastOnSlope;
+                        jump = false;
+                        isGliding = false;
+                    } else if (jump) {
+                        if (jumpspeed < 0) {
+                            jumpspeed = 0;
+                            if (isGliding) {
+                                jump = false;
+                                isGliding = false;
+                                jumpspeed = 0;
+                            }
+                        }
+                        if (jumpspeed <= 0) {
+                            const double minY = (HitUpMidLeft || HitUpMidRight) ? (upmidY + 1) * tw + playerheight + 1
+                                                                               : (upY + 1) * tw + playerheight + 1;
+                            if (y < minY) {
+                                y = minY;
+                            }
+                            onSlope = 0;
+                        } else {
+                            // "Jumping, but dropping": back to where the jump started if it was close.
+                            const double dist = std::sqrt((y - jumpedFromY) * (y - jumpedFromY) + (x - jumpedFromX) * (x - jumpedFromX));
+                            if (dist <= 32) {
+                                x = jumpedFromX;
+                                y = jumpedFromY;
+                                onSlope = jumpedFromSlope;
+                                jump = false;
+                                xtile = std::floor(x / tw);
+                                ytile = std::floor(y / tw);
+                            } else {
+                                onSlope = 0;
+                            }
+                        }
+                        ytile = std::floor(y / tw);
+                    }
+                    if (checkForCrawlGap(dirX) && canCrawl && !isCrawling) {
+                        // SKELETON: crawlgap.wav
+                        isCrawling = true;
+                        duck = true;
+                        // isTurning lives in CustomerChar; crawling characters are not translated yet.
+                    } else {
+                        slopedIntoCeiling = slopeSide;
+                        isWalking = false;
+                    }
+                } else {
+                    y = target;
+                    if (onSlope == 7 || onSlope == 8 || onSlope == 9 || onSlope == 10) {
+                        ytile = std::floor(y / tw);
+                    }
+                    slopedIntoCeiling = 0;
+                }
+                if (onSlope != 0) {
+                    if (jump && jumpspeed >= 0) {
+                        // Landing on a slope.
+                        if (bounceY) {
+                            diry = -1;
+                            jumpspeed = std::min(-10.0, 0 - std::fabs(jumpspeed * bounceDecayY));
+                            speed = std::max(6.0, std::floor(speed * bounceDecayX));
+                            ++numBounces;
+                            if (onSlope == 1 || onSlope == 3 || onSlope == 4 || onSlope == 7 || onSlope == 8) {
+                                dirx = -1;
+                            } else if (onSlope == 2 || onSlope == 5 || onSlope == 6 || onSlope == 9 || onSlope == 10) {
+                                dirx = 1;
+                            }
+                            if (jumpspeed == 0) {
+                                dirx = 0;
+                                jumpspeed = 0;
+                                speed = 0;
+                                bounceY = false;
+                                jump = false;
+                                triggerjump = false;
+                                triggerjumpx = false;
+                                isWallSliding = false;
+                            }
+                        } else {
+                            jump = false;
+                            triggerjump = false;
+                            triggerjumpx = false;
+                            isWallSliding = false;
+                        }
+                    }
+                    slopeDir = slopeSide;
+                }
+            }
+        }
+        onSlopeWallRight = (map.getTileProperty(xtile + 1, ytile - 1, "collision") != 0 && onSlope != 7 && onSlope != 8) ||
+                           (map.getTileProperty(xtile + 1, ytile - 2, "collision") != 0 && !duck);
+        onSlopeWallLeft = (map.getTileProperty(xtile - 1, ytile - 1, "collision") != 0 && onSlope != 10 && onSlope != 9) ||
+                          (map.getTileProperty(xtile - 1, ytile - 2, "collision") != 0 && !duck);
+    } else {
+        if (onSlope != 0) {
+            // Leaving a slope: step onto the flat tile at the top or the bottom.
+            if ((onSlope == 1 && dirX == 1) || (onSlope == 2 && dirX == -1) || (onSlope == 4 && dirX == 1) ||
+                (onSlope == 5 && dirX == -1) || ((onSlope == 7 || onSlope == 8) && dirX == 1) ||
+                ((onSlope == 10 || onSlope == 9) && dirX == -1)) {
+                if (map.getTileProperty(xtile, ytile, "collision") != 0) {
+                    --ytile;
+                }
+                y = (ytile + 1) * tw - height;
+                if (isSliding) {
+                    jump = true;
+                    jumpspeed = -12;
+                }
+            } else if ((onSlope == 1 && dirX == -1) || (onSlope == 2 && dirX == 1) || (onSlope == 3 && dirX == -1) ||
+                       (onSlope == 6 && dirX == 1) || ((onSlope == 7 || onSlope == 8) && dirX == -1) ||
+                       ((onSlope == 10 || onSlope == 9) && dirX == 1)) {
+                y = (ytile + 1) * tw - height;
+            }
+        }
+        onSlope = 0;
+        slopeDir = 0;
+        slopedIntoCeiling = 0;
+        rise = 0;
+    }
+    if (isFlying) {
+        y = savedY;
+        if (dirx == 1) {
+            if (onSlope == 1 || onSlope == 3 || onSlope == 4 || onSlope == 7 || onSlope == 8) {
+                dirx = -1;
+            }
+        } else if (dirx == -1) {
+            if (onSlope == 2 || onSlope == 5 || onSlope == 6 || onSlope == 9 || onSlope == 10) {
+                dirx = 1;
+            }
+        }
+    }
+    (void)rise;
 }
 
 } // namespace papaGame::models

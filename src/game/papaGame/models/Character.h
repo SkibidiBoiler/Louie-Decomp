@@ -1,7 +1,7 @@
 #pragma once
 // AS: papaGame.models.Character — position, tile collision and movement shared by the player and enemies.
 // Ported so far: getMyCorners, cloud/ladder/edge checks, fallChar, jumpChar, moveChar.
-// SKELETON: checkForSlopes / checkForCeilingSlopes (slopes), moving tiles, crawl gaps and doors.
+// Also checkForSlopes / checkForCeilingSlopes. SKELETON: moving tiles, crawl gaps and doors.
 #include <climits>
 
 namespace obf_9G { class obf_4R; }
@@ -45,16 +45,19 @@ public:
     double maxjumpvelocity = INT_MAX;
     double shortjump = -10;
     double slopedIntoCeiling = 0;
-    bool jumpedFromSlope = false;
+    double jumpedFromSlope = 0;
     double lastx = 0, lasty = 0;
-    bool lastOnSlope = false;
+    double lastOnSlope = 0;
     double facingDir = -1, walkingDir = 1, dirx = 0, diry = 0;
     double jumpedFromX = 0, jumpedFromY = 0;
     bool jump = false, triggerjump = false, triggerjumpx = false;
     bool isWalking = false, isSliding = false, isCrawling = false, isClimbingLadder = false;
     bool isFlying = false, isGliding = false, isWallSliding = false, isInQuicksand = false;
     bool isCarryingObject = false, isDead = false, duck = false, canCrawl = false;
-    bool onMovingTile = false, onSlope = false, onSlopeWallLeft = false, onSlopeWallRight = false;
+    bool onMovingTile = false, onSlopeWallLeft = false, onSlopeWallRight = false;
+    double onSlope = 0;  // slope type under the character (1-10), 0 = none
+    double slopeDir = 0;
+    bool onCeiling = false, onlyCheckSolidSlopes = false;
     bool onWall = false, canClimbUp = false, bounceX = false, bounceY = false;
     bool shouldCheckCeilingSlopes = false;
     double bounceDecayX = 1, bounceDecayY = 1, numBounces = 0;

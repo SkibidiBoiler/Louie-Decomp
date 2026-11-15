@@ -216,9 +216,9 @@ void App::tickLevel()
     const bool *keys = SDL_GetKeyboardState(nullptr);
     const bool panning = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
     ActionState actions = panning ? ActionState{} : input_.poll();
-    if (walkTest_ >= 0) { // DEV: right for 60 frames, jump at frames 30-45
+    if (walkTest_ >= 0) { // DEV: right until the capture (~3 s), jump at frames 30-45
         ++walkTest_;
-        actions.held[static_cast<size_t>(Action::Right)] = walkTest_ < 60;
+        actions.held[static_cast<size_t>(Action::Right)] = walkTest_ < 200;
         actions.held[static_cast<size_t>(Action::Jump)] = walkTest_ > 30 && walkTest_ < 45;
     }
     controls.keyPressedLeft = actions[Action::Left];
