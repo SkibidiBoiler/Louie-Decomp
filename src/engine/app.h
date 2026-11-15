@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "engine/movieclip.h"
+#include "engine/sheets.h"
 #include "engine/stage.h"
 #include "engine/symbols.h"
 #include "engine/textures.h"
@@ -26,9 +27,10 @@ private:
     void tick();
     void render(double alpha);
 
-    // DEV: symbol viewer, used until the first game screen is ported.
+    // DEV: symbol viewer and blit demo, used until the first game screen is ported.
     void loadGame(const std::string &game);
     void showSymbol(int index);
+    void renderBlitDemo();
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -47,6 +49,8 @@ private:
     int viewerIndex_ = 0;
     std::unique_ptr<MovieClip> viewerClip_;
     Affine viewerFit_;
+    SheetLibrary sheets_;
+    bool blitDemo_ = true;
 };
 
 } // namespace engine

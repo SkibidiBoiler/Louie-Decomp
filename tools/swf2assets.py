@@ -13,6 +13,7 @@ Usage:
 import argparse
 import json
 import os
+import re
 import shutil
 import struct
 import subprocess
@@ -331,12 +332,75 @@ def export_media(swf, out, scales, java, ffdec):
     print(f"  sounds: {len(list(dest.iterdir()))} files")
 
 
+def export_sheets(swf, out, scales, java, ffdec, names, chars, classes):
+    """Bake the classes the game rasterises at runtime: sprites (frame 1) at every scale, bitmaps as-is.
+
+    Writes sheets/<N>x/<name>.png (vector) or sheets/1x/<name>.png|jpg (bitmap) and sheets/index.txt with one
+    line per sheet: "<name> <origin x> <origin y> vector|bitmap" (origin = top-left of the PNG in symbol units).
+    """
+    log = out / "ffdec.log"
+    root = out / "sheets"
+    if root.exists():
+        shutil.rmtree(root)
+    root.mkdir(parents=True)
+    by_id = {}
+    for n in names:
+        cid = classes.get(n)
+        if cid is not None and chars.get(cid) in (KIND_SPRITE, KIND_BITMAP):
+            by_id[cid] = n
+    sprite_ids = sorted(c for c in by_id if chars[c] == KIND_SPRITE)
+    bitmap_ids = sorted(c for c in by_id if chars[c] == KIND_BITMAP)
+    ids = ",".join(map(str, sprite_ids))
+    select = ",".join(f"{c}:1" for c in sprite_ids)
+
+    def sprite_dirs(base):
+        found = {}
+        for d in Path(base).rglob("DefineSprite_*"):
+            if d.is_dir():
+                found[int(d.name.split("_")[1])] = d
+        return found
+
+    origins = {}
+    with tempfile.TemporaryDirectory(dir=out) as tmp:
+        run_ffdec(java, ffdec, ["-format", "sprite:svg", "-select", select, "-selectid", ids,
+                                "-export", "sprite", tmp, str(swf)], log)
+        for cid, d in sprite_dirs(tmp).items():
+            head = (d / "1.svg").read_text(encoding="utf-8", errors="replace")[:2000]
+            m = re.search(r'<g transform="matrix\(([^)]*)\)"', head)
+            vals = [float(v) for v in m.group(1).split(",")] if m else [1, 0, 0, 1, 0, 0]
+            origins[cid] = (-vals[4], -vals[5])
+    for s in scales:
+        dest = root / f"{s}x"
+        dest.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=out) as tmp:
+            run_ffdec(java, ffdec, ["-format", "sprite:png", "-zoom", str(s), "-select", select, "-selectid", ids,
+                                    "-export", "sprite", tmp, str(swf)], log)
+            for cid, d in sprite_dirs(tmp).items():
+                shutil.move(str(d / "1.png"), str(dest / f"{by_id[cid]}.png"))
+    lines = [f"{by_id[c]} {origins.get(c, (0, 0))[0] + 0.0:g} {origins.get(c, (0, 0))[1] + 0.0:g} vector" for c in sprite_ids]
+    if bitmap_ids:
+        dest = root / "1x"
+        dest.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=out) as tmp:
+            run_ffdec(java, ffdec, ["-selectid", ",".join(map(str, bitmap_ids)), "-export", "image", tmp, str(swf)], log)
+            for f in Path(tmp).rglob("*"):
+                if f.is_file() and f.suffix.lower() in (".png", ".jpg"):
+                    cid = int(f.stem.split("_")[0])
+                    if cid in by_id:
+                        shutil.move(str(f), str(dest / f"{by_id[cid]}{f.suffix.lower()}"))
+                        lines.append(f"{by_id[cid]} 0 0 bitmap")
+    (root / "index.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"  sheets: {len(sprite_ids)} vector x {len(scales)} scales, {len(bitmap_ids)} bitmaps")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--swf", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--scales", default="1,2")
     ap.add_argument("--skip-ffdec", action="store_true", help="only rewrite symbols.bin and manifest.json")
+    ap.add_argument("--sheets", help="file listing the classes to bake as sheets (e.g. tools/sheets/pl2.txt)")
+    ap.add_argument("--only-sheets", action="store_true", help="skip shapes and sounds, only bake sheets")
     ap.add_argument("--java", default=DEFAULT_JAVA)
     ap.add_argument("--ffdec", default=DEFAULT_FFDEC)
     args = ap.parse_args()
@@ -355,7 +419,12 @@ def main():
     print(f"symbols.bin: {size:,} bytes; {len(chars)} characters, {len(sprites)} timelines, "
           f"{tracks} tracks, {keys} keys, {len(classes)} classes")
     if not args.skip_ffdec:
-        export_media(swf, out, scales, args.java, args.ffdec)
+        if not args.only_sheets:
+            export_media(swf, out, scales, args.java, args.ffdec)
+        if args.sheets:
+            names = [ln.strip() for ln in Path(args.sheets).read_text(encoding="utf-8").splitlines()
+                     if ln.strip() and not ln.startswith("#")]
+            export_sheets(swf, out, scales, args.java, args.ffdec, names, chars, classes)
 
     kinds = {}
     for k in chars.values():

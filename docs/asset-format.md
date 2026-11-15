@@ -7,8 +7,18 @@ Produced by `tools/swf2assets.py` from the owner's SWF, loaded by `src/engine/`.
 ├── manifest.json             summary: stage size, fps, available scales, counts
 ├── symbols.bin               characters, shape bounds, class names, timelines
 ├── shapes/<N>x/<id>.png      shape <id> rasterised at scale N (FFDec)
+├── sheets/index.txt          one line per sheet: "<class> <origin x> <origin y> vector|bitmap"
+├── sheets/<N>x/<class>.png   vector sheet: frame 1 of the class, rendered at scale N (FFDec)
+├── sheets/1x/<class>.png|jpg bitmap sheet (a linked BitmapData), as stored in the SWF
 └── sounds/<id>_<name>.*      embedded sounds (FFDec)
 ```
+
+**Sheets** are the bitmaps the original builds at runtime (see `docs/renderer.md`); the list per game is in
+`tools/sheets/<game>.txt`. A sheet PNG's top-left pixel is the point `(origin x, origin y)` of the symbol, so
+the original's `copyPixels(sheet, Rectangle(sx, sy, w, h), ...)` reads texture pixels
+`((sx - origin x) * N, (sy - origin y) * N)` with size `(w * N, h * N)`. Tilesets are composed at load time
+from their five parts (`<tileset>_solid|soft|bridge|blocks|details`), stacked and clipped as in
+`BitmapManager.createTilesheet`.
 
 A shape PNG at scale N covers the shape's bounds: its top-left corner is `(x, y)` from `symbols.bin` and its
 size is `ceil(w*N) x ceil(h*N)` pixels, so it is drawn over `x .. x + png_width / N` in shape units (pixels at 1x).

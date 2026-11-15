@@ -14,6 +14,7 @@ App::~App()
 {
     viewerClip_.reset();
     textures_.clear(); // release textures before the renderer
+    sheets_.clear();
     if (renderer_) {
         SDL_DestroyRenderer(renderer_);
     }
@@ -74,6 +75,7 @@ void App::loadGame(const std::string &game)
         }
     }
     textures_.init(renderer_, dir, scale);
+    sheets_.init(renderer_, dir, scale);
     SDL_Log("Shapes at %dx (display needs %.2fx)", scale, static_cast<double>(wanted));
 
     for (const auto &entry : symbols_.classes()) {
@@ -123,7 +125,9 @@ SDL_AppResult App::event(const SDL_Event &ev)
         if (ev.key.key == SDLK_ESCAPE || ev.key.key == SDLK_AC_BACK) {
             return SDL_APP_SUCCESS;
         }
-        if (ev.key.key == SDLK_RIGHT || ev.key.key == SDLK_SPACE) {
+        if (ev.key.key == SDLK_TAB) {
+            blitDemo_ = !blitDemo_;
+        } else if (ev.key.key == SDLK_RIGHT || ev.key.key == SDLK_SPACE) {
             showSymbol(viewerIndex_ + 1);
         } else if (ev.key.key == SDLK_LEFT) {
             showSymbol(viewerIndex_ - 1);
@@ -132,7 +136,11 @@ SDL_AppResult App::event(const SDL_Event &ev)
     case SDL_EVENT_MOUSE_BUTTON_UP: { // touches arrive here too (SDL synthesises mouse events)
         int w = 0, h = 0;
         SDL_GetWindowSize(window_, &w, &h);
-        showSymbol(viewerIndex_ + (ev.button.x >= static_cast<float>(w) * 0.5f ? 1 : -1));
+        if (ev.button.y < static_cast<float>(h) * 0.2f) { // top band: switch mode
+            blitDemo_ = !blitDemo_;
+        } else if (!blitDemo_) {
+            showSymbol(viewerIndex_ + (ev.button.x >= static_cast<float>(w) * 0.5f ? 1 : -1));
+        }
         break;
     }
     default:
@@ -175,11 +183,35 @@ void App::render(double alpha)
     }
     SDL_RenderClear(renderer_);
 
-    if (viewerClip_) {
+    if (blitDemo_ && hasData_) {
+        renderBlitDemo();
+    } else if (viewerClip_) {
         const RenderContext ctx{renderer_, &symbols_, &textures_};
         viewerClip_->render(ctx, viewerFit_, ColorTransform{});
     }
     SDL_RenderPresent(renderer_);
+}
+
+void App::renderBlitDemo()
+{
+    // Background sheet as the original's backdrop, then two tile rows from the composed tilesheet.
+    if (const Sheet *bg = sheets_.get("tilesheet1_bg")) {
+        sheets_.blit(*bg, 0, 0, static_cast<float>(stage_.width), static_cast<float>(stage_.height), 0, 0);
+    }
+    if (const Sheet *tiles = sheets_.composeTilesheet("tilesheet1")) {
+        sheets_.blit(*tiles, 0, 0, static_cast<float>(stage_.width), 96, 0, static_cast<float>(stage_.height) - 96);
+    }
+    // Enemy35 ("enemysheet_sarge"): 192x160 cells, 11 per row, mirrored rows start at y = 1280.
+    if (const Sheet *sarge = sheets_.get("enemysheet_sarge")) {
+        const float w = 192, h = 160;
+        const int perRow = 11;
+        const int frame = static_cast<int>((frame_ / 2) % 88);
+        const float sx = static_cast<float>(frame % perRow) * w;
+        const float sy = static_cast<float>(frame / perRow) * h;
+        const float y = static_cast<float>(stage_.height) - 96 - 135; // feet on the tiles (spriteTargetY = 135)
+        sheets_.blit(*sarge, sx, sy, w, h, 120, y);
+        sheets_.blit(*sarge, sx, sy + 1280, w, h, 390, y);
+    }
 }
 
 } // namespace engine
