@@ -123,6 +123,8 @@ build\windows\papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
 #   --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por texto;
 #   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. Partidas guardadas de Windows:
 #   %APPDATA%\SkibidiBoiler\PapaLouieRecomp\saves\PapaLouie2_<ranura>.json
+# Progreso de la traducción (funciones y líneas del AS con su `// AS:` en src/game; solo local, sin tokens):
+python -I tools/progress.py                 # --by-class: por clase; --missing <Clase>: funciones que faltan
 # Leer una función del código original deofuscado (solo local):
 python -I tools/as_func.py "C:/Users/alfre/Proyectos/datos-papas/extracted/pl2-deob/scripts" GameControls keyCheckPlayer
 

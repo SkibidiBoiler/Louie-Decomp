@@ -2,6 +2,10 @@
 
 Read this first when resuming. Rules and commands: [AGENTS.md](../AGENTS.md).
 
+Translation progress, counted locally: `python -I tools/progress.py` (functions and lines of the game's AS
+whose `// AS:` tag exists in `src/game`; SKELETON code counts, so it is an upper bound). On 2026-11-16, PL2:
+697 of 2263 functions (30.8 %), 13.1K of 37.7K lines (34.8 %), 105 of 232 classes started.
+
 ## Done (branch `claude/hola-153774`, local only; merged into `main`. Push only to `main`, only when asked)
 
 - Toolchain: CMake + SDL3 3.4.20; Android (Gradle, verified on the POCO X5 Pro at 120 Hz); Windows
