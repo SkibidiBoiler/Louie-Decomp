@@ -43,6 +43,25 @@ static const char kSheetsPl2[] = R\"PLSHEETS(${PL_SHEETS_PL2})PLSHEETS\";
 file(COPY_FILE ${PL_GENERATED}/sheet_lists.h.tmp ${PL_GENERATED}/sheet_lists.h ONLY_IF_DIFFERENT)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tools/sheets/pl2.txt)
 
+# The port's translation tables (lang/*.json), compiled in.
+file(GLOB PL_LANG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/lang/*.json)
+set(PL_LANG_HEADER "#pragma once
+// Generated from lang/*.json by CMake.
+struct LangTable { const char *code; const char *json; };
+static const LangTable kLangTables[] = {
+")
+foreach(lang_file ${PL_LANG_FILES})
+    get_filename_component(lang_code ${lang_file} NAME_WE)
+    file(READ ${lang_file} lang_json)
+    string(APPEND PL_LANG_HEADER "    {\"${lang_code}\", R\"PLLANG(${lang_json})PLLANG\"},
+")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${lang_file})
+endforeach()
+string(APPEND PL_LANG_HEADER "};
+")
+file(WRITE ${PL_GENERATED}/lang_tables.h.tmp "${PL_LANG_HEADER}")
+file(COPY_FILE ${PL_GENERATED}/lang_tables.h.tmp ${PL_GENERATED}/lang_tables.h ONLY_IF_DIFFERENT)
+
 set(PL_SOURCES
     src/main.cpp
     src/engine/app.cpp
@@ -57,6 +76,8 @@ set(PL_SOURCES
     src/engine/sheets.cpp
     src/engine/settings.cpp
     src/engine/json.cpp
+    src/engine/lang.cpp
+    src/engine/menu_bar.cpp
     src/engine/xml.cpp
     src/import/abc.cpp
     src/import/importer.cpp
@@ -134,6 +155,8 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy6.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
+    src/game/papaGame/screens/SplashScreen.cpp
+    src/game/papaGame/screens/StageIntroScreen.cpp
 )
 
 if(ANDROID)

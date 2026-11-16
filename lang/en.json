@@ -1,0 +1,20 @@
+{
+  "menu.play": "Play ►",
+  "menu.credits": "CREDITS",
+  "menu.back": "BACK",
+  "menu.quit": "QUIT",
+  "menu.continue": "Continue ►",
+  "menu.start_level": "Start Level ►",
+  "menu.back_to_map": "◄ BACK TO MAP",
+  "menu.back_to_game": "Back to Game ►",
+  "menu.quit_level": "QUIT LEVEL",
+  "menu.baddies": "BADDIES",
+  "menu.badges": "BADGES",
+  "menu.controls": "CONTROLS",
+  "menu.help": "HELP",
+  "menu.info": "INFO",
+  "title.choose_slot": "CHOOSE A SLOT",
+  "title.level_complete": "LEVEL COMPLETE",
+  "title.map": "MAP",
+  "title.info": "INFO"
+}

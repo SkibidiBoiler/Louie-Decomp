@@ -196,6 +196,61 @@ TimelineData parseTimeline(const uint8_t *data, size_t pos, size_t end, uint16_t
 
 namespace {
 
+// DefineButton (7) / DefineButton2 (34) as a four-frame timeline: 0 up, 1 over, 2 down, 3 hit area. A record
+// shown in states that are not adjacent becomes one track per run of states.
+TimelineData parseButton(const Tag &tag)
+{
+    TimelineData tl;
+    tl.frameCount = 4;
+    const uint8_t *b = tag.body;
+    const size_t n = tag.size;
+    const bool v2 = tag.code == 34;
+    size_t p = v2 ? 5 : 2; // id (+ flags, action offset)
+    while (p < n && b[p] != 0) {
+        const uint8_t flags = b[p++];
+        if (p + 4 > n) {
+            break;
+        }
+        const uint16_t charId = u16(b + p);
+        const uint16_t depth = u16(b + p + 2);
+        p += 4;
+        const Matrix matrix = readMatrix(b, n, p);
+        std::optional<CxForm> cx;
+        if (v2) {
+            cx = readCxForm(b, n, p, true);
+        }
+        uint8_t nfilters = 0, blend = 0;
+        if (v2 && (flags & 0x10)) {
+            p = skipFilters(b, n, p, nfilters);
+        }
+        if (v2 && (flags & 0x20) && p < n) {
+            blend = b[p++];
+        }
+        const bool states[4] = {(flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0};
+        for (int s = 0; s < 4; ++s) {
+            if (!states[s] || (s > 0 && states[s - 1])) {
+                continue;
+            }
+            int e = s;
+            while (e + 1 < 4 && states[e + 1]) {
+                ++e;
+            }
+            auto t = std::make_unique<TrackData>();
+            t->depth = depth;
+            t->charId = charId;
+            t->first = s;
+            t->last = e;
+            t->matrix = matrix;
+            t->cx = cx;
+            t->blend = blend;
+            t->filters = nfilters;
+            t->keys.push_back(Key{static_cast<uint16_t>(s), matrix, cx, std::nullopt});
+            tl.tracks.push_back(std::move(t));
+        }
+    }
+    return tl;
+}
+
 class Writer {
 public:
     std::vector<uint8_t> bytes;
@@ -259,6 +314,8 @@ std::vector<uint8_t> buildSymbols(const Swf &swf, const SwfIndex &index)
         if (index.chars.at(id) == KindSprite && tag.size >= 4) {
             const uint16_t fc = u16(tag.body + 2);
             sprites[id] = parseTimeline(tag.body, 4, tag.size, fc);
+        } else if (index.chars.at(id) == KindButton) {
+            sprites[id] = parseButton(tag);
         }
     }
     sprites[0] = parseTimeline(d.data(), swf.firstTag(), d.size(), swf.frameCount());

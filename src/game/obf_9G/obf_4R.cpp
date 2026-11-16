@@ -23,6 +23,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_V = std::make_unique<papaGame::managers::EffectManager>(this);
     obf_94 = std::make_unique<papaGame::managers::ChallengeManager>(this);
     obf_7t = std::make_unique<papaGame::events::EventManager>(this);
+    obf_5h = engine::MovieClip::createEmpty(*symbols);
 }
 
 bool obf_4R::loadLevelData(const std::string &gameDir_)
@@ -171,6 +172,102 @@ void obf_4R::runPending()
         obf_9k();
         obf_6V(level);
     }
+}
+
+// AS: §_-4R§.§_-8O§ — SKELETON: GameDisplay.setupBitmapDraw (the port's display sets itself up per level).
+void obf_4R::obf_8O()
+{
+    obf_Q();
+}
+
+// AS: §_-4R§.§_-Q§
+void obf_4R::obf_Q()
+{
+    obf_7L = std::make_unique<papaGame::screens::StageIntroScreen>(this);
+}
+
+// AS: §_-4R§.§_-q§ — SKELETON: GameControls.resetKeyFocus (keyboard focus is a Flash matter).
+void obf_4R::obf_q()
+{
+    if (obf_7L) {
+        obf_7L->destroy();
+        pendingDestroyIntro_ = std::move(obf_7L); // port: it may be running; freed on the next frame
+    }
+}
+
+void obf_4R::addContainerListener(const std::string &event, std::function<void()> fn)
+{
+    containerListeners[event] = std::move(fn);
+}
+
+void obf_4R::removeContainerListener(const std::string &event)
+{
+    containerListeners.erase(event);
+}
+
+void obf_4R::dispatchContainerEvent(const std::string &event)
+{
+    auto it = containerListeners.find(event);
+    if (it != containerListeners.end()) {
+        std::function<void()> fn = it->second; // the handler may remove itself
+        fn();
+    }
+}
+
+void obf_4R::showApiScreen(const std::string &name)
+{
+    using Kind = engine::MenuBar::Kind;
+    if (splashScreen) {
+        splashScreen->destroy();
+        pendingDestroySplash_ = std::move(splashScreen);
+    }
+    menuBar.clear();
+    SDL_Log("API screen: %s", name.c_str());
+    apiScreen = name;
+    if (name == "SplashScreen") {
+        splashScreen = std::make_unique<papaGame::screens::SplashScreen>(this, obf_5h.get());
+        engine::MenuBar::Layout layout;
+        layout.topVisible = 73;
+        layout.bottomVisible = 120;
+        menuBar.setup(*symbols, text, lang, "",
+                      {{Kind::Action, "menu.play", "clickStart"}, {Kind::Tab, "menu.credits", "clickCredits"}},
+                      layout);
+    } else if (name == "SlotSelect") {
+        // SKELETON: SlotSelectScreen and MainMenuScreen (save slots, the map, character select) are not ported
+        // yet: the game goes straight to the stage intro of the current level.
+        apiScreen.clear();
+        obf_8O();
+    }
+}
+
+bool obf_4R::screensActive() const
+{
+    return !apiScreen.empty() || obf_7L != nullptr;
+}
+
+bool obf_4R::updateScreens(const engine::PointerState &pointer)
+{
+    pendingDestroySplash_.reset();
+    pendingDestroyIntro_.reset();
+    const bool onBar = menuBar.update(pointer, [this](const std::string &event) { dispatchContainerEvent(event); });
+    if (!onBar) {
+        engine::MovieClip::dispatchPointer(*obf_5h, engine::Affine{}, pointer);
+    }
+    obf_5h->advance();
+    if (splashScreen) {
+        splashScreen->animateScreen();
+    }
+    if (obf_7L) {
+        obf_7L->updateScreen();
+    }
+    return screensActive();
+}
+
+void obf_4R::renderScreens(engine::RenderContext &ctx)
+{
+    ctx.masks = masks;
+    obf_5h->render(ctx, engine::Affine{}, engine::ColorTransform{});
+    menuBar.render(ctx);
 }
 
 } // namespace obf_9G

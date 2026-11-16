@@ -46,9 +46,29 @@ SDL_AppResult App::init(int argc, char *argv[])
     }
     settings_.load();
     audio_.open();
+    lang_.select(settings_.language);
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--customer") == 0 && i + 1 < argc) {
             customer_ = std::atoi(argv[i + 1]);
+        }
+        for (const char *dev : {"--level", "--room", "--at", "--input", "--trace", "--walk-test", "--customer"}) {
+            devDirect_ = devDirect_ || std::strcmp(argv[i], dev) == 0;
+        }
+        if (std::strcmp(argv[i], "--lang") == 0 && i + 1 < argc) { // DEV: interface language
+            lang_.select(argv[i + 1]);
+        }
+        if (std::strcmp(argv[i], "--tap") == 0 && i + 1 < argc) { // DEV: "x,y@frame;x,y@frame"
+            const char *p = argv[i + 1];
+            while (*p) {
+                ScriptedTap t;
+                unsigned long long f = 0;
+                if (std::sscanf(p, "%f,%f@%llu", &t.x, &t.y, &f) == 3) {
+                    t.frame = f;
+                    taps_.push_back(t);
+                }
+                const char *next = std::strchr(p, ';');
+                p = next ? next + 1 : p + std::strlen(p);
+            }
         }
         if (std::strcmp(argv[i], "--mute") == 0) {
             audio_.setMasterVolume(0); // DEV: silent automated runs (sounds still play, and --trace lists them)
@@ -211,10 +231,16 @@ void App::loadGame(const std::string &game)
         game_->obf_51->selectedCharacter = customer_; // DEV: --customer N (index in CustomerData)
         game_->playerObj->defineVars();
     }
+    game_->lang = &lang_;
+    game_->masks = &masks_;
     if (game_->loadLevelData(dir)) {
-        game_->obf_6V(0);
-        SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
-                game_->obf_AQ->currentScreens.size());
+        if (devDirect_) {
+            game_->obf_6V(0);
+            SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
+                    game_->obf_AQ->currentScreens.size());
+        } else {
+            game_->showApiScreen("SplashScreen"); // the original starts at the title screen
+        }
     } else {
         game_.reset();
         mode_ = Mode::BlitDemo;
@@ -424,6 +450,34 @@ void App::showSymbol(int index)
 SDL_AppResult App::event(const SDL_Event &ev)
 {
     input_.event(ev, window_);
+    // The pointer in stage coordinates, for the menus (mouse, or the first finger).
+    if (ev.type == SDL_EVENT_MOUSE_MOTION || ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
+        ev.type == SDL_EVENT_MOUSE_BUTTON_UP || ev.type == SDL_EVENT_FINGER_DOWN || ev.type == SDL_EVENT_FINGER_UP ||
+        ev.type == SDL_EVENT_FINGER_MOTION) {
+        SDL_Event local = ev;
+        SDL_ConvertEventToRenderCoordinates(renderer_, &local);
+        const bool finger = ev.type == SDL_EVENT_FINGER_DOWN || ev.type == SDL_EVENT_FINGER_UP ||
+                            ev.type == SDL_EVENT_FINGER_MOTION;
+        if (finger) {
+            pointer_.x = local.tfinger.x;
+            pointer_.y = local.tfinger.y;
+        } else if (ev.type == SDL_EVENT_MOUSE_MOTION) {
+            pointer_.x = local.motion.x;
+            pointer_.y = local.motion.y;
+        } else {
+            pointer_.x = local.button.x;
+            pointer_.y = local.button.y;
+        }
+        const bool isDown = ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN || ev.type == SDL_EVENT_FINGER_DOWN;
+        const bool isUp = ev.type == SDL_EVENT_MOUSE_BUTTON_UP || ev.type == SDL_EVENT_FINGER_UP;
+        if (isDown && (finger || ev.button.button == SDL_BUTTON_LEFT)) {
+            pointer_.down = true;
+            pointer_.pressed = true;
+        } else if (isUp && (finger || ev.button.button == SDL_BUTTON_LEFT)) {
+            pointer_.down = false;
+            pointer_.released = true;
+        }
+    }
     if ((ev.type == SDL_EVENT_FINGER_DOWN || ev.type == SDL_EVENT_FINGER_UP || ev.type == SDL_EVENT_FINGER_MOTION) &&
         mode_ == Mode::Level && input_.touch.event(ev, window_)) {
         return SDL_APP_CONTINUE; // used by an on-screen button
@@ -512,6 +566,9 @@ void App::tap(float winX, float winY)
     SDL_GetWindowSize(window_, &w, &h);
     const float fx = winX / static_cast<float>(w), fy = winY / static_cast<float>(h);
     const int originalRate = static_cast<int>(std::lround(stage_.frameRate));
+    if (mode_ == Mode::Level && game_ && game_->screensActive()) {
+        return; // the menus take the pointer
+    }
     if (fy < 0.15f) { // DEV top band: FPS cap | next mode | interpolation
         if (fx < 0.33f) {
             settings_.nextFpsCap(originalRate);
@@ -583,9 +640,25 @@ void App::tick()
     if (game_ && game_->obf_AQ->currentScreenData) {
         tickLevel();
     }
+    for (const ScriptedTap &t : taps_) {
+        if (frame_ == t.frame || frame_ == t.frame + 2) {
+            pointer_.x = t.x;
+            pointer_.y = t.y;
+            pointer_.down = frame_ == t.frame;
+            (frame_ == t.frame ? pointer_.pressed : pointer_.released) = true;
+            SDL_Log("TAP %.0f,%.0f %s", static_cast<double>(t.x), static_cast<double>(t.y),
+                    frame_ == t.frame ? "down" : "up");
+        } else if (frame_ == t.frame + 1) {
+            pointer_.x = t.x;
+            pointer_.y = t.y;
+        }
+    }
     if (game_) {
+        game_->updateScreens(pointer_);
         game_->obf_7C->advanceTime(1000.0 / stage_.frameRate);
     }
+    pointer_.pressed = false;
+    pointer_.released = false;
     audio_.update();
     if (trace_) {
         std::string sounds;
@@ -622,8 +695,14 @@ void App::render(float alpha)
 
     if (mode_ == Mode::Import) {
         importScreen_->render(renderer_, static_cast<float>(stage_.width), static_cast<float>(stage_.height));
-    } else if (mode_ == Mode::Level && game_ && game_->obf_AQ->currentScreenData) {
-        game_->obf_71->redrawScreen(alpha, settings_.interpolation);
+    } else if (mode_ == Mode::Level && game_) {
+        if (game_->obf_AQ->currentScreenData) {
+            game_->obf_71->redrawScreen(alpha, settings_.interpolation);
+        }
+        RenderContext ctx{renderer_, &symbols_, &textures_, &text_};
+        ctx.interpolate = settings_.interpolation;
+        ctx.alpha = alpha;
+        game_->renderScreens(ctx);
     } else if (mode_ == Mode::BlitDemo && hasData_) {
         renderBlitDemo(alpha);
     } else if (mode_ == Mode::Viewer && viewerClip_) {

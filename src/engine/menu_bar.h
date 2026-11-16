@@ -1,0 +1,59 @@
+#pragma once
+// The port's menu bars: a top panel (title, tabs, a back button) and a bottom panel (the big action button), in
+// place of the Flipline API's screen frame, which is not ported (it was part of the online API). Built from the
+// SWF's own api_* panels and button pieces and laid out with the API's sizes; labels come from engine::Lang.
+#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "engine/movieclip.h"
+
+namespace engine {
+
+class Lang;
+
+class MenuBar {
+public:
+    enum class Kind { Action, Tab, Back };
+    struct Item {
+        Kind kind = Kind::Tab;
+        std::string labelKey; // engine::Lang key
+        std::string event;    // the event name the screen listens for ("clickStart"...)
+    };
+    struct Layout {
+        float topVisible = 43, bottomVisible = 101; // the API's default frame
+        bool showTop = true, showBottom = true;
+    };
+
+    void setup(const SymbolLibrary &symbols, TextLibrary *text, const Lang *lang, const std::string &titleKey,
+               const std::vector<Item> &items, const Layout &layout);
+    void clear();
+    bool active() const { return active_; }
+    // The pointer for one logic frame: calls `onEvent(event)` when a button is clicked. True when the pointer
+    // is over the bars (the screen below should not get it).
+    bool update(const PointerState &pointer, const std::function<void(const std::string &)> &onEvent);
+    void render(const RenderContext &ctx) const;
+
+private:
+    struct Button {
+        Item item;
+        std::string label;
+        float x = 0, y = 0, w = 0, h = 0, piece = 16;
+        bool large = false, red = false, over = false, down = false;
+        std::vector<std::unique_ptr<MovieClip>> pieces, overlays;
+    };
+    void buildButton(Button &b);
+
+    const SymbolLibrary *symbols_ = nullptr;
+    TextLibrary *text_ = nullptr;
+    bool active_ = false;
+    std::string title_;
+    Layout layout_;
+    std::unique_ptr<MovieClip> top_, bottom_;
+    float topY_ = 0, bottomY_ = 0;
+    std::vector<Button> buttons_;
+    int pressed_ = -1;
+};
+
+} // namespace engine

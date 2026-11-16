@@ -8,6 +8,7 @@
 #include "engine/audio.h"
 #include "engine/import_screen.h"
 #include "engine/input.h"
+#include "engine/lang.h"
 #include "engine/movieclip.h"
 #include "engine/settings.h"
 #include "engine/sheets.h"
@@ -75,6 +76,15 @@ private:
     Affine viewerFit_;
     SheetLibrary sheets_;
     Audio audio_;
+    Lang lang_;
+    MaskLayers masks_;
+    PointerState pointer_;     // the pointer for the next logic frame (stage coordinates)
+    struct ScriptedTap {
+        float x = 0, y = 0;
+        uint64_t frame = 0;
+    };
+    std::vector<ScriptedTap> taps_; // DEV: --tap "x,y@frame;..." (stage coordinates, app logic frames)
+    bool devDirect_ = false;   // DEV: a level test flag was given: start in the level, no menus
     int customer_ = -1; // DEV: --customer N
 
     // DEV: what the app shows until the menus are ported. Level = PL2 level 0 with a free camera.

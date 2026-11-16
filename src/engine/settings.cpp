@@ -41,7 +41,12 @@ void Settings::load()
         const std::string line = all.substr(pos, end - pos);
         pos = end + 1;
         int value = 0;
-        if (std::sscanf(line.c_str(), "interpolation=%d", &value) == 1) {
+        if (line.rfind("language=", 0) == 0) {
+            language = line.substr(9);
+            while (!language.empty() && (language.back() == '\r' || language.back() == ' ')) {
+                language.pop_back();
+            }
+        } else if (std::sscanf(line.c_str(), "interpolation=%d", &value) == 1) {
             interpolation = value != 0;
         } else if (std::sscanf(line.c_str(), "fps_cap=%d", &value) == 1) {
             fpsCap = value < 0 ? 0 : value;
@@ -55,8 +60,9 @@ void Settings::save() const
     if (path.empty()) {
         return;
     }
-    char text[128];
-    const int n = std::snprintf(text, sizeof(text), "interpolation=%d\nfps_cap=%d\n", interpolation ? 1 : 0, fpsCap);
+    char text[192];
+    const int n = std::snprintf(text, sizeof(text), "interpolation=%d\nfps_cap=%d\nlanguage=%s\n",
+                                interpolation ? 1 : 0, fpsCap, language.c_str());
     if (!SDL_SaveFile(path.c_str(), text, static_cast<size_t>(n))) {
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot save settings: %s", SDL_GetError());
     }

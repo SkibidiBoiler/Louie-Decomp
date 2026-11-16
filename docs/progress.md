@@ -189,6 +189,26 @@ first room).
 SKELETON: pushing (needs the pushable objects), Foodini's balloons (FoodiniBalloonEffect, FoodiniGlideEffect),
 the skill tutorials (§_-c§), cheese (jumpCheesed), projectile weapons (toss / pistol / longgun / bazooka need
 BulletManager, task 6), character select (MainMenuScreen, with the menus).
+(23) Menus, part 1. Engine: buttons (the importer exports DefineButton / DefineButton2 as four-frame timelines:
+up, over, down, hit; `MovieClip` shows the state under the pointer), x / y / scale set from code
+(`setX`, `setY`, `setScale`), mouse events (`onClick`, `onMouseDown`, `onRollOver`; hit test by bounding boxes,
+`MovieClip::dispatchPointer`), `MovieClip::create(class)`, `createEmpty`, `removeChild`, and masks
+(`MaskLayers`: the masked children and the mask go to two render targets and are combined with a custom blend;
+only on the window target, so a mask inside a mask or inside a sheet is drawn unclipped). The app tracks the
+pointer (mouse or finger) in stage coordinates. Translation tables: `lang/<code>.json` in the repository
+(the port's own interface texts), compiled in (`engine::Lang`), language from settings.ini (`language=`) or
+the system; `TextLibrary::drawString` draws them with the SWF's fonts and builds the letters the fonts lack
+(á é í ó ú ñ ü ¿ ¡) from a base letter and a mark. `engine::MenuBar` stands in for the Flipline API's screen
+frame (the API is not ported): the SWF's api_* panels and button pieces, the API's sizes, labels from the
+tables; `§_-4R§.showApiScreen` replaces api.§_-1G§ and the bars send their events to the screens' container
+(`addContainerListener`). Screens: `SplashScreen` (title, Play iris out, credits panel) and `StageIntroScreen`
+(the portal intro with the customer puppet, then §_-6V§), `§_-4R§` §_-8O§, §_-Q§, §_-q§ and the container
+§_-5h§. The app now starts at the title screen; any DEV level flag (--level, --room, --at, --input, --trace,
+--customer) still starts straight in level 0. DEV `--lang es`, `--tap "x,y@frame;..."` (scripted taps).
+Checked: title screen in Spanish (capture), Play -> iris -> stage intro (capture: portal and Marty) -> level 0
+by trace. SKELETON: SlotSelectScreen and MainMenuScreen (save slots, map, character select: "SlotSelect" goes
+straight to the stage intro), ScoreTallyScreen, NewCustomerScreen, the boss / outro / parade screens, the
+puppet's GlowFilter outline, BitmapManager.createCagedSprites, the bars' slide-in animation.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

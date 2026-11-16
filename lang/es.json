@@ -1,0 +1,20 @@
+{
+  "menu.play": "Jugar ►",
+  "menu.credits": "CRÉDITOS",
+  "menu.back": "ATRÁS",
+  "menu.quit": "SALIR",
+  "menu.continue": "Continuar ►",
+  "menu.start_level": "Empezar nivel ►",
+  "menu.back_to_map": "◄ VOLVER AL MAPA",
+  "menu.back_to_game": "Volver al juego ►",
+  "menu.quit_level": "SALIR DEL NIVEL",
+  "menu.baddies": "MALOS",
+  "menu.badges": "MEDALLAS",
+  "menu.controls": "CONTROLES",
+  "menu.help": "AYUDA",
+  "menu.info": "INFO",
+  "title.choose_slot": "ELIGE UNA RANURA",
+  "title.level_complete": "¡NIVEL COMPLETADO!",
+  "title.map": "MAPA",
+  "title.info": "INFO"
+}

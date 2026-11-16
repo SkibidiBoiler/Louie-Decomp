@@ -28,6 +28,11 @@ public:
     // A DefineEditText character showing `text` (its initial text when null); HTML when the field is an HTML
     // field or the text starts with '<' (the original sets htmlText).
     void drawEdit(uint16_t id, const std::string *text, const Affine &m, const ColorTransform &color);
+    // The port's own interface text (menus, the translation tables) in an embedded font found by name: one line
+    // at (x, baseline), align 0 left, 1 right, 2 center. Returns its width. Letters the font lacks (accents, ñ,
+    // ¿ ¡) are built from the base letter and a mark the font has. Nothing is drawn when `draw` is false.
+    float drawString(std::string_view fontName, float size, std::string_view utf8, float x, float baseline,
+                     SDL_FColor color, int align, const Affine &m, bool draw = true);
 
 private:
     struct Glyph {
@@ -77,6 +82,7 @@ private:
 
     Font *font(uint16_t id);
     Font *variant(uint16_t id, const std::string &face, bool bold);
+    Font *fontByName(std::string_view name);
     void drawGlyph(const Font &f, const Glyph &g, float penX, float baseline, float size, const Affine &m,
                    SDL_FColor color);
     static std::string parseHtml(std::string_view html, Style &style);

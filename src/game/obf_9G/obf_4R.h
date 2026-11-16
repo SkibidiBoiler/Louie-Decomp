@@ -2,10 +2,15 @@
 // AS: §_-9G§.§_-4R§ — the game object (obfuscated name; it holds every manager and runs the game).
 // Ported so far: the managers needed to show a room, the level start (§_-6V§) and the room switch (§_-4X§).
 #include <SDL3/SDL.h>
+#include <functional>
+#include <map>
 #include <memory>
 #include <string>
 
 #include "engine/audio.h"
+#include "engine/lang.h"
+#include "engine/menu_bar.h"
+#include "engine/movieclip.h"
 #include "engine/sheets.h"
 #include "engine/symbols.h"
 #include "engine/text.h"
@@ -27,6 +32,8 @@
 #include "game/papaGame/managers/SoundManager.h"
 #include "game/papaGame/models/GameHUD.h"
 #include "game/papaGame/models/characters/CustomerChar.h"
+#include "game/papaGame/screens/SplashScreen.h"
+#include "game/papaGame/screens/StageIntroScreen.h"
 
 namespace obf_9G {
 
@@ -54,6 +61,26 @@ public:
     // at the start of the next logic frame, when no translated object is running.
     void runPending();
 
+    // AS: §_-4R§.§_-8O§ — get ready to play: the stage intro, which starts the level §_-8W§.
+    void obf_8O();
+    // AS: §_-4R§.§_-Q§ / §_-q§ — create / destroy the StageIntroScreen.
+    void obf_Q();
+    void obf_q();
+
+    // Port: the Flipline API's screen manager is not ported (it was part of the online API). These stand in for
+    // the parts of it the game uses: api.§_-1G§(name) switches between its screens (SplashScreen, SlotSelect,
+    // MainMenu...), each with its menu bar, and the bar's buttons send events to the screens' container
+    // (`container.addEventListener("clickStart", ...)`).
+    void showApiScreen(const std::string &name);
+    void addContainerListener(const std::string &event, std::function<void()> fn);
+    void removeContainerListener(const std::string &event);
+    void dispatchContainerEvent(const std::string &event);
+    // Port: one logic frame of the screens: the pointer (menu bar, then the screens' buttons), then their
+    // ENTER_FRAME handlers. True while a menu screen is up.
+    bool updateScreens(const engine::PointerState &pointer);
+    bool screensActive() const;
+    void renderScreens(engine::RenderContext &ctx);
+
     SDL_Renderer *renderer = nullptr; // port
     const engine::SymbolLibrary *symbols = nullptr; // port
     engine::ShapeTextures *textures = nullptr; // port
@@ -78,6 +105,19 @@ public:
     std::string gameDir;      // port: where loadLevelData read the tables
     double pendingLevel = -1; // port: see runPending
     std::unique_ptr<papaGame::models::GameHUD> obf_6Z; // created by loadLevelData, once the tables exist
+    std::unique_ptr<engine::MovieClip> obf_5h; // AS: §_-5h§, the container the screens add their clips to
+    std::unique_ptr<papaGame::screens::StageIntroScreen> obf_7L;
+    std::unique_ptr<papaGame::screens::SplashScreen> splashScreen; // port: the API's SplashScreen instance
+    const engine::Lang *lang = nullptr;      // port: the menu bars' texts
+    engine::MaskLayers *masks = nullptr;     // port: offscreen layers for masks
+    engine::MenuBar menuBar;                 // port: see showApiScreen
+    std::string apiScreen;                   // port: the API screen being shown, "" when none
+    std::map<std::string, std::function<void()>> containerListeners; // port
+
+private:
+    // Port: screens destroyed from their own update are freed at the start of the next frame.
+    std::unique_ptr<papaGame::screens::SplashScreen> pendingDestroySplash_;
+    std::unique_ptr<papaGame::screens::StageIntroScreen> pendingDestroyIntro_;
 };
 
 } // namespace obf_9G
