@@ -150,10 +150,41 @@ void MaskLayers::draw(SDL_Renderer *renderer, const std::function<void(const Aff
     SDL_RenderTexture(renderer, content_, nullptr, &stage);
 }
 
+MovieClip *MovieClip::lastOver_ = nullptr;
+MovieClip *MovieClip::pressedOn_ = nullptr;
+
+MovieClip::~MovieClip()
+{
+    if (lastOver_ == this) {
+        lastOver_ = nullptr;
+    }
+    if (pressedOn_ == this) {
+        pressedOn_ = nullptr;
+    }
+    if (maskedBy_) {
+        maskedBy_->masking_ = nullptr;
+    }
+    if (masking_) {
+        masking_->maskedBy_ = nullptr;
+    }
+}
+
+void MovieClip::setMask(MovieClip *mask)
+{
+    if (maskedBy_) {
+        maskedBy_->masking_ = nullptr;
+    }
+    maskedBy_ = mask;
+    if (mask) {
+        mask->masking_ = this;
+    }
+}
+
 MovieClip::MovieClip(const SymbolLibrary &symbols, const Timeline &timeline)
     : symbols_(&symbols), timeline_(&timeline)
 {
     syncChildren(false);
+    runScript(0); // Flash runs the first frame's script when the clip is made (often a stop())
 }
 
 void MovieClip::gotoFrame(int frame)
@@ -405,7 +436,23 @@ void MovieClip::renderChild(const RenderContext &ctx, const Child &child, const 
         return;
     }
     if (child.clip) {
-        if (child.clip->visible_) {
+        if (!child.clip->visible_ || child.clip->masking_) {
+            return; // hidden, or a mask set from code (masks are not drawn)
+        }
+        const MovieClip *mask = child.clip->maskedBy_;
+        const Child *maskChild = nullptr;
+        for (const Child &c : children_) {
+            if (mask && c.clip.get() == mask) {
+                maskChild = &c;
+            }
+        }
+        if (maskChild && ctx.masks && SDL_GetRenderTarget(ctx.renderer) == nullptr) {
+            const Affine maskM = parent * childLocal(*maskChild, ctx.interpolate, ctx.alpha);
+            const MovieClip *content = child.clip.get();
+            ctx.masks->draw(
+                ctx.renderer, [&](const Affine &toTexture) { content->render(ctx, toTexture * m, color); },
+                [&](const Affine &toTexture) { mask->render(ctx, toTexture * maskM, ColorTransform{}); });
+        } else {
             child.clip->render(ctx, m, color);
         }
     } else if (ctx.symbols->kind(track.charId) == CharKind::Shape) {
@@ -468,6 +515,27 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
             a.clip->render(ctx, parent * a.clip->ownLocal(), parentColor);
         }
     }
+    for (const BitmapChild &b : bitmaps_) {
+        if (!b.texture) {
+            continue;
+        }
+        float tw = 0, th = 0;
+        SDL_GetTextureSize(b.texture, &tw, &th);
+        const SDL_FColor tint{clamp01(parentColor.mr), clamp01(parentColor.mg), clamp01(parentColor.mb),
+                              clamp01(parentColor.ma)};
+        const float corners[4][4] = {{b.x, b.y, b.src.x / tw, b.src.y / th},
+                                     {b.x + b.w, b.y, (b.src.x + b.src.w) / tw, b.src.y / th},
+                                     {b.x + b.w, b.y + b.h, (b.src.x + b.src.w) / tw, (b.src.y + b.src.h) / th},
+                                     {b.x, b.y + b.h, b.src.x / tw, (b.src.y + b.src.h) / th}};
+        SDL_Vertex v[4];
+        for (int i = 0; i < 4; ++i) {
+            parent.apply(corners[i][0], corners[i][1], v[i].position.x, v[i].position.y);
+            v[i].color = tint;
+            v[i].tex_coord = {corners[i][2], corners[i][3]};
+        }
+        static const int indices[6] = {0, 1, 2, 0, 2, 3};
+        SDL_RenderGeometry(ctx.renderer, b.texture, v, 4, indices, 6);
+    }
     // Text fields made by code were added last: they are drawn above the other children.
     if (ctx.text) {
         for (const auto &[name, f] : fields_) {
@@ -518,8 +586,6 @@ MovieClip *MovieClip::hitTest(const Affine &parent, float px, float py)
 
 void MovieClip::dispatchPointer(MovieClip &root, const Affine &parent, const PointerState &pointer)
 {
-    static MovieClip *lastOver = nullptr;    // compared only, never dereferenced (it may be gone)
-    static MovieClip *pressedOn = nullptr;   // the same
     ++gPointerTick;
     MovieClip *target = pointer.x >= 0 ? root.hitTest(parent, pointer.x, pointer.y) : nullptr;
     if (target) {
@@ -529,20 +595,26 @@ void MovieClip::dispatchPointer(MovieClip &root, const Affine &parent, const Poi
             target->gotoFrame(pointer.down ? 2 : 1);
         }
     }
-    if (target != lastOver && target && target->onRollOver) {
-        target->onRollOver();
+    if (target != lastOver_) {
+        MovieClip *was = lastOver_;
+        lastOver_ = target;
+        if (was && was->onRollOut) {
+            was->onRollOut();
+        }
+        if (target && target->onRollOver) {
+            target->onRollOver();
+        }
     }
-    lastOver = target;
     if (pointer.pressed) {
         SDL_Log("POINTER %.0f,%.0f on %s", static_cast<double>(pointer.x), static_cast<double>(pointer.y), target ? (target->isButton_ ? "button" : "clip") : "nothing");
-        pressedOn = target;
+        pressedOn_ = target;
         if (target && target->onMouseDown) {
             target->onMouseDown();
         }
     }
     if (pointer.released) {
-        MovieClip *was = pressedOn;
-        pressedOn = nullptr;
+        MovieClip *was = pressedOn_;
+        pressedOn_ = nullptr;
         if (target && target == was && target->onClick) {
             target->onClick();
         }
@@ -616,11 +688,34 @@ std::unique_ptr<MovieClip> MovieClip::createEmpty(const SymbolLibrary &symbols)
     return std::make_unique<MovieClip>(symbols, empty);
 }
 
+std::vector<std::unique_ptr<MovieClip>> MovieClip::graveyard_;
+
 void MovieClip::removeChild(const MovieClip *clip)
 {
-    attached_.erase(std::remove_if(attached_.begin(), attached_.end(),
-                                   [&](const Attached &a) { return a.clip.get() == clip; }),
-                    attached_.end());
+    for (auto it = attached_.begin(); it != attached_.end(); ++it) {
+        if (it->clip.get() == clip) {
+            graveyard_.push_back(std::move(it->clip));
+            attached_.erase(it);
+            return;
+        }
+    }
+}
+
+void MovieClip::collectGarbage()
+{
+    // Destroying a clip may remove more (its destructor does not), so swap first.
+    std::vector<std::unique_ptr<MovieClip>> dead;
+    dead.swap(graveyard_);
+}
+
+std::string MovieClip::currentFrameLabel() const
+{
+    for (const auto &[label, frame] : timeline_->labels) {
+        if (frame == frame_) {
+            return label;
+        }
+    }
+    return {};
 }
 
 } // namespace engine

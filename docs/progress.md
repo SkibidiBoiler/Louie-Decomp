@@ -233,6 +233,24 @@ story -> Skip -> stage intro -> level 1; loading the slot -> level; slot card wi
 SKELETON: MainMenuScreen (map, character select, outfits, badges, help, credits), ScoreTallyScreen (the level
 score is not saved yet), the menus' thumbnails (generateCustomerBitmap / generateEnemyBitmap), translated static
 texts of the SWF ("New Game", "Enter your name below:", task 16).
+(25) Main menu (menus, part 3). `MainMenuScreen`: the map (unlocked areas with their number, the "new" ring,
+the totals, the reveal animation of a newly opened area, the challenge bubble on roll-over), and before a level
+the area's panel (title, number, high score, the level preview inside its mask, the six challenges with the rescued
+customers' faces) and the customer choice (thumbnails of the unlocked customers, the "new" banner, name, game,
+weapon, skill, the puppet that runs in while the old one runs out, outfits A/B/C with their prices, buying one).
+Start Level closes the iris and starts the area (§_-8W§, §_-9k§). Sections slide as in the original
+(setSection / tweenSections); the credits section works with its web links hidden. Bars: MainMenu (CREDITS, QUIT)
+and MapSelectMenu (Start Level, Back to map). `CustomerData.generateCustomerBitmap` / `getCustomerBitmap`
+(every customer's face drawn into a texture). `ChallengeManager.getChallengeType` / `getChallengeSkillNeeded`.
+Engine: code-set masks (`MovieClip::setMask`), Bitmaps added by code (`addBitmap`), ROLL_OUT (the pointer's
+targets are cleared when a clip dies), `currentFrameLabel`, removed clips are destroyed one frame later
+(`collectGarbage`: a screen often removes the clip whose button handler is running). Fix: a clip now runs its first
+frame's script when it is made, as Flash does (the character section's iris played on and closed itself; other
+clips with a stop() on frame 1 were playing too). The HUD now shows its MENU and sound buttons (DefineButtons).
+Checked (captures and taps): saved slot -> map -> area 1 -> customer choice (Marty, then Rita runs in) -> Start
+Level -> stage intro -> level 0 as Rita; level end regression.
+SKELETON: the baddies, badges, controls, help, info (pause menu) and confirm-quit sections and their tabs, the
+checkpoint ribbon, the tutorial pop-ups, the level-complete screen (ScoreTallyScreen), the pause menu.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

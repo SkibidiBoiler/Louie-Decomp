@@ -1,6 +1,7 @@
 #include "game/papaGame/data/CustomerData.h"
 
 #include "game/as3.h"
+#include "game/obf_9G/obf_4R.h"
 #include "game/papaGame/data/customers/CustomerAkari.h"
 #include "game/papaGame/data/customers/CustomerBigPauly.h"
 #include "game/papaGame/data/customers/CustomerBoomer.h"
@@ -127,6 +128,96 @@ double CustomerData::getTrappedCustomerIndex(double whichWorld, double cageIndex
         }
     }
     return -1;
+}
+
+CustomerData::~CustomerData()
+{
+    if (thumbBMP) {
+        SDL_DestroyTexture(thumbBMP);
+    }
+}
+
+// AS: CustomerData.getCustomerName
+std::string CustomerData::getCustomerName(double index) const
+{
+    const CustomerDataFile *c = getCustomerData(index);
+    return c ? c->customerName : std::string();
+}
+
+// AS: CustomerData.generateCustomerBitmap
+void CustomerData::generateCustomerBitmap()
+{
+    if (thumbBMP) {
+        return;
+    }
+    const engine::SymbolLibrary &symbols = *gameObj->symbols;
+    SDL_Renderer *renderer = gameObj->renderer;
+    const int count = static_cast<int>(customerDataFiles.size());
+    constexpr float kCell = 45;
+    thumbBMP = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
+                                 static_cast<int>(kCell * kThumbScale) * count, static_cast<int>(kCell * kThumbScale));
+    if (!thumbBMP) {
+        return;
+    }
+    SDL_SetTextureBlendMode(thumbBMP, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    SDL_Texture *previous = SDL_GetRenderTarget(renderer);
+    SDL_SetRenderTarget(renderer, thumbBMP);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
+    engine::RenderContext ctx{renderer, gameObj->symbols, gameObj->textures, gameObj->text};
+    for (int i = 0; i < count; ++i) {
+        std::unique_ptr<engine::MovieClip> model = engine::MovieClip::create(symbols, "customerOneSwingMC");
+        if (!model) {
+            continue;
+        }
+        const std::string name = getCustomerClipName(i);
+        auto attach = [&](const char *slot, const std::string &part) {
+            engine::MovieClip *holder = model->findChild(slot);
+            std::unique_ptr<engine::MovieClip> clip = engine::MovieClip::create(symbols, "customer_" + name + "_" + part);
+            if (holder && clip) {
+                holder->addChild(std::move(clip), "clip");
+            }
+        };
+        attach("body", "body");
+        attach("head", "head");
+        attach("eyes", "eyes");
+        attach("mouth", "mouth");
+        attach("neck", "neck");
+        attach("hair", "hair");
+        attach("back_hair", "back_hair");
+        attach("front_upperarm", "upperarm");
+        attach("back_upperarm", "upperarm");
+        model->gotoLabel("stand", false);
+        constexpr float kScale = 0.3f;
+        // The head's own bounds put its left edge at -25 (in the model's space).
+        float minX = 1e9f, minY = 1e9f, maxX = -1e9f, maxY = -1e9f;
+        engine::MovieClip *head = model->findChild("head");
+        if (engine::MovieClip *part = head ? head->firstChildClip() : nullptr) {
+            part->accumulateBounds(engine::Affine{}, minX, minY, maxX, maxY);
+        }
+        const float x = minX < maxX ? (-25 - minX) * kScale : 0;
+        const SDL_Rect cell{static_cast<int>(static_cast<float>(i) * kCell * kThumbScale), 0,
+                            static_cast<int>(kCell * kThumbScale), static_cast<int>(kCell * kThumbScale)};
+        SDL_SetRenderClipRect(renderer, &cell);
+        const engine::Affine m = engine::Affine::scale(kThumbScale) *
+                                 engine::Affine::translate(static_cast<float>(i) * kCell, 0) *
+                                 engine::Affine{kScale, 0, 0, kScale, x, 0};
+        model->render(ctx, m, engine::ColorTransform{});
+    }
+    SDL_SetRenderClipRect(renderer, nullptr);
+    SDL_SetRenderTarget(renderer, previous);
+}
+
+// AS: CustomerData.getCustomerBitmap (the rescued-customer row, param2, is never generated)
+engine::MovieClip::BitmapChild CustomerData::getCustomerBitmap(double index) const
+{
+    engine::MovieClip::BitmapChild b;
+    b.texture = thumbBMP;
+    const float cell = 45 * kThumbScale;
+    b.src = {static_cast<float>(index) * cell, 0, cell, cell};
+    b.w = 45;
+    b.h = 45;
+    return b;
 }
 
 } // namespace papaGame::data

@@ -22,5 +22,17 @@
   "title.enter_name": "ENTER YOUR NAME",
   "title.choose_character": "CHOOSE A CHARACTER",
   "slot.empty": "Empty Slot",
-  "slot.player": "Player"
+  "slot.player": "Player",
+  "challenge.rescue": "Rescue:",
+  "challenge.defeat": "Defeat {0}:",
+  "challenge.find": "Find {0}:",
+  "skill.crawl": "Crawl",
+  "skill.doublejump": "Jump",
+  "skill.walljump": "Wall",
+  "skill.glide": "Glide",
+  "skill.pound": "Pound",
+  "skill.push": "Push",
+  "skill.none": "None",
+  "title.area_info": "AREA INFO",
+  "title.choose_your_character": "CHOOSE YOUR CHARACTER"
 }

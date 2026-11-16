@@ -230,7 +230,7 @@ void obf_4R::dispatchContainerEvent(const std::string &event)
     }
 }
 
-void obf_4R::showApiScreen(const std::string &name)
+void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::MainMenuParams &params)
 {
     using Kind = engine::MenuBar::Kind;
     if (splashScreen) {
@@ -240,6 +240,10 @@ void obf_4R::showApiScreen(const std::string &name)
     if (slotSelectScreen) {
         slotSelectScreen->destroy();
         pendingDestroySlots_ = std::move(slotSelectScreen);
+    }
+    if (mainMenuScreen) {
+        mainMenuScreen->destroy();
+        pendingDestroyMenu_ = std::move(mainMenuScreen);
     }
     menuBar.clear();
     SDL_Log("API screen: %s", name.c_str());
@@ -257,11 +261,18 @@ void obf_4R::showApiScreen(const std::string &name)
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, "title.choose_slot", {{Kind::Back, "menu.back", "clickBack"}}, layout);
     } else if (name == "MainMenu") {
-        // SKELETON: MainMenuScreen (the map, character select, badges, help, credits). Until it is ported the
-        // loaded game goes to its latest area's stage intro.
-        apiScreen.clear();
-        obf_8W = obf_51->lastAreaRevealed;
-        obf_9k();
+        // SKELETON: the BADDIES, BADGES, CONTROLS and HELP tabs (their sections are not ported yet).
+        mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
+        engine::MenuBar::Layout layout;
+        menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
+                      {{Kind::Tab, "menu.credits", "clickCredits"}, {Kind::Back, "menu.quit", "clickExit"}}, layout);
+    } else if (name == "MapSelectMenu") {
+        mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
+        engine::MenuBar::Layout layout;
+        menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
+                      {{Kind::Action, "menu.start_level", "clickStartLevel"},
+                       {Kind::Tab, "menu.back_to_map", "clickBackToMap"}},
+                      layout);
     } else {
         apiScreen.clear();
     }
@@ -278,6 +289,8 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     pendingDestroyIntro_.reset();
     pendingDestroySlots_.reset();
     pendingDestroyStory_.reset();
+    pendingDestroyMenu_.reset();
+    engine::MovieClip::collectGarbage();
     const bool onBar = menuBar.update(pointer, [this](const std::string &event) { dispatchContainerEvent(event); });
     if (!onBar) {
         engine::MovieClip::dispatchPointer(*obf_5h, engine::Affine{}, pointer);
@@ -288,6 +301,9 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     }
     if (slotSelectScreen) {
         slotSelectScreen->animateScreen();
+    }
+    if (mainMenuScreen) {
+        mainMenuScreen->enterFrame();
     }
     if (obf_3U) {
         obf_3U->updateScreen();

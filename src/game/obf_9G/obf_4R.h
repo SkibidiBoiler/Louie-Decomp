@@ -33,6 +33,7 @@
 #include "game/papaGame/models/GameHUD.h"
 #include "game/papaGame/models/characters/CustomerChar.h"
 #include "game/papaGame/screens/GameIntroScreen.h"
+#include "game/papaGame/screens/MainMenuScreen.h"
 #include "game/papaGame/screens/SlotSelectScreen.h"
 #include "game/papaGame/screens/SplashScreen.h"
 #include "game/papaGame/screens/StageIntroScreen.h"
@@ -76,7 +77,7 @@ public:
     // the parts of it the game uses: api.§_-1G§(name) switches between its screens (SplashScreen, SlotSelect,
     // MainMenu...), each with its menu bar, and the bar's buttons send events to the screens' container
     // (`container.addEventListener("clickStart", ...)`).
-    void showApiScreen(const std::string &name);
+    void showApiScreen(const std::string &name, const papaGame::screens::MainMenuParams &params = {});
     void addContainerListener(const std::string &event, std::function<void()> fn);
     void removeContainerListener(const std::string &event);
     void dispatchContainerEvent(const std::string &event);
@@ -118,6 +119,7 @@ public:
     std::unique_ptr<papaGame::screens::SplashScreen> splashScreen; // port: the API's SplashScreen instance
     std::unique_ptr<papaGame::screens::SlotSelectScreen> slotSelectScreen; // port: the API's SlotSelect
     std::unique_ptr<papaGame::screens::GameIntroScreen> obf_3U;
+    std::unique_ptr<papaGame::screens::MainMenuScreen> mainMenuScreen; // port: the API's MainMenu / MapSelectMenu
     const engine::Lang *lang = nullptr;      // port: the menu bars' texts
     engine::MaskLayers *masks = nullptr;     // port: offscreen layers for masks
     engine::MenuBar menuBar;                 // port: see showApiScreen
@@ -130,6 +132,7 @@ private:
     std::unique_ptr<papaGame::screens::StageIntroScreen> pendingDestroyIntro_;
     std::unique_ptr<papaGame::screens::SlotSelectScreen> pendingDestroySlots_;
     std::unique_ptr<papaGame::screens::GameIntroScreen> pendingDestroyStory_;
+    std::unique_ptr<papaGame::screens::MainMenuScreen> pendingDestroyMenu_;
 };
 
 } // namespace obf_9G

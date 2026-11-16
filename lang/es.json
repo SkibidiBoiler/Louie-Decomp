@@ -22,5 +22,17 @@
   "title.enter_name": "ESCRIBE TU NOMBRE",
   "title.choose_character": "ELIGE UN PERSONAJE",
   "slot.empty": "Ranura vacía",
-  "slot.player": "Jugador"
+  "slot.player": "Jugador",
+  "challenge.rescue": "Rescata:",
+  "challenge.defeat": "Derrota {0}:",
+  "challenge.find": "Busca {0}:",
+  "skill.crawl": "Gatear",
+  "skill.doublejump": "Salto",
+  "skill.walljump": "Pared",
+  "skill.glide": "Planear",
+  "skill.pound": "Pisotón",
+  "skill.push": "Empujar",
+  "skill.none": "Ninguna",
+  "title.area_info": "INFO DE LA ZONA",
+  "title.choose_your_character": "ELIGE TU PERSONAJE"
 }

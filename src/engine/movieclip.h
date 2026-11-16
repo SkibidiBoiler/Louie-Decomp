@@ -51,6 +51,9 @@ struct PointerState {
 class MovieClip {
 public:
     MovieClip(const SymbolLibrary &symbols, const Timeline &timeline);
+    ~MovieClip();
+    MovieClip(const MovieClip &) = delete;
+    MovieClip &operator=(const MovieClip &) = delete;
     // `new <Class>()` for a class linked to a symbol; nullptr when there is no such class (getDefinitionByName
     // throws in the original).
     static std::unique_ptr<MovieClip> create(const SymbolLibrary &symbols, std::string_view className);
@@ -68,6 +71,8 @@ public:
     void gotoAndStop(int frame1) { goTo(frame1 - 1, false); }
     void gotoAndPlay(int frame1) { goTo(frame1 - 1, true); }
     bool gotoLabel(std::string_view label, bool play);
+    // MovieClip.currentFrameLabel: the label on the current frame, or empty.
+    std::string currentFrameLabel() const;
 
     const Timeline &timeline() const { return *timeline_; }
     bool visible() const { return visible_; }
@@ -81,8 +86,10 @@ public:
     void forEachChild(const std::function<void(const std::string &, MovieClip &)> &fn);
     // addChild: a runtime child drawn above the timeline children, with an identity transform.
     MovieClip &addChild(std::unique_ptr<MovieClip> clip, std::string name);
-    // removeChild for a clip added with addChild (destroys it).
+    // removeChild for a clip added with addChild. The clip is destroyed at the next collectGarbage (a screen
+    // often removes the clip whose button handler is running).
     void removeChild(const MovieClip *clip);
+    static void collectGarbage();
     // getChildAt(0) as a MovieClip; nullptr when that child is not a MovieClip (AS3 would throw).
     MovieClip *firstChildClip();
     // `<instance>.text` / `.htmlText` of a timeline text field child (HTML when it starts with '<').
@@ -104,7 +111,7 @@ public:
     bool hasPosition() const { return hasPos_; }
 
     // Mouse events (flash.events.MouseEvent) registered by the game: CLICK, MOUSE_DOWN, ROLL_OVER.
-    std::function<void()> onClick, onMouseDown, onRollOver;
+    std::function<void()> onClick, onMouseDown, onRollOver, onRollOut;
     bool mouseEnabled = true;
     bool mouseChildren = true; // false: the children take no mouse events (this clip may, with a handler)
 
@@ -122,6 +129,20 @@ public:
     };
     TextField &addTextField(const std::string &name, const TextField &field);
     TextField *textField(std::string_view name);
+
+    // `.mask = <sibling>` set from code: this clip is drawn clipped by `mask`, a timeline child of the same
+    // parent, which itself is no longer drawn. Null removes it.
+    void setMask(MovieClip *mask);
+
+    // A Bitmap added by code (`addChild(new Bitmap(data))`): part of a texture drawn at (x, y) with size w x h,
+    // above the timeline children, in this clip's space.
+    struct BitmapChild {
+        SDL_Texture *texture = nullptr;
+        SDL_FRect src{};
+        float x = 0, y = 0, w = 0, h = 0;
+    };
+    void addBitmap(const BitmapChild &bitmap) { bitmaps_.push_back(bitmap); }
+    void clearBitmaps() { bitmaps_.clear(); }
     bool isButton() const { return isButton_; } // a SimpleButton (DefineButton): frames up/over/down/hit
     // The topmost instance under (x, y) that takes mouse events: a button, or a clip with a handler.
     MovieClip *hitTest(const Affine &parent, float x, float y);
@@ -166,6 +187,11 @@ private:
     std::vector<std::pair<std::string, std::string>> texts_; // text field instance -> its text
     std::vector<std::pair<std::string, float>> alphas_;      // instance -> alpha set from code
     std::vector<std::pair<std::string, TextField>> fields_;  // text fields made by code
+    std::vector<BitmapChild> bitmaps_;                        // bitmaps added by code
+    MovieClip *maskedBy_ = nullptr; // a sibling set as this clip's mask
+    MovieClip *masking_ = nullptr;  // the sibling this clip masks (then it is not drawn itself)
+    static MovieClip *lastOver_, *pressedOn_; // the pointer's targets (cleared when they are destroyed)
+    static std::vector<std::unique_ptr<MovieClip>> graveyard_;
     bool visible_ = true;
     int scriptDepth_ = 0;
     bool hasPos_ = false, hasScale_ = false;

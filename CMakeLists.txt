@@ -157,6 +157,7 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
     src/game/papaGame/screens/GameIntroScreen.cpp
+    src/game/papaGame/screens/MainMenuScreen.cpp
     src/game/papaGame/screens/SlotSelectScreen.cpp
     src/game/papaGame/screens/SplashScreen.cpp
     src/game/papaGame/screens/StageIntroScreen.cpp

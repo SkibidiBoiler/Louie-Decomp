@@ -449,10 +449,11 @@ void SlotSelectScreen::startClosingScreen()
 }
 
 // AS: SlotSelectScreen.closeSlotSelectScreen — a new game starts with the story, a loaded one at the map.
-// SKELETON: CustomerData.generateCustomerBitmap and DataManager.generateEnemyBitmap (the menus' thumbnails).
+// SKELETON: DataManager.generateEnemyBitmap (the baddies' thumbnails).
 void SlotSelectScreen::closeSlotSelectScreen()
 {
     isClosing = false;
+    gameObj->obf_3A->generateCustomerBitmap();
     if (isNewSlot) {
         gameObj->obf_19();
         gameObj->showApiScreen("");

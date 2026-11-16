@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "engine/movieclip.h"
 #include "game/papaGame/data/CustomerDataFile.h"
 
 namespace obf_9G { class obf_4R; }
@@ -39,11 +40,20 @@ public:
     std::string getWeaponClipName(double index, double style) const;
     const CustomerDataFile *getCustomerData(double index) const;
     double getTrappedCustomerIndex(double whichWorld, double cageIndex) const;
+    std::string getCustomerName(double index) const; // AS: CustomerData.getCustomerName
+    // AS: CustomerData.generateCustomerBitmap — every customer's head, 45 x 45 each, in a row (thumbBMP). The port
+    // draws it into a texture at kThumbScale. SKELETON: the DropShadowFilter.
+    void generateCustomerBitmap();
+    // AS: CustomerData.getCustomerBitmap — that customer's cell, as a Bitmap child (45 x 45 at the origin).
+    engine::MovieClip::BitmapChild getCustomerBitmap(double index) const;
+    ~CustomerData();
 
     obf_9G::obf_4R *gameObj = nullptr;
+    static constexpr float kThumbScale = 2;
 
 private:
     std::vector<std::unique_ptr<CustomerDataFile>> customerDataFiles;
+    SDL_Texture *thumbBMP = nullptr;
 };
 
 } // namespace papaGame::data

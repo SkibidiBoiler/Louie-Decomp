@@ -89,6 +89,32 @@ std::string ChallengeManager::getChallengeTargetAmount(double whichWorld, double
     return {};
 }
 
+// AS: ChallengeManager.getChallengeType
+std::string ChallengeManager::getChallengeType(double whichWorld, double whichChallenge) const
+{
+    if (whichWorld > -1) {
+        for (const data::Challenge &c : challenges) {
+            if (c.whichWorld == whichWorld && c.whichChallenge == whichChallenge) {
+                return c.challengeType;
+            }
+        }
+    }
+    return {};
+}
+
+// AS: ChallengeManager.getChallengeSkillNeeded
+std::string ChallengeManager::getChallengeSkillNeeded(double whichWorld, double whichChallenge) const
+{
+    if (whichWorld > -1) {
+        for (const data::Challenge &c : challenges) {
+            if (c.whichWorld == whichWorld && c.whichChallenge == whichChallenge) {
+                return c.skillNeeded;
+            }
+        }
+    }
+    return {};
+}
+
 // AS: ChallengeManager.getMedalProgressArray
 std::vector<double> ChallengeManager::getMedalProgressArray() const
 {
