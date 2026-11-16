@@ -79,7 +79,12 @@ void GameObject21::getHit(double damage)
         if (currentHealth < 0) {
             currentHealth = 0;
         }
-        // SKELETON: papow.wav when broken, impact_2.wav otherwise.
+        if (currentHealth == 0) {
+            gameObj->obf_7C->playSound("papow.wav");
+        } else {
+            // QUIRK: there is no impact_2.wav in the game, so this logs "Error Playing Sound".
+            gameObj->obf_7C->playSound("impact_2.wav");
+        }
     }
     gameObj->obf_V->addEffect(x - 5, y - 5, "CrackerBreakEffect", "piece5");
     gameObj->obf_V->addEffect(x + 12, y + 2, "CrackerBreakEffect", "piece6");

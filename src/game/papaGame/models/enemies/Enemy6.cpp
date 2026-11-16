@@ -1,5 +1,7 @@
 #include "game/papaGame/models/enemies/Enemy6.h"
 
+#include <cmath>
+
 #include "game/obf_9G/obf_4R.h"
 
 namespace papaGame::models::enemies {
@@ -177,7 +179,13 @@ void Enemy6::updateObject()
                     jumpspeed = jumpstart;
                     whichJump = whichJump == 1 ? 2 : 1;
                     if (isReallyOnScreen()) {
-                        // SKELETON: jump_tomato1.wav (even id) / jump_tomato2.wav with proximity volume and pan.
+                        if (std::fmod(id, 2) == 0) {
+                            gameObj->obf_7C->playSound("jump_tomato1.wav", false, getProximityVolume(),
+                                                       getProximityPan());
+                        } else {
+                            gameObj->obf_7C->playSound("jump_tomato2.wav", false, getProximityVolume(),
+                                                       getProximityPan());
+                        }
                     }
                 }
             }

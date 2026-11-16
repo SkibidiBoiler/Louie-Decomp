@@ -159,11 +159,20 @@ reads object literals, `new Class(args)` (as {"new", "args"}) and static constan
 (`Challenge.RESCUE`); bogus values it used to pick up from unread getproperty results are gone.
 `MovieClip::setChildAlpha` for `.alpha` on text fields. SKELETON: HUD buttons (menu, mute, pause), portrait,
 challenge bubbles, the challenge recording.
-Sound (task 9) is BLOCKED: every DefineSound in PL2 is MP3 (94 at 22 kHz, 21 at 11 kHz, 5 at 44 kHz, 1.5 MB) and
-the project has no MP3 decoder (SDL3 and stb have none). Adding one (minimp3 or dr_mp3, public domain) means
-downloading third-party code: waiting for the owner's permission. Then: importer decodes DefineSound to WAV/PCM
-(sounds/<name>.wav), `SoundManager` (§_-7C§: playSound with volume/pan, playTrack, crossfade, endMusic, mute)
-on SDL3 audio streams. Until then every playSound call is a `// SKELETON:` comment.
+(21) Sound: every DefineSound in PL2 is MP3. The owner approved minimp3 (CC0), added as the submodule
+`external/minimp3`, pinned to the 2022 commit 3f50914 (the repo got a burst of new commits on 2026-11-15; not
+reviewed, so not taken). The importer (`src/import/sound_export.cpp`) decodes every sound with an AS3 linkage
+name to 16-bit WAV, `sounds/<linkage name>.wav` (117 files, 14 MB; names keep their own ".wav", e.g.
+`getcoin.wav.wav`), skipping the MP3 SeekSamples and cutting to SampleCount so music loops cleanly.
+`engine::Audio` (audio.cpp): one SDL3 audio stream per playing sound, bound to the device, fed by a callback that
+applies the channel's volume, pan (Flash SoundTransform) and the master volume (SoundMixer); `SoundChannel` is
+the game's handle (stop, soundTransform). `SoundManager` (§_-7C§) translated whole: playSound, playTrack with the
+two music channels, switchMusic / fadeMusic (fadeTimer driven by the logic clock, 100 ms), endMusic, mute,
+pauseMusic, startLevelMusic. Sound calls hooked in everything ported so far (level start, jumps, ladders, crawl
+gaps, attacks, hits, stomps, hurt / death, items, cracker blocks, checkpoint, the finish and fanfare).
+DEV `--mute` silences the output; `--trace` prints an `S` line with the sounds started each frame.
+QUIRK: GameObject21 plays "impact_2.wav", which is not in the SWF ("Error Playing Sound").
+SKELETON: Flipline API mute events, the HUD mute button, sounds of classes not ported yet.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects
@@ -186,5 +195,5 @@ player at the room's `startPoint`; then `Character`/`PlayerChar`/`CustomerChar` 
 
 ## Later
 
-Enemies, objects, items, HUD/menus (needs masks/filters/text → SDL_GPU renderer), sound, widescreen, options
+Enemies, objects, items, HUD/menus (needs masks/filters/text → SDL_GPU renderer), widescreen, options
 menu, translations, touch-control editor, PL3 (shares the engine), PL1 (AS2, separate).

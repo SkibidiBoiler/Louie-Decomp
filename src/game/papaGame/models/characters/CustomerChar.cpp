@@ -1,5 +1,7 @@
 #include "game/papaGame/models/characters/CustomerChar.h"
 
+#include <algorithm>
+#include <climits>
 #include <cmath>
 
 #include "engine/json.h"
@@ -851,7 +853,9 @@ void CustomerChar::checkIfAttacking()
                 }
             }
         }
-        // SKELETON: the whip sound (attack_whip.wav) at startAttackFrame.
+        if (isAttacking && hasWeaponType == "whip" && cycleFrame == startAttackFrame) {
+            gameObj->obf_7C->playSound("attack_whip.wav");
+        }
     }
 }
 
@@ -897,7 +901,16 @@ void CustomerChar::startAttacking()
     }
     isDoubleJumping = false;
     isGliding = false;
-    // SKELETON: Foodini's balloon is hidden, and the punch / swing sounds play here.
+    // SKELETON: Foodini's balloon (balloonFXID) is hidden here.
+    if (weaponType == CustomerData::WEAPON_MELEE || weaponType == CustomerData::WEAPON_TOSS) {
+        gameObj->obf_7C->playSound("attack_punch_" + as3::String(std::min(2.0, attackVariation)) + ".wav");
+    } else if (hasWeaponType == "swing1" || hasWeaponType == "swing2" || hasWeaponType == "kahuna" ||
+               hasWeaponType == "scooter") {
+        gameObj->obf_7C->playSound("attack_swing_" + as3::String(std::min(2.0, attackVariation)) + ".wav");
+        if (playerData()->customerName == "Xandra") {
+            gameObj->obf_7C->playSound("xandra_sparkle.wav");
+        }
+    }
 }
 
 // AS: CustomerChar.setupAttackRect
@@ -1005,7 +1018,7 @@ void CustomerChar::updateObject()
                     } else if (!jump && !finishAddedPortal) {
                         finishPortalID = fx.addEffect(x + 54 * facingDir, y - 54, "EndPortalEffect");
                         finishAddedPortal = true;
-                        // SKELETON: portalsound_spin.wav.
+                        gameObj->obf_7C->playSound("portalsound_spin.wav");
                     } else if (finishAddedPortal) {
                         ++finishWaitTimer;
                         Effect *portal = fx.getEffect(finishPortalID);
@@ -1035,7 +1048,7 @@ void CustomerChar::updateObject()
                                 isGone = true;
                                 static_cast<effects::EndPortalEffect *>(portal)->isClosed = true;
                                 gameObj->obf_71->flashPortal = true;
-                                // SKELETON: portalsound_spinfallout.wav.
+                                gameObj->obf_7C->playSound("portalsound_spinfallout.wav");
                                 fx.removeEffect(finishCustomerFXIndex);
                             }
                         }
@@ -1166,7 +1179,11 @@ void CustomerChar::updateObject()
                 lastSafeY = ytile;
             }
         }
-        // SKELETON: ladder step sounds.
+        if (isClimbingLadder && climbDir != 0 && cycleFrame == 1) {
+            gameObj->obf_7C->playSound("ladder_step1.wav");
+        } else if (isClimbingLadder && climbDir != 0 && cycleFrame == 9) {
+            gameObj->obf_7C->playSound("ladder_step2.wav");
+        }
     } else if (!jump) {
         walkingDir = facingDir;
         dirx = facingDir;
@@ -1176,7 +1193,7 @@ void CustomerChar::updateObject()
     if (wasJumping && !jump && !isGrabbing && !isRidingObject && !isInQuicksand) {
         fx.addEffect(x, y + 18, "DustEffect", "anim", false, -1, 0);
         fx.addEffect(x, y + 18, "DustEffect", "anim", false, 1, 0);
-        // SKELETON: the jumpland sound.
+        gameObj->obf_7C->playSound("jumpland");
     }
     if (!wasTurning && isTurning && !jump && !isGrabbing && !isCrawling) {
         if (dirx == -1) {
@@ -1266,7 +1283,7 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
             gameObj->obf_V->removeEffect(invincibleFXID);
             invincibleFXID = -1;
         }
-        // SKELETON: player_died.wav.
+        gameObj->obf_7C->playSound("player_died.wav");
         controls.stopHurtControls = true;
     } else {
         // SKELETON: GameCam.setCameraJiggle(6, 8).
@@ -1286,7 +1303,7 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
         controls.stopHurtControls = true;
         isStunned = true;
         stunStarIDs.push_back(gameObj->obf_V->addEffect(x, y, "DizzyEffect", "faceRight", true, 0, isCrawling ? -32 : -72));
-        // SKELETON: player_hurt.wav.
+        gameObj->obf_7C->playSound("player_hurt.wav");
     }
     gameObj->obf_6Z->updatePlayerHealth(currentHealth);
     // SKELETON: throwCarriedObject(0).
@@ -1325,7 +1342,8 @@ void CustomerChar::restartPlayer(double lives)
         gameObj->obf_8o->resetKeys();
         startupPlayer(lastSafeX, lastSafeY);
     } else {
-        // "DEAD!" SKELETON: the analytics event and endMusic.
+        // "DEAD!" The analytics event is dropped with the Flipline API.
+        gameObj->obf_7C->endMusic();
         gameObj->obf_8o->stopCycle = true;
         gameObj->obf_71->startMainIrisOut();
     }
@@ -1408,7 +1426,8 @@ bool CustomerChar::checkForHittingEnemies(bool justChecking)
             isDoubleJumping = false;
             isWallJumping = false;
             isGroundPounding = false;
-            // SKELETON: GameCam.setCameraJiggle(10, 10) and papow.wav.
+            // SKELETON: GameCam.setCameraJiggle(10, 10).
+            gameObj->obf_7C->playSound("papow.wav");
         } else if (canGetHit() && !justChecking) {
             if (e->checkSpriteCollision(body) && !e->isDead) {
                 if (isCheesed && jump && jumpspeed >= 0) {
@@ -1431,7 +1450,9 @@ bool CustomerChar::checkForHittingEnemies(bool justChecking)
                     isWallJumping = false;
                     isWallSliding = false;
                     isGroundPounding = false;
-                    // SKELETON: stunbounce.wav at volume 0.7 when the enemy is not dead or hit.
+                    if (!e->isDead && !e->isHit) {
+                        gameObj->obf_7C->playSound("stunbounce.wav", false, 0.7);
+                    }
                     break;
                 }
                 if (!e->isStunned && !e->isUnstunning && !stomped && e->canDealDamage) {
@@ -1576,8 +1597,11 @@ void CustomerChar::finishLevel(const std::string &how)
     finishType = how;
     isGliding = false;
     isGroundPounding = false;
-    // SKELETON: the fanfare (playTrack / playSound) and ChallengeManager.recordCompletionTime /
-    // checkCustomChallenges when the finish is not "fake".
+    if (how != "fake") {
+        gameObj->obf_7C->playTrack("", INT_MAX);
+        gameObj->obf_7C->playSound("papalouie2_fanfare.wav");
+    }
+    // SKELETON: ChallengeManager.recordCompletionTime / checkCustomChallenges when the finish is not "fake".
     SDL_Log("-- FINISH LEVEL: %s", how.c_str());
 }
 

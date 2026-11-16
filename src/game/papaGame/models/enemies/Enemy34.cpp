@@ -172,7 +172,7 @@ void Enemy34::endAnimationCycle()
         jumpspeed = jumpstart;
         jump = true;
         if (isReallyOnScreen()) {
-            // SKELETON: burgerzilla_jump.wav with proximity volume and pan (sound).
+            gameObj->obf_7C->playSound("burgerzilla_jump.wav", false, getProximityVolume(), getProximityPan());
         }
     } else if (cycleName.starts_with("hit")) {
         isStunned = false;
@@ -230,7 +230,7 @@ void Enemy34::updateObject()
         if (wasJumping) {
             isSquashing = true;
             if (isReallyOnScreen()) {
-                // SKELETON: burgerzilla_land.wav with proximity volume and pan (sound).
+                gameObj->obf_7C->playSound("burgerzilla_land.wav", false, getProximityVolume(), getProximityPan());
             }
         }
         if (!isSquashing && !isReadyJump) {

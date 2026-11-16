@@ -114,8 +114,17 @@ void GameControls::jumpPlayer(CustomerChar &p)
             p.jumpedFromSlope = p.onSlope;
             p.jumpedFromX = p.x;
             p.jumpedFromY = p.y;
-            // SKELETON: jump1 / jump2 sounds (whichJumpSound alternates).
-            p.whichJumpSound = p.whichJumpSound == 1 ? 2 : 1;
+            if (!p.isGliding && !p.isCheesed && !p.isInQuicksand) {
+                if (p.whichJumpSound == 1) {
+                    gameObj->obf_7C->playSound("jump1");
+                    p.whichJumpSound = 2;
+                } else {
+                    gameObj->obf_7C->playSound("jump2");
+                    p.whichJumpSound = 1;
+                }
+            } else if (p.isCheesed || p.isInQuicksand) {
+                gameObj->obf_7C->playSound("jumpcheesed.wav");
+            }
         }
         p.canPressJump = false;
         p.lastSafeTime = 0;
@@ -167,7 +176,9 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
         const double tileWidth = gameObj->obf_71->tileWidth;
         // Grabbing a ladder snaps the player to its side, facing the way they were.
         auto grabLadder = [&](double dir) {
-            // SKELETON: ladder_grab.wav when not already climbing.
+            if (!p.isClimbingLadder) {
+                gameObj->obf_7C->playSound("ladder_grab.wav");
+            }
             p.isClimbingLadder = true;
             p.climbDir = dir;
             if (p.facingDir == 1) {

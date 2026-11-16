@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 
+#include "engine/audio.h"
 #include "engine/sheets.h"
 #include "engine/symbols.h"
 #include "engine/text.h"
@@ -23,6 +24,7 @@
 #include "game/papaGame/managers/ItemManager.h"
 #include "game/papaGame/managers/MapManager.h"
 #include "game/papaGame/managers/ObjectManager.h"
+#include "game/papaGame/managers/SoundManager.h"
 #include "game/papaGame/models/GameHUD.h"
 #include "game/papaGame/models/characters/CustomerChar.h"
 
@@ -32,7 +34,7 @@ class obf_4R {
 public:
     // Port: the engine services the translated code draws with.
     obf_4R(SDL_Renderer *renderer, engine::SheetLibrary *sheets, const engine::SymbolLibrary *symbols,
-           engine::ShapeTextures *textures, engine::TextLibrary *text);
+           engine::ShapeTextures *textures, engine::TextLibrary *text, engine::Audio *audio);
 
     // Port: replaces the level-data loading screen; reads <gameDir>/levels.xml.
     bool loadLevelData(const std::string &gameDir);
@@ -71,6 +73,7 @@ public:
     std::unique_ptr<papaGame::managers::EffectManager> obf_V;
     std::unique_ptr<papaGame::managers::ChallengeManager> obf_94;
     std::unique_ptr<papaGame::events::EventManager> obf_7t;
+    std::unique_ptr<papaGame::managers::SoundManager> obf_7C;
     double obf_8W = 0; // AS: §_-8W§, the world (level) being played
     std::string gameDir;      // port: where loadLevelData read the tables
     double pendingLevel = -1; // port: see runPending

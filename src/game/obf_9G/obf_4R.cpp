@@ -3,9 +3,10 @@
 namespace obf_9G {
 
 obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engine::SymbolLibrary *symbols_,
-               engine::ShapeTextures *textures_, engine::TextLibrary *text_)
+               engine::ShapeTextures *textures_, engine::TextLibrary *text_, engine::Audio *audio)
     : renderer(renderer_), symbols(symbols_), textures(textures_), text(text_)
 {
+    obf_7C = std::make_unique<papaGame::managers::SoundManager>(this, audio);
     obf_51 = std::make_unique<papaGame::data::UserData>(this);
     obf_3A = std::make_unique<papaGame::data::CustomerData>(this);
     // Same order as the original (§_-AP§ creates the DataManager, §_-9k§ the rest).
@@ -75,7 +76,9 @@ void obf_4R::obf_52()
     obf_71->currentYcoord = 0;
     obf_3Y->savePrevious(); // port: no interpolation across the snap
     obf_AQ->initializeScreenObjects(0);
-    // SKELETON: level music and the portal sound.
+    obf_7C->startLevelMusic();
+    obf_7C->playSound("portalsound_spinfallout.wav");
+    // SKELETON: playerObj.startTrainSound (train and river levels).
     obf_6Z->showHUD();
     // SKELETON: setupControls, setupCycleCode, handleCheckpointProgress.
     obf_6Z->updateDisplay();

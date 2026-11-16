@@ -144,7 +144,9 @@ bool Character::moveChar(double dx, double dy, double jumpDir, bool bounceAtWall
                 isWalking = true;
             }
         } else if (checkForCrawlGap(-1)) {
-            // SKELETON: crawlgap.wav
+            if (!isCrawling) {
+                gameObj->obf_7C->playSound("crawlgap.wav");
+            }
             x += step * dx;
             isWalking = true;
             isCrawling = true;
@@ -173,6 +175,9 @@ bool Character::moveChar(double dx, double dy, double jumpDir, bool bounceAtWall
                 isWalking = true;
             }
         } else if (checkForCrawlGap(1)) {
+            if (!isCrawling) {
+                gameObj->obf_7C->playSound("crawlgap.wav");
+            }
             x += step * dx;
             isWalking = true;
             isCrawling = true;
@@ -589,7 +594,9 @@ void Character::checkForSlopes(double dirX, double dirY)
                         ytile = std::floor(y / tw);
                     }
                     if (checkForCrawlGap(dirX) && canCrawl && !isCrawling) {
-                        // SKELETON: crawlgap.wav
+                        if (!isCrawling) {
+                            gameObj->obf_7C->playSound("crawlgap.wav");
+                        }
                         isCrawling = true;
                         duck = true;
                         // isTurning lives in CustomerChar; crawling characters are not translated yet.

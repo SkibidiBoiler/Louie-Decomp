@@ -117,6 +117,7 @@ build\windows\papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
 #   --capture <png>: guarda el fotograma a los 3 s y sale (comprobaciones automáticas)
 #   --input "R1-60,U61-90" (teclas LRUDJA por fotograma lógico), --trace (estado por fotograma), --frames N,
 #   --level N, --room N, --at x,y (jugador en esa casilla): pruebas por texto, más baratas que las capturas
+#   --mute: sin salida de sonido (con --trace, la línea S lista los sonidos de cada fotograma)
 # Leer una función del código original deofuscado (solo local):
 python -I tools/as_func.py "C:/Users/alfre/Proyectos/datos-papas/extracted/pl2-deob/scripts" GameControls keyCheckPlayer
 

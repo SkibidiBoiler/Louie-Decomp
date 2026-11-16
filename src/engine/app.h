@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "engine/audio.h"
 #include "engine/import_screen.h"
 #include "engine/input.h"
 #include "engine/movieclip.h"
@@ -73,6 +74,7 @@ private:
     std::unique_ptr<MovieClip> viewerClip_;
     Affine viewerFit_;
     SheetLibrary sheets_;
+    Audio audio_;
 
     // DEV: what the app shows until the menus are ported. Level = PL2 level 0 with a free camera.
     enum class Mode { Level, BlitDemo, Viewer, Import };

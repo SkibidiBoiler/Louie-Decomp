@@ -95,7 +95,7 @@ void GameObject28::finishDeactivatingObject()
     for (int i = 1; i <= 6; ++i) {
         gameObj->obf_V->addEffect(p.x, p.y, "PlayerCheckpointEffect", "star" + std::to_string(i), true, 0, -32);
     }
-    // SKELETON: checkpoint.wav.
+    gameObj->obf_7C->playSound("checkpoint.wav");
 }
 
 // AS: GameObject28.saveObjectData

@@ -8,6 +8,7 @@
 #include "import/abc.h"
 #include "import/raster.h"
 #include "import/sha256.h"
+#include "import/sound_export.h"
 #include "import/swf.h"
 #include "import/symbols_export.h"
 #include "sheet_lists.h"
@@ -451,6 +452,13 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
         }
         writeFile(out + "/framescripts.txt", text.data(), text.size());
         SDL_Log("Import: frame scripts converted (%zu statements skipped)", skipped);
+    }
+
+    report(0.44f, "Converting sounds");
+    {
+        size_t skipped = 0;
+        const size_t sounds = exportSounds(index, out, skipped);
+        SDL_Log("Import: %zu sounds converted, %zu skipped", sounds, skipped);
     }
 
     // Vector art at 2x: sharp at the usual window and phone sizes (the stage is 700x416).

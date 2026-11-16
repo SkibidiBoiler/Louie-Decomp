@@ -98,7 +98,7 @@ bool Enemy::getHit(double damage, double dir, bool /*unused*/, const std::string
             killed = true;
         }
         gameObj->obf_V->addEffect(x, y - 24, "StarburstEffect");
-        // SKELETON: hitenemy_alt.wav.
+        gameObj->obf_7C->playSound("hitenemy_alt.wav");
     }
     return killed;
 }

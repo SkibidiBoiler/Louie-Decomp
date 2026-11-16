@@ -45,6 +45,12 @@ SDL_AppResult App::init(int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
     settings_.load();
+    audio_.open();
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--mute") == 0) {
+            audio_.setMasterVolume(0); // DEV: silent automated runs (sounds still play, and --trace lists them)
+        }
+    }
 #if defined(SDL_PLATFORM_ANDROID)
     input_.touch.visible = true;
 #endif
@@ -195,7 +201,8 @@ void App::loadGame(const std::string &game)
     showSymbol(start == viewerList_.end() ? 0 : static_cast<int>(start - viewerList_.begin()));
 
     symbols_.loadFrameScripts(dir + "/framescripts.txt");
-    game_ = std::make_unique<obf_9G::obf_4R>(renderer_, &sheets_, &symbols_, &textures_, &text_);
+    audio_.setSoundDir(dir + "/sounds");
+    game_ = std::make_unique<obf_9G::obf_4R>(renderer_, &sheets_, &symbols_, &textures_, &text_, &audio_);
     mode_ = Mode::Level;
     if (game_->loadLevelData(dir)) {
         game_->obf_6V(0);
@@ -565,6 +572,19 @@ void App::tick()
     ++frame_;
     if (game_ && game_->obf_AQ->currentScreenData) {
         tickLevel();
+    }
+    if (game_) {
+        game_->obf_7C->advanceTime(1000.0 / stage_.frameRate);
+    }
+    audio_.update();
+    if (trace_) {
+        std::string sounds;
+        for (const std::string &name : audio_.takeStarted()) {
+            sounds += " " + name;
+        }
+        if (!sounds.empty()) {
+            SDL_Log("S%s", sounds.c_str()); // DEV: sounds started this frame
+        }
     }
     if (viewerClip_) {
         viewerClip_->advance();

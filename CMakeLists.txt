@@ -7,8 +7,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/SDL/CMakeLists.txt" OR
    NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/stb/stb_image.h" OR
-   NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/plutovg/CMakeLists.txt")
-    message(FATAL_ERROR "A submodule (SDL3, stb, PlutoVG) is missing. Run: git submodule update --init --recursive")
+   NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/plutovg/CMakeLists.txt" OR
+   NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/minimp3/minimp3.h")
+    message(FATAL_ERROR "A submodule (SDL3, stb, PlutoVG, minimp3) is missing. Run: git submodule update --init --recursive")
 endif()
 
 # SDL3 as a shared library: SDLActivity loads libSDL3.so on Android; on Windows SDL3.dll sits next to the exe.
@@ -27,6 +28,7 @@ if(NOT MSVC)
     # The importer runs on the phone: keep it fast even in debug builds.
     target_compile_options(plutovg PRIVATE -O2)
     set_source_files_properties(src/import/raster.cpp src/import/swf.cpp src/import/symbols_export.cpp
+                                src/import/sound_export.cpp
                                 PROPERTIES COMPILE_OPTIONS "-O2")
 endif()
 
@@ -44,6 +46,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_S
 set(PL_SOURCES
     src/main.cpp
     src/engine/app.cpp
+    src/engine/audio.cpp
     src/engine/import_screen.cpp
     src/engine/input.cpp
     src/engine/paths.cpp
@@ -61,6 +64,7 @@ set(PL_SOURCES
     src/import/sha256.cpp
     src/import/swf.cpp
     src/import/symbols_export.cpp
+    src/import/sound_export.cpp
     src/game/obf_9G/obf_4R.cpp
     src/game/papaGame/data/CustomerData.cpp
     src/game/papaGame/data/DataManager.cpp
@@ -80,6 +84,7 @@ set(PL_SOURCES
     src/game/papaGame/managers/ItemManager.cpp
     src/game/papaGame/managers/MapManager.cpp
     src/game/papaGame/managers/ObjectManager.cpp
+    src/game/papaGame/managers/SoundManager.cpp
     src/game/papaGame/models/Character.cpp
     src/game/papaGame/models/Effect.cpp
     src/game/papaGame/models/effects/CageBackBarsEffect.cpp
@@ -140,15 +145,16 @@ else()
 endif()
 
 target_include_directories(papalouie PRIVATE src)
-target_include_directories(papalouie SYSTEM PRIVATE external/stb ${PL_GENERATED})
+target_include_directories(papalouie SYSTEM PRIVATE external/stb external/minimp3 ${PL_GENERATED})
 target_link_libraries(papalouie PRIVATE SDL3::SDL3 plutovg::plutovg)
 
 # Desktop command line for the importer (same conversion the game runs on the device).
 if(NOT ANDROID)
     add_executable(pl_import src/import/cli.cpp src/import/abc.cpp src/import/importer.cpp src/import/raster.cpp
-                   src/import/sha256.cpp src/import/swf.cpp src/import/symbols_export.cpp)
+                   src/import/sha256.cpp src/import/swf.cpp src/import/symbols_export.cpp
+                   src/import/sound_export.cpp)
     target_include_directories(pl_import PRIVATE src)
-    target_include_directories(pl_import SYSTEM PRIVATE external/stb ${PL_GENERATED})
+    target_include_directories(pl_import SYSTEM PRIVATE external/stb external/minimp3 ${PL_GENERATED})
     target_link_libraries(pl_import PRIVATE SDL3::SDL3 plutovg::plutovg)
     if(MSVC)
         target_compile_options(pl_import PRIVATE /W4 /permissive- /utf-8)

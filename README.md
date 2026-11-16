@@ -114,4 +114,5 @@ app. A data folder converted on a PC can also be copied to
 ## License
 
 MIT for the code in this repository (see [LICENSE](LICENSE)). The original games and their assets belong to their
-owners and are not covered by this license.
+owners and are not covered by this license. Third-party code in `external/`: SDL3 (zlib), stb (MIT / public
+domain), PlutoVG (MIT) and minimp3 (CC0).

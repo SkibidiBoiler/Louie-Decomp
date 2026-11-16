@@ -10,7 +10,7 @@ Produced by `tools/swf2assets.py` from the owner's SWF, loaded by `src/engine/`.
 ├── sheets/index.txt          one line per sheet: "<class> <origin x> <origin y> vector|bitmap"
 ├── sheets/<N>x/<class>.png   vector sheet: frame 1 of the class, rendered at scale N (FFDec)
 ├── sheets/1x/<class>.png|jpg bitmap sheet (a linked BitmapData), as stored in the SWF
-└── sounds/<id>_<name>.*      embedded sounds (FFDec)
+└── sounds/<name>.wav          embedded sounds with an AS3 linkage name, 16-bit PCM (MP3 decoded by minimp3)
 ```
 
 **Sheets** are the bitmaps the original builds at runtime (see `docs/renderer.md`); the list per game is in
