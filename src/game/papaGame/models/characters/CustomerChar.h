@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "engine/audio.h"
 #include "game/papaGame/managers/CharacterBlitter.h"
 #include "game/papaGame/models/Character.h"
 #include "game/papaGame/models/GameObject.h"
@@ -33,7 +34,16 @@ public:
     void fallChar() override;
     void setSpeed(double v) { speed = v; }  // AS: PlayerChar.setSpeed
     bool canFudgeJump() const;              // AS: PlayerChar.canFudgeJump
-    void startDucking();                    // AS: PlayerChar.startDucking (no sliding on slopes yet)
+    void startDucking();                    // AS: PlayerChar.startDucking
+    void startSliding(double slideSpeed = 0, bool useSlope = true); // AS: PlayerChar.startSliding
+    void startPounding();                                          // AS: PlayerChar.startPounding
+    void startDoubleJumping();                                     // AS: PlayerChar.startDoubleJumping
+    void startGliding();                                           // AS: PlayerChar.startGliding
+    void startWallJumping(double dir = 0, const std::string &key = "jump"); // AS: PlayerChar.startWallJumping
+    bool checkIfAgainstWall(double dir = 0);                      // AS: CustomerChar.checkIfAgainstWall
+    void stopGrabRiding();                                         // AS: CustomerChar.stopGrabRiding
+    bool checkForCrawlGap(double dir) override;                    // AS: CustomerChar.checkForCrawlGap
+    bool isInsideCrawlGap() override;                              // AS: CustomerChar.isInsideCrawlGap
     bool checkIfOnLadder(double dir);       // AS: PlayerChar.checkIfOnLadder
     void checkIfOnDoor();                   // AS: PlayerChar.checkIfOnDoor
     void checkGoingThroughDoor(double dx, double dy) override;
@@ -86,6 +96,15 @@ public:
     bool isAttackLunging = false, wasJumping = false, wasTurning = false;
     bool isFinishPushing = false, isPushingObject = false, isGroundPounding = false, isWallJumping = false;
     bool isRidingElevator = false;
+    std::string skillType = "none";
+    bool isGrabbingObject = false, isInRiver = false;
+    bool canPush = false, canGlideBoost = true, canArrowWallJump = true;
+    double wallSlideCancelTimer = 0, wallSlideCancelTimerMax = 6, wallSlideStartTimer = 0, wallSlideStartTimerMax = 4;
+    std::string lastWallJumpKey = "jump", lastWallJumpOtherKey = "jump";
+    double maxSlideSpeed = 24, slideDecayTimerInterval = 2, bulletFrequency = 5;
+    double balloonFXID = -1, balloonsLastFloatedAway = 0;
+    std::vector<double> foodiniGlideBalloonIDs;
+    std::shared_ptr<engine::SoundChannel> slideSound, poundSound;
     double climbDir = 1, climbSpeed = 5;
     bool waitToEnterDoor = false;
     double doorDirX = 0, doorDirY = 0, doorXtile = 0, doorYtile = 0;

@@ -75,6 +75,7 @@ private:
     Affine viewerFit_;
     SheetLibrary sheets_;
     Audio audio_;
+    int customer_ = -1; // DEV: --customer N
 
     // DEV: what the app shows until the menus are ported. Level = PL2 level 0 with a free camera.
     enum class Mode { Level, BlitDemo, Viewer, Import };

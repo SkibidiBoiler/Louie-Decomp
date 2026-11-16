@@ -97,6 +97,7 @@ public:
     void checkForCeilingSlopes(double dir = -1);
     void checkForSlopes(double dirx, double diry);
     virtual bool checkForCrawlGap(double /*dir*/) { return false; }
+    virtual bool isInsideCrawlGap() { return false; } // AS: Character.isInsideCrawlGap
     bool checkDropThruCloud() const { return false; } // AS: Character.checkDropThruCloud (always false)
 
     // PlayerChar hooks used by moveChar (overridden by the player).
@@ -128,7 +129,8 @@ public:
     double spriteheight = 80, spritewidth = 128;
     double heightmultiplier = 1, widthmultiplier = 1;
     double speed = 7, walkspeed = 7, jumpspeed = 0, jumpstart = -26;
-    double gravity = 2, normalgravity = 2, jumpgravity = 2;
+    double gravity = 2, normalgravity = 2, jumpgravity = 2, glidegravity = 1;
+    double baseSlideSpeed = 0, slideSpeed = 0;
     double maxjumpvelocity = INT_MAX;
     double shortjump = -10;
     double slopedIntoCeiling = 0;

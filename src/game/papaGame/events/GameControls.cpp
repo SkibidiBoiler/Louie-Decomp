@@ -7,6 +7,7 @@
 namespace papaGame::events {
 
 using models::characters::CustomerChar;
+using papaGame::data::CustomerData;
 
 // AS: GameControls.resetKeys
 void GameControls::resetKeys()
@@ -94,26 +95,75 @@ void GameControls::detectKeys()
     // redrawScreen comes next in the original; the port redraws in its render pass.
 }
 
-// AS: GameControls.jumpPlayer (without the skill branches: double jump, glide, wall jump)
+// AS: GameControls.jumpPlayer
 void GameControls::jumpPlayer(CustomerChar &p)
 {
     const bool jumpKey = keyPressedJump;
     const bool downKey = keyPressedDown;
-    const bool canStart = !p.jump || p.canFudgeJump();
-    if (jumpKey && canStart && p.canPressJump && (!p.duck || !p.canCrawl || !p.isCrawling) && !p.isSliding &&
-        !p.isClimbingLadder) {
-        if (!(downKey && p.checkDropThruCloud())) {
-            p.jump = true;
-            p.jumpspeed = p.jumpstart;
-            p.gravity = p.jumpgravity;
-            p.isDoubleJumping = false;
-            p.canPressDoubleJump = false;
-            p.canPressWallJump = false;
+    if (downKey && !p.jump && p.isGrabbing) {
+        // Down while hanging: drop.
+        p.jump = true;
+        p.jumpspeed = 2;
+        p.jumpedFromSlope = p.onSlope;
+        p.jumpedFromX = p.x;
+        p.jumpedFromY = p.y;
+        const double tw = gameObj->obf_71->tileWidth;
+        const double belowY = std::floor((p.y + p.height - 1 + 22) / tw);
+        const double leftX = std::floor((p.x - p.width) / tw);
+        const double rightX = std::floor((p.x + p.width * p.widthmultiplier - 1) / tw);
+        const bool leftHit = gameObj->obf_4i->getTileProperty(leftX, belowY, "collision") != 0;
+        const bool rightHit = gameObj->obf_4i->getTileProperty(rightX, belowY, "collision") != 0;
+        if (!leftHit && !rightHit) {
+            p.y += 22;
+        }
+        p.ytile = std::floor(p.y / tw);
+        p.gravity = p.normalgravity;
+        p.duck = false;
+        p.isDucking = false;
+        p.isGrabbing = false;
+        p.isStartingGrabbing = false;
+        p.isWalking = false;
+    }
+    const bool free = !p.isCheesed && !p.isInQuicksand;
+    const bool canDouble = p.skillType == CustomerData::SKILL_DOUBLEJUMP && !p.isDoubleJumping && free;
+    const bool canGlide = p.skillType == CustomerData::SKILL_GLIDE && !p.isGliding && free;
+    if (jumpKey && (!p.jump || p.canFudgeJump() || canDouble || canGlide) && !p.isGrabbingObject &&
+        (p.canPressJump || (p.canPressDoubleJump && (canDouble || canGlide))) &&
+        (!p.duck || (p.skillType != CustomerData::SKILL_CRAWL || !p.isCrawling)) && !p.isRidingElevator &&
+        !p.isSliding && !p.isClimbingLadder && !p.checkIfOnLadder(-1) &&
+        (!p.isRidingObject || (p.whichObjectRiding && p.whichObjectRiding->canJumpFromRideable))) {
+        if (!(downKey && (p.checkDropThruCloud() || p.isGrabbing || p.isRidingObject))) {
+            if (!p.jump || p.canFudgeJump()) {
+                p.jump = true;
+                p.jumpspeed = p.jumpstart;
+                p.gravity = p.jumpgravity;
+                p.isDoubleJumping = false;
+                p.canPressDoubleJump = false;
+                p.canPressWallJump = false;
+            } else if (free && p.skillType == CustomerData::SKILL_DOUBLEJUMP && !p.isDoubleJumping &&
+                       p.canPressDoubleJump && !p.didDoubleJump) {
+                p.startDoubleJumping();
+                p.canPressDoubleJump = false;
+                p.didDoubleJump = true;
+            } else if (free && p.skillType == CustomerData::SKILL_GLIDE && !p.isGliding && p.canPressDoubleJump &&
+                       !p.didDoubleJump) {
+                p.startGliding();
+                p.canPressDoubleJump = false;
+                p.didDoubleJump = true;
+            }
             p.duck = false;
             p.isDucking = false;
             p.jumpedFromSlope = p.onSlope;
             p.jumpedFromX = p.x;
             p.jumpedFromY = p.y;
+            if (p.isCheesed) {
+                p.jumpspeed = -10;
+                // SKELETON: PlayerChar.jumpCheesed (the cheese is not ported).
+            } else if (p.isInQuicksand) {
+                p.jumpspeed = -16;
+            } else if (p.isInRiver) {
+                p.jumpspeed = -14;
+            }
             if (!p.isGliding && !p.isCheesed && !p.isInQuicksand) {
                 if (p.whichJumpSound == 1) {
                     gameObj->obf_7C->playSound("jump1");
@@ -126,9 +176,31 @@ void GameControls::jumpPlayer(CustomerChar &p)
                 gameObj->obf_7C->playSound("jumpcheesed.wav");
             }
         }
+        p.isGrabbing = false;
+        p.isStartingGrabbing = false;
         p.canPressJump = false;
         p.lastSafeTime = 0;
-    } else if (!jumpKey && p.jump && p.jumpspeed < p.shortjump && !p.triggerjump && !p.isDoubleJumping) {
+        if (p.isRidingObject) {
+            p.stopGrabRiding();
+        }
+    } else if (jumpKey && p.jump && p.skillType == CustomerData::SKILL_WALLJUMP && p.checkIfAgainstWall() &&
+               !p.isGrabbingObject && p.canPressWallJump &&
+               (!p.isRidingObject || (p.whichObjectRiding && p.whichObjectRiding->canJumpFromRideable)) &&
+               !p.isCheesed && !p.isInQuicksand) {
+        if (!p.checkIfOnLadder(-1) && ((p.facingDir == 1 && p.checkIfAgainstWall(1) && p.isWallSliding) ||
+                                       (p.facingDir == -1 && p.checkIfAgainstWall(-1) && p.isWallSliding))) {
+            p.startWallJumping();
+            if (p.whichJumpSound == 1) {
+                gameObj->obf_7C->playSound("jump1");
+                p.whichJumpSound = 2;
+            } else {
+                gameObj->obf_7C->playSound("jump2");
+                p.whichJumpSound = 1;
+            }
+            p.canPressDoubleJump = false;
+        }
+    } else if (!jumpKey && p.jump && p.jumpspeed < p.shortjump && !p.triggerjump && !p.isDoubleJumping &&
+               !p.isWallJumping && !p.isCheesed && !p.isInQuicksand) {
         // Releasing the key early cuts the jump short.
         p.jumpspeed = p.shortjump;
         p.canPressJump = true;
@@ -143,8 +215,17 @@ void GameControls::jumpPlayer(CustomerChar &p)
     } else if (!jumpKey && p.jump && !p.didDoubleJump) {
         p.canPressDoubleJump = true;
     }
+    if (!jumpKey && p.isGliding) {
+        p.isGliding = false;
+    }
     if (!p.canPressWallJump && !jumpKey) {
         p.canPressWallJump = true;
+    } else if (!p.canArrowWallJump) {
+        if (p.lastWallJumpKey == "left" && !keyPressedLeft) {
+            p.canArrowWallJump = true;
+        } else if (p.lastWallJumpKey == "right" && !keyPressedRight) {
+            p.canArrowWallJump = true;
+        }
     }
 }
 
@@ -162,8 +243,12 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
     if (down && !p.isClimbingLadder && !p.jump && !p.isCrawling && !left && !right && p.canPressDown) {
         p.startDucking(); // SKELETON: throwing / grabbing objects come first in the original
         p.canPressDown = false;
+    } else if (down && p.jump && !p.isClimbingLadder && !p.isCheesed && !p.isGroundPounding && !p.isRidingObject &&
+               !p.isRidingElevator && p.canPressDown && p.skillType == CustomerData::SKILL_POUND) {
+        p.startPounding();
+        p.canPressDown = false;
     } else if (!down || p.isCrawling) {
-        if (p.duck) {
+        if (p.duck && !p.isInsideCrawlGap() && !p.isHit) {
             p.duck = false;
             p.isTurning = false;
             p.isCrawling = false;
@@ -217,18 +302,38 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
         if (p.isRidingObject || p.isSliding || p.isGroundPounding || p.isClimbingLadder || p.isAttackLunging) {
             p.isWalking = false; // SKELETON: also in a river or cheesed
         } else if (p.facingDir == -dir && p.isWallSliding) {
-            p.isWalking = false; // SKELETON: wall jumping off the wall (startWallJumping)
+            // Pressing away from the wall jumps off it.
+            if (p.checkIfAgainstWall(-dir) && p.canArrowWallJump) {
+                p.isWalking = true;
+                p.startWallJumping(dir, dir < 0 ? "left" : "right");
+                if (p.whichJumpSound == 1) {
+                    gameObj->obf_7C->playSound("jump1");
+                    p.whichJumpSound = 2;
+                } else {
+                    gameObj->obf_7C->playSound("jump2");
+                    p.whichJumpSound = 1;
+                }
+            } else {
+                p.isWalking = false;
+            }
         } else if (p.isWallJumping) {
             p.isWalking = false;
         } else if (p.isDucking && !p.duck) {
             p.walkingDir = dir;
             p.facingDir = dir;
             p.isWalking = false;
-        } else if ((p.duck && (!p.canCrawl || !p.isCrawling)) || p.isRidingElevator) {
+        } else if ((p.duck && (p.skillType != CustomerData::SKILL_CRAWL || !p.isCrawling)) || p.isGrabbingObject ||
+                   p.isRidingElevator) {
             p.walkingDir = dir;
             p.facingDir = dir;
             p.isWalking = false;
-            // SKELETON: crawling into a crawl gap (isInsideCrawlGap) and grabbing objects.
+            if (p.duck && p.skillType == CustomerData::SKILL_CRAWL && !p.isCrawling && p.isInsideCrawlGap()) {
+                SDL_Log("You slid into a gap, you can crawl now.");
+                if (!p.isCrawling) {
+                    gameObj->obf_7C->playSound("crawlgap.wav");
+                }
+                p.isCrawling = true;
+            }
         } else if (p.isAttacking && p.facingDir == -dir) {
             // Turning round cancels a swing.
             if (!(p.usingGun() || p.usingPowerTool())) {
@@ -326,7 +431,10 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
             p.moveChar(p.walkingDir, 0, 0);
         }
     }
-    // SKELETON: sliding (isSliding moves at slideSpeed).
+    if (p.isSliding && !p.isGrabbing && !p.isCheesed && !p.isClimbingLadder && !p.isRidingObject && !p.isShoved) {
+        p.setSpeed(p.slideSpeed);
+        p.moveChar(p.walkingDir, 0, 0);
+    }
     if (p.isAttackLunging && !p.isClimbingLadder && !p.isRidingObject && !p.isShoved) { // SKELETON: && !isCheesed
         p.setSpeed(p.useLungeSpeed);
         p.moveChar(p.lungeDirection, 0, 0);

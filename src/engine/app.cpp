@@ -47,6 +47,9 @@ SDL_AppResult App::init(int argc, char *argv[])
     settings_.load();
     audio_.open();
     for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--customer") == 0 && i + 1 < argc) {
+            customer_ = std::atoi(argv[i + 1]);
+        }
         if (std::strcmp(argv[i], "--mute") == 0) {
             audio_.setMasterVolume(0); // DEV: silent automated runs (sounds still play, and --trace lists them)
         }
@@ -204,6 +207,10 @@ void App::loadGame(const std::string &game)
     audio_.setSoundDir(dir + "/sounds");
     game_ = std::make_unique<obf_9G::obf_4R>(renderer_, &sheets_, &symbols_, &textures_, &text_, &audio_);
     mode_ = Mode::Level;
+    if (customer_ >= 0) {
+        game_->obf_51->selectedCharacter = customer_; // DEV: --customer N (index in CustomerData)
+        game_->playerObj->defineVars();
+    }
     if (game_->loadLevelData(dir)) {
         game_->obf_6V(0);
         SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
@@ -329,13 +336,16 @@ void App::tickLevel()
     }
     if (trace_) {
         const auto &dm = *game_->obf_AQ;
-        SDL_Log("T %d room %.0f x %.1f y %.1f tile %.0f,%.0f hp %.0f $%.0f sp %.0f %s/%s%s%s%s%s", scriptFrame_,
+        SDL_Log("T %d room %.0f x %.1f y %.1f tile %.0f,%.0f hp %.0f $%.0f sp %.0f %s/%s%s%s%s%s%s%s%s%s%s%s", scriptFrame_,
                 dm.currentScreen, player.x,
                 player.y, player.xtile, player.ytile, player.currentHealth, game_->obf_51->money,
                 game_->obf_51->specialitems, player.cycleName.c_str(), player.footCycleName.c_str(),
                 player.jump ? " jump" : "", player.isClimbingLadder ? " ladder" : "",
                 player.waitToEnterDoor ? " door" : "",
-                game_->obf_71->isTransitionOut ? " out" : (game_->obf_71->isTransitioningIn ? " in" : ""));
+                game_->obf_71->isTransitionOut ? " out" : (game_->obf_71->isTransitioningIn ? " in" : ""),
+                player.isDoubleJumping ? " dj" : "", player.isGliding ? " glide" : "",
+                player.isGroundPounding ? " pound" : "", player.isSliding ? " slide" : "",
+                player.isWallSliding ? " wallslide" : "", player.isWallJumping ? " walljump" : "");
         // DEV: the room's enemies: id:type x,y cycle and flags (d dead, s stunned, h hit).
         std::string enemies;
         for (const papaGame::models::Enemy *e : game_->obf_E->enemies) {

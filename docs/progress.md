@@ -173,6 +173,22 @@ gaps, attacks, hits, stomps, hurt / death, items, cracker blocks, checkpoint, th
 DEV `--mute` silences the output; `--trace` prints an `S` line with the sounds started each frame.
 QUIRK: GameObject21 plays "impact_2.wav", which is not in the SWF ("Error Playing Sound").
 SKELETON: Flipline API mute events, the HUD mute button, sounds of classes not ported yet.
+(22) Customers and skills: all 28 `papaGame.data.customers.Customer*` classes (one header each, translated from
+their initCustomerData) in `CustomerData.customersIncluded` order. `CustomerChar` now takes skillType, canPush,
+jumpgravity and bulletstart from the customer, and has the skills: sliding (`startSliding`; Down on a slope,
+Scooter after a double jump; speed along the slope, decay, the hop of Scooter / Kahuna, the slide sound),
+ground pound (`startPounding`, Down in the air), double jump, gliding (`startGliding`, the glide boost), wall
+sliding and wall jumping (`startWallJumping`, `checkIfAgainstWall`, jumping off with the jump key or the arrow
+away from the wall), crawl gaps (`checkForCrawlGap`, `isInsideCrawlGap`), `stopGrabRiding`;
+`GameControls.jumpPlayer` translated whole (drop from a hang, double jump / glide / wall jump branches, river /
+quicksand jump speeds). DEV `--customer N` plays as customer N (0 Marty, 9 Kahuna, 11 Ninjoy, 15 Scooter,
+16 Connor, 20 Greg, 26 Papa Louie); `--trace` shows dj / glide / pound / slide / wallslide / walljump.
+Checked by trace: Connor's double jump, Papa Louie's glide, Kahuna's pound and slope slide with the end hop;
+Kahuna drawn with his surfboard. Not checked in game: wall jumping and crawl gaps (no wall or gap in level 0's
+first room).
+SKELETON: pushing (needs the pushable objects), Foodini's balloons (FoodiniBalloonEffect, FoodiniGlideEffect),
+the skill tutorials (§_-c§), cheese (jumpCheesed), projectile weapons (toss / pistol / longgun / bazooka need
+BulletManager, task 6), character select (MainMenuScreen, with the menus).
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

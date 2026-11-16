@@ -118,6 +118,7 @@ build\windows\papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
 #   --input "R1-60,U61-90" (teclas LRUDJA por fotograma lógico), --trace (estado por fotograma), --frames N,
 #   --level N, --room N, --at x,y (jugador en esa casilla): pruebas por texto, más baratas que las capturas
 #   --mute: sin salida de sonido (con --trace, la línea S lista los sonidos de cada fotograma)
+#   --customer N: jugar con el cliente N (orden de CustomerData; 0 Marty, 9 Kahuna, 26 Papa Louie)
 # Leer una función del código original deofuscado (solo local):
 python -I tools/as_func.py "C:/Users/alfre/Proyectos/datos-papas/extracted/pl2-deob/scripts" GameControls keyCheckPlayer
 

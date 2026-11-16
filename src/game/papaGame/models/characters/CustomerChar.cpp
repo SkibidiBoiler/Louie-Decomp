@@ -66,17 +66,22 @@ void CustomerChar::defineVars()
     maxHealth = 3;
     shouldCheckCeilingSlopes = true;
     if (const data::CustomerDataFile *c = playerData()) {
+        skillType = c->skillType;
         hasWeaponType = c->weaponType;
-        canCrawl = c->skillType == CustomerData::SKILL_CRAWL;
-        if (canCrawl) {
+        if (skillType == CustomerData::SKILL_CRAWL) {
             playerheight = 50;
         }
+        canCrawl = skillType == CustomerData::SKILL_CRAWL;
+        canPush = skillType == CustomerData::SKILL_PUSH;
+        // SKELETON: BulletManager.addToPreblit(bulletName) for the customers with a projectile.
         jumpstart = c->jumpstart;
+        jumpgravity = c->jumpgravity;
         baseWalkSpeed = c->walkspeed;
         walkspeed = baseWalkSpeed;
         maxSkidSpeed = c->maxskidspeed;
         skidDecayTimerInterval = c->skiddecay;
         skidDecayAmount = c->skiddecayamount;
+        bulletFrequency = c->bulletstart;
     }
 }
 
@@ -194,10 +199,205 @@ bool CustomerChar::canFudgeJump() const
 // AS: PlayerChar.startDucking
 void CustomerChar::startDucking()
 {
-    // SKELETON: on a slope the original starts sliding (startSliding) instead.
-    duck = true;
-    isDucking = true;
-    isTurning = false;
+    if (onSlope > 0 && (skillType != CustomerData::SKILL_CRAWL || !isCrawling)) {
+        startSliding(1);
+    } else {
+        duck = true;
+        isDucking = true;
+        isTurning = false;
+    }
+}
+
+// AS: PlayerChar.startSliding — downhill on a slope, or straight ahead.
+void CustomerChar::startSliding(double startSpeed, bool useSlope)
+{
+    if (isSliding) {
+        return;
+    }
+    if (onSlope != 0 && useSlope) {
+        const double dir = (onSlope == 1 || onSlope == 3 || onSlope == 4 || onSlope == 7 || onSlope == 8) ? -1 : 1;
+        facingDir = dir;
+        walkingDir = dir;
+        dirx = dir;
+    } else {
+        walkingDir = facingDir;
+        dirx = walkingDir;
+    }
+    isSliding = true;
+    slideSpeed = startSpeed;
+    baseSlideSpeed = startSpeed;
+    if (!slideSound) {
+        if (playerData()->customerName == "Scooter") {
+            slideSound = gameObj->obf_7C->playSound("skateboard_slide.wav", true, 0.1);
+        } else {
+            slideSound = gameObj->obf_7C->playSound("hill_slide.wav", true, 0.1);
+        }
+    }
+}
+
+// AS: PlayerChar.startPounding — SKELETON: the "groundpound" / "poundcontext" tutorials (§_-c§).
+void CustomerChar::startPounding()
+{
+    if (skillType == CustomerData::SKILL_POUND && !isGroundPounding) {
+        isGroundPounding = true;
+        jump = true;
+        jumpspeed = 0;
+    }
+}
+
+// AS: PlayerChar.startDoubleJumping — SKELETON: the "doublejump" tutorial (§_-c§).
+void CustomerChar::startDoubleJumping()
+{
+    if (skillType == CustomerData::SKILL_DOUBLEJUMP && !isDoubleJumping) {
+        isDoubleJumping = true;
+        jump = true;
+        jumpspeed = jumpstart;
+        gravity = jumpgravity;
+    }
+}
+
+// AS: PlayerChar.startGliding — SKELETON: the "glide" tutorial (§_-c§).
+void CustomerChar::startGliding()
+{
+    if (skillType == CustomerData::SKILL_GLIDE && jump && !isGliding) {
+        isGliding = true;
+        gravity = glidegravity;
+        if (canGlideBoost) {
+            jumpspeed = -6;
+            canGlideBoost = false;
+        } else {
+            jumpspeed = 0;
+        }
+        if (playerData()->customerName == "Foodini") {
+            gameObj->obf_7C->playSound("balloon_glide.wav");
+        } else if (playerData()->customerName != "Professor Fitz") {
+            gameObj->obf_7C->playSound("hatglider.wav", false, 0.3);
+        }
+    }
+}
+
+// AS: PlayerChar.startWallJumping — away from the wall. SKELETON: the "walljump" tutorial (§_-c§).
+void CustomerChar::startWallJumping(double dir, const std::string &key)
+{
+    isWallJumping = true;
+    isWallSliding = false;
+    jumpspeed = jumpstart;
+    gravity = jumpgravity;
+    lastWallJumpKey = key;
+    lastWallJumpOtherKey = key;
+    canPressWallJump = false;
+    canArrowWallJump = false;
+    speed = 10;
+    canAutoWallJump = true;
+    if (checkIfAgainstWall(1) || dir == -1) {
+        facingDir = -1;
+        walkingDir = -1;
+        dirx = -1;
+        triggerjump = true;
+        triggerjumpx = true;
+        lastWallJumpKey = "right";
+    } else if (checkIfAgainstWall(-1) || dir == 1) {
+        facingDir = 1;
+        walkingDir = 1;
+        dirx = 1;
+        triggerjump = true;
+        triggerjumpx = true;
+        lastWallJumpKey = "left";
+    }
+}
+
+// AS: CustomerChar.stopGrabRiding — letting go of a moving rideable launches the player along it.
+void CustomerChar::stopGrabRiding()
+{
+    if (!isRidingObject) {
+        return;
+    }
+    double dir = 0;
+    if (whichObjectRiding) {
+        dir = whichObjectRiding->getRideableDirection();
+        whichObjectRiding->releaseRideableObject();
+        whichObjectRiding = nullptr;
+    }
+    isRidingObject = false;
+    if (dir != 0) {
+        walkingDir = facingDir;
+        dirx = walkingDir;
+        isSkidding = false;
+        skidSpeed = walkspeed * 2;
+        speed = walkspeed * 2;
+        isWalking = true;
+        jump = true;
+    }
+}
+
+// AS: CustomerChar.checkForCrawlGap — a crawler walking into a low gap ducks into it (corners already read).
+bool CustomerChar::checkForCrawlGap(double dir)
+{
+    bool found = false;
+    std::string how;
+    if (skillType == CustomerData::SKILL_CRAWL && !jump && !isAttacking) {
+        if (dir == -1 && !HitDownLeft && (HitUpLeft || HitUpMidLeft || HitDownMidLeft)) {
+            how = "left";
+        } else if (dir == 1 && !HitDownRight && (HitUpRight || HitUpMidRight || HitDownMidRight)) {
+            how = "right";
+        } else if (onSlope == 9 && dir == -1 && !HitDownMidLeft && (HitUpMidLeft || HitUpLeft)) {
+            how = "9-1";
+        } else if (onSlope == 8 && dir == 1 && !HitDownMidRight && (HitUpMidRight || HitUpRight)) {
+            how = "8-1";
+        } else if (onSlope == 9 && dir == -1 && !HitDownMidLeft && onSlopeWallLeft) {
+            how = "9-2";
+        } else if (onSlope == 8 && dir == 1 && !HitDownMidRight && onSlopeWallRight) {
+            how = "8-2";
+        }
+        if (!how.empty()) {
+            found = true;
+            duck = true;
+            isDucking = true;
+            isTurning = false;
+        }
+    }
+    if (found) {
+        SDL_Log("Start Crawling into gap! (%s)", how.c_str());
+    }
+    return found;
+}
+
+// AS: CustomerChar.isInsideCrawlGap — something solid above a ducking player.
+bool CustomerChar::isInsideCrawlGap()
+{
+    if (!duck) {
+        return false;
+    }
+    const managers::MapManager &map = *gameObj->obf_4i;
+    getMyCorners(x, y);
+    auto either = [&](double row, const char *prop) {
+        return map.getTileProperty(leftX, row, prop) > 0 || map.getTileProperty(rightX, row, prop) > 0;
+    };
+    return either(standupY, "collision") || either(standupmidY, "collision") || either(upY, "collision") ||
+           (onSlope == 9 && facingDir == -1 && map.getTileProperty(xtile - 1, ytile - 2, "collision") != 0) ||
+           (onSlope == 8 && facingDir == 1 && map.getTileProperty(xtile + 1, ytile - 2, "collision") != 0) ||
+           either(standupY, "ceilingslope") || either(standupmidY, "ceilingslope") || either(upY, "ceilingslope");
+}
+
+// AS: CustomerChar.checkIfAgainstWall — only wall jumpers ever are.
+bool CustomerChar::checkIfAgainstWall(double dir)
+{
+    bool against = false;
+    if (skillType == CustomerData::SKILL_WALLJUMP) {
+        if (dir == 0 || dir == -1) {
+            getMyCorners(x - 6, y);
+            if ((HitDownLeft || HitMidLeft) && HitUpLeft) {
+                against = true;
+            }
+        }
+        if (dir == 0 || dir == 1) {
+            getMyCorners(x + 6, y);
+            if ((HitDownRight || HitMidRight) && HitUpRight) {
+                against = true;
+            }
+        }
+    }
+    return against;
 }
 
 // AS: PlayerChar.checkIfOnLadder — a ladder tile here; going down it must not start on solid ground.
@@ -977,7 +1177,10 @@ void CustomerChar::updateObject()
     }
     // SKELETON: forceGrabYoffset and the boss music delay.
     if (isDoubleJumping && !jump) {
-        // SKELETON: Scooter starts sliding here when landing with Down held.
+        if (data->customerName == "Scooter" && (isWalking || isSkidding || onSlope != 0) && speed > 0 &&
+            controls.keyPressedDown) {
+            startSliding(speed, false);
+        }
         isDoubleJumping = false;
     }
     updateSprite();
@@ -1156,8 +1359,177 @@ void CustomerChar::updateObject()
             steepAngle = 67;
         }
         walkspeed = slopeSpeed(onSlope, baseSpeed, steepAngle);
-        // SKELETON: sliding (slide speed on slopes, Scooter / Kahuna hops, the slide sound), ground pounding,
-        // gliding (Foodini's balloons), wall jumping and wall sliding.
+        const bool hopper = data->customerName == "Scooter" || data->customerName == "Kahuna";
+        // Sliding stops in a hop (Scooter, Kahuna) or a crouch.
+        auto stopSliding = [&] {
+            isSliding = false;
+            baseSlideSpeed = 0;
+            slideSpeed = 0;
+            if (hopper) {
+                jump = true;
+                jumpspeed = -12;
+                if (data->customerName == "Scooter") {
+                    gameObj->obf_7C->playSound("skateboard_hop.wav");
+                }
+            } else {
+                isDucking = true;
+            }
+        };
+        if (isSliding) {
+            walkingDir = facingDir;
+            dirx = facingDir;
+            const double timer = controls.gameplayTimer;
+            if (jump) {
+                isSliding = false;
+                skidSpeed = slideSpeed;
+                if (data->customerName == "Scooter") {
+                    gameObj->obf_7C->playSound("skateboard_hop.wav");
+                }
+            } else if (onSlope > 0) {
+                if (baseSlideSpeed == 0 || std::fmod(timer, slideDecayTimerInterval) == 0) {
+                    // Faster downhill, slower uphill; the shallow slopes (3-6) change by 1, the others by 2.
+                    auto alongSlope = [&](bool downhill, bool shallow) {
+                        if (downhill) {
+                            if (baseSlideSpeed < maxSlideSpeed) {
+                                baseSlideSpeed += shallow ? 1 : 2;
+                            }
+                            if (baseSlideSpeed > maxSlideSpeed) {
+                                baseSlideSpeed = maxSlideSpeed;
+                            }
+                        } else if (baseSlideSpeed >= 0) {
+                            if (data->customerName == "Scooter") {
+                                if (shallow) {
+                                    if (std::fmod(timer, 2) == 0) {
+                                        --baseSlideSpeed;
+                                    }
+                                } else {
+                                    --baseSlideSpeed;
+                                }
+                            } else if (shallow) {
+                                --baseSlideSpeed;
+                            } else {
+                                baseSlideSpeed -= 2;
+                            }
+                        }
+                    };
+                    if (baseSlideSpeed < 0) {
+                        stopSliding();
+                    } else if (onSlope == 1 || onSlope == 3 || onSlope == 4 || onSlope == 7 || onSlope == 8) {
+                        alongSlope(facingDir == -1, onSlope == 3 || onSlope == 4);
+                    } else if (onSlope == 2 || onSlope == 5 || onSlope == 6 || onSlope == 9 || onSlope == 10) {
+                        alongSlope(facingDir == 1, onSlope == 5 || onSlope == 6);
+                    }
+                }
+            } else if (baseSlideSpeed > 0) {
+                if (data->customerName == "Scooter") {
+                    if (std::fmod(timer, slideDecayTimerInterval * 2) == 0) {
+                        --baseSlideSpeed;
+                    }
+                } else if (std::fmod(timer, slideDecayTimerInterval) == 0) {
+                    --baseSlideSpeed;
+                }
+            } else if (onSlope == 0 && baseSlideSpeed <= 0 && !isSkidding) {
+                stopSliding();
+            }
+        } else {
+            baseSlideSpeed = 0;
+            slideSpeed = 0;
+        }
+        if (!isSliding && !isWallSliding && slideSound) {
+            slideSound->stop();
+            slideSound = nullptr;
+        } else if (isSliding && slideSound) {
+            double volume = baseSlideSpeed / maxSlideSpeed;
+            if (data->customerName == "Scooter") {
+                volume *= 2;
+                if (volume > 1) {
+                    volume = 1;
+                }
+            }
+            slideSound->setTransform(volume, 0);
+        } else if (isWallSliding && slideSound) {
+            if (std::fmod(controls.gameplayTimer, 3) == 0) {
+                double volume = slideSound->volume() + 0.1;
+                if (volume > 1) {
+                    volume = 1;
+                }
+                slideSound->setTransform(volume, 0);
+            }
+        } else if (isWallSliding && !slideSound) {
+            slideSound = gameObj->obf_7C->playSound("hill_slide.wav", true, 0.1);
+        }
+        if (baseSlideSpeed > 0) {
+            slideSpeed = slopeSpeed(onSlope, baseSlideSpeed, steepAngle);
+        }
+        if (isGroundPounding) {
+            checkForPoundingObjects();
+            fallChar();
+            if (!poundSound) {
+                poundSound = gameObj->obf_7C->playSound("groundpound_dive.wav", true);
+                gameObj->obf_7C->playSound("groundpound_start.wav");
+            }
+            if (!jump) {
+                isGroundPounding = false;
+                jumpspeed = jumpstart / 2;
+                jump = true;
+                // SKELETON: GameCam.setCameraJiggle(10, 10).
+                gameObj->obf_7C->playSound("papow.wav");
+            }
+        } else if (poundSound) {
+            poundSound->stop();
+            poundSound = nullptr;
+        }
+        if (isGliding) {
+            // SKELETON: Foodini's six FoodiniGlideEffect balloons (foodiniGlideBalloonIDs) and floating them away.
+            if (!jump) {
+                isGliding = false;
+            }
+        }
+        if (!canGlideBoost && !jump) {
+            canGlideBoost = true;
+        }
+        if (isWallJumping) {
+            if (!jump || jumpspeed > 0) {
+                isWallJumping = false;
+                triggerjump = false;
+                triggerjumpx = false;
+                speed = walkspeed;
+            }
+            isWallSliding = false;
+        } else if (onSlope == 0 && jump && !isCheesed && !isInQuicksand && !isAttacking && !controls.keyPressedDown &&
+                   jumpspeed >= 0 &&
+                   (((controls.keyPressedRight || canAutoWallJump) && facingDir == 1 && checkIfAgainstWall(1)) ||
+                    ((controls.keyPressedLeft || canAutoWallJump) && facingDir == -1 && checkIfAgainstWall(-1)))) {
+            ++wallSlideStartTimer;
+            if (canAutoWallJump || wallSlideStartTimer >= wallSlideStartTimerMax) {
+                if (!isWallSliding) {
+                    jumpspeed = 1;
+                }
+                isWallSliding = true;
+                wallSlideCancelTimer = 0;
+            }
+        } else if (isWallSliding && (controls.keyPressedDown || !jump || onSlope > 0 ||
+                                     (facingDir == 1 && !checkIfAgainstWall(1)) ||
+                                     (facingDir == -1 && !checkIfAgainstWall(-1)))) {
+            isWallSliding = false;
+            canAutoWallJump = false;
+            jumpspeed = 1;
+        } else if (isWallSliding &&
+                   ((checkIfAgainstWall(1) && facingDir == 1 && !canAutoWallJump && !controls.keyPressedRight) ||
+                    (checkIfAgainstWall(-1) && facingDir == -1 && !canAutoWallJump && !controls.keyPressedLeft))) {
+            ++wallSlideCancelTimer;
+            if (wallSlideCancelTimer >= wallSlideCancelTimerMax) {
+                isWallSliding = false;
+                canAutoWallJump = false;
+                jumpspeed = 1;
+            }
+        }
+        if (!jump && !isWallSliding && canAutoWallJump) {
+            canAutoWallJump = false;
+        }
+        if (!jump || !checkIfAgainstWall()) {
+            wallSlideStartTimer = 0;
+        }
         checkIfAttacking();
         checkForHittingEnemies();
         checkForHittingObjects();
