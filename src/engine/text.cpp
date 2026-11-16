@@ -371,10 +371,7 @@ void TextLibrary::drawEdit(uint16_t id, const std::string *text, const Affine &m
             lines.back().push_back(cp);
         }
     }
-    auto advanceOf = [&](uint32_t cp) {
-        auto g = f->byCode.find(cp);
-        return g == f->byCode.end() ? 0.0f : f->glyphs[static_cast<size_t>(g->second)].advance * k;
-    };
+    auto advanceOf = [&](uint32_t cp) { return drawCodePoint(*f, cp, 0, 0, size, m, c, false); };
     const float avail = (e.x1 - e.x0) - 4 - e.left - e.right;
     if (e.wordWrap) {
         std::vector<std::vector<uint32_t>> wrapped;
@@ -416,12 +413,7 @@ void TextLibrary::drawEdit(uint16_t id, const std::string *text, const Affine &m
             pen += (avail - width) / 2;
         }
         for (uint32_t cp : line) {
-            auto g = f->byCode.find(cp);
-            if (g != f->byCode.end()) {
-                const Glyph &glyph = f->glyphs[static_cast<size_t>(g->second)];
-                drawGlyph(*f, glyph, pen, baseline, size, m, c);
-                pen += glyph.advance * k;
-            }
+            pen += drawCodePoint(*f, cp, pen, baseline, size, m, c, true);
         }
         baseline += (f->ascent + f->descent + f->leading) * k + e.leading;
     }
@@ -441,18 +433,15 @@ TextLibrary::Font *TextLibrary::fontByName(std::string_view name)
     return most ? font(best) : nullptr;
 }
 
-float TextLibrary::drawString(std::string_view fontName, float size, std::string_view utf8, float x, float baseline,
-                              SDL_FColor color, int align, const Affine &m, bool draw)
+// One character of the port's text: the font's glyph, or a letter built from a base letter and a mark when the
+// font lacks it (á é í ó ú ñ ü ¿ ¡ are missing from the game's fonts). Returns its advance; nothing is drawn when
+// `draw` is false.
+float TextLibrary::drawCodePoint(const Font &f, uint32_t code, float pen, float baseline, float size, const Affine &m,
+                                 SDL_FColor color, bool draw)
 {
-    Font *f = fontByName(fontName);
-    if (!f) {
-        return 0;
-    }
-    // Letters missing from the game's fonts: base letter + mark (acute ', tilde ˜, diaeresis ..), or a
-    // letter turned upside down (¿ ¡).
     struct Compose {
         uint32_t code, base;
-        char mark; // '\'' acute, '~' tilde, ':' diaeresis, 'R' rotate the base 180 degrees
+        char mark; // '\'' acute, '~' tilde, ':' diaeresis, 'R' the base turned 180 degrees
     };
     static const Compose kCompose[] = {
         {0xE1, 'a', '\''}, {0xE9, 'e', '\''}, {0xED, 'i', '\''}, {0xF3, 'o', '\''}, {0xFA, 'u', '\''},
@@ -460,83 +449,87 @@ float TextLibrary::drawString(std::string_view fontName, float size, std::string
         {0xF1, 'n', '~'},  {0xD1, 'N', '~'},  {0xFC, 'u', ':'},  {0xDC, 'U', ':'},
         {0xBF, '?', 'R'},  {0xA1, '!', 'R'},
     };
-    auto glyphOf = [&](uint32_t code) -> const Glyph * {
-        auto it = f->byCode.find(code);
-        return it == f->byCode.end() ? nullptr : &f->glyphs[static_cast<size_t>(it->second)];
+    auto glyphOf = [&](uint32_t c) -> const Glyph * {
+        auto it = f.byCode.find(c);
+        return it == f.byCode.end() ? nullptr : &f.glyphs[static_cast<size_t>(it->second)];
     };
     const float k = size / em_;
-    // Width first (for the alignment), then draw.
-    float width = 0;
+    if (const Glyph *g = glyphOf(code)) {
+        if (draw) {
+            drawGlyph(f, *g, pen, baseline, size, m, color);
+        }
+        return g->advance * k;
+    }
+    const Compose *cp = nullptr;
+    for (const Compose &item : kCompose) {
+        if (item.code == code) {
+            cp = &item;
+        }
+    }
+    // A dotless i would be right under the accent; the game's fonts have none, so the dot stays.
+    const Glyph *base = cp ? glyphOf(cp->base) : nullptr;
+    if (!base) {
+        return 0;
+    }
+    const float advance = base->advance * k;
+    if (!draw) {
+        return advance;
+    }
+    const float xHeight = f.ascent * k * 0.52f;
+    if (cp->mark == 'R') {
+        // Turned 180 degrees about the middle of the letter's x-height band.
+        const float cx = pen + advance / 2, cy = baseline - xHeight * 0.75f;
+        const Affine turn = m * Affine{-1, 0, 0, -1, 2 * cx, 2 * cy};
+        drawGlyph(f, *base, pen, baseline + xHeight * 0.5f, size, turn, color);
+        return advance;
+    }
+    drawGlyph(f, *base, pen, baseline, size, m, color);
+    // The apostrophe and the tilde sit at cap height: over a lowercase letter they go up a little (over the i,
+    // above its dot), over a capital by about the cap height minus the x-height.
+    const bool capital = cp->base >= 'A' && cp->base <= 'Z';
+    const float lift = capital ? size * 0.32f : (cp->base == 'i' ? size * 0.22f : size * 0.1f);
+    if (cp->mark == '\'') {
+        if (const Glyph *mark = glyphOf('\'')) {
+            // Slanted like an acute accent (top to the right).
+            const float mw = mark->advance * k;
+            const float markBase = baseline - lift;
+            const Affine shear = m * Affine{1, 0, -0.5f, 1, 0.5f * (markBase - size * 0.5f), 0};
+            drawGlyph(f, *mark, pen + (advance - mw) / 2, markBase, size, shear, color);
+        }
+    } else if (cp->mark == '~') {
+        if (const Glyph *mark = glyphOf(0x2DC)) {
+            const float mw = mark->advance * k;
+            drawGlyph(f, *mark, pen + (advance - mw) / 2, baseline - lift, size, m, color);
+        }
+    } else if (cp->mark == ':') {
+        if (const Glyph *dot = glyphOf('.')) {
+            const float dw = dot->advance * k;
+            const float dotBase = baseline - (capital ? size * 0.82f : size * 0.6f);
+            drawGlyph(f, *dot, pen + advance / 2 - dw * 1.05f, dotBase, size, m, color);
+            drawGlyph(f, *dot, pen + advance / 2 + dw * 0.05f, dotBase, size, m, color);
+        }
+    }
+    return advance;
+}
+
+float TextLibrary::drawString(std::string_view fontName, float size, std::string_view utf8, float x, float baseline,
+                              SDL_FColor color, int align, const Affine &m, bool draw)
+{
+    Font *f = fontByName(fontName);
+    if (!f) {
+        return 0;
+    }
     const std::vector<uint32_t> codes = codePoints(utf8);
+    float width = 0;
     for (uint32_t c : codes) {
-        const Glyph *g = glyphOf(c);
-        if (!g) {
-            for (const Compose &cp : kCompose) {
-                if (cp.code == c) {
-                    g = glyphOf(cp.base);
-                }
-            }
-        }
-        if (g) {
-            width += g->advance * k;
-        }
+        width += drawCodePoint(*f, c, 0, 0, size, m, color, false);
     }
     if (!draw) {
         return width;
     }
     float pen = align == 1 ? x - width : (align == 2 ? x - width / 2 : x);
-    const float xHeight = f->ascent * k * 0.52f;
     for (uint32_t c : codes) {
-        if (const Glyph *g = glyphOf(c)) {
-            drawGlyph(*f, *g, pen, baseline, size, m, color);
-            pen += g->advance * k;
-            continue;
-        }
-        const Compose *cp = nullptr;
-        for (const Compose &item : kCompose) {
-            if (item.code == c) {
-                cp = &item;
-            }
-        }
-        const Glyph *base = cp ? glyphOf(cp->base) : nullptr;
-        if (!base) {
-            continue;
-        }
-        const float advance = base->advance * k;
-        if (cp->mark == 'R') {
-            // Turned 180 degrees about the middle of the letter's x-height band.
-            const float cx = pen + advance / 2, cy = baseline - xHeight * 0.75f;
-            const Affine turn = m * Affine{-1, 0, 0, -1, 2 * cx, 2 * cy};
-            drawGlyph(*f, *base, pen, baseline + xHeight * 0.5f, size, turn, color);
-        } else {
-            drawGlyph(*f, *base, pen, baseline, size, m, color);
-            // The apostrophe and the tilde already sit at cap height: over a lowercase letter they need no
-            // move, over a capital they go up by about the cap height minus the x-height.
-            const bool capital = cp->base >= 'A' && cp->base <= 'Z';
-            const float lift = capital ? size * 0.3f : 0.0f;
-            if (cp->mark == '\'') {
-                if (const Glyph *mark = glyphOf('\'')) {
-                    // Slanted like an acute accent (top to the right).
-                    const float mw = mark->advance * k;
-                    const float markBase = baseline - lift;
-                    const Affine shear = m * Affine{1, 0, -0.5f, 1, 0.5f * (markBase - size * 0.5f), 0};
-                    drawGlyph(*f, *mark, pen + (advance - mw) / 2, markBase, size, shear, color);
-                }
-            } else if (cp->mark == '~') {
-                if (const Glyph *mark = glyphOf(0x2DC)) {
-                    const float mw = mark->advance * k;
-                    drawGlyph(*f, *mark, pen + (advance - mw) / 2, baseline - lift, size, m, color);
-                }
-            } else if (cp->mark == ':') {
-                if (const Glyph *dot = glyphOf('.')) {
-                    const float dw = dot->advance * k;
-                    const float dotBase = baseline - (capital ? size * 0.82f : size * 0.6f);
-                    drawGlyph(*f, *dot, pen + advance / 2 - dw * 1.05f, dotBase, size, m, color);
-                    drawGlyph(*f, *dot, pen + advance / 2 + dw * 0.05f, dotBase, size, m, color);
-                }
-            }
-        }
-        pen += advance;
+        pen += drawCodePoint(*f, c, pen, baseline, size, m, color, true);
     }
     return width;
 }

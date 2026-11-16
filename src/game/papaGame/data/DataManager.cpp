@@ -179,6 +179,13 @@ bool DataManager::loadTables(const std::string &path)
     grid("standardCollisionArray", standardCollisionArray);
     grid("standardThruArray", standardThruArray);
     grid("standardGrabArray", standardGrabArray);
+    grid("outfitPrices", outfitPrices);
+    coinsToUnlockWorld.clear();
+    if (const engine::JsonValue *v = tables_.get("coinsToUnlockWorld")) {
+        for (const auto &n : v->items) {
+            coinsToUnlockWorld.push_back(n.number);
+        }
+    }
     auto number = [&](const char *name) {
         const engine::JsonValue *v = tables_.get(name);
         return v ? v->number : 0.0;
@@ -282,6 +289,19 @@ double DataManager::getPropValue(std::string_view property, const ScreenData::Ti
         }
     }
     return value;
+}
+
+// AS: DataManager.getOutfitPrice
+double DataManager::getOutfitPrice(double customer, double outfit) const
+{
+    if (customer >= 0 && customer < static_cast<double>(outfitPrices.size())) {
+        const auto &prices = outfitPrices[static_cast<size_t>(customer)];
+        if (outfit >= 0 && outfit < static_cast<double>(prices.size())) {
+            return prices[static_cast<size_t>(outfit)];
+        }
+        return 999999;
+    }
+    return 999999;
 }
 
 } // namespace papaGame::data

@@ -117,6 +117,9 @@ SDL_AppResult App::init(int argc, char *argv[])
         } else if (std::strcmp(argv[i], "--touch") == 0) { // DEV: show the on-screen buttons
             input_.touch.visible = true;
         }
+        if (std::strcmp(argv[i], "--capture-frame") == 0) {
+            captureFrame_ = std::strtoull(argv[i + 1], nullptr, 10);
+        }
         if (std::strcmp(argv[i], "--capture") == 0) {
             capturePath_ = argv[i + 1];
         } else if (std::strcmp(argv[i], "--player-sheet") == 0 && game_) { // DEV: save the player's torso sheet
@@ -399,9 +402,6 @@ void App::tickLevel()
             SDL_Log("FX%s", effects.c_str());
         }
     }
-    if (quitAfterFrames_ >= 0 && --quitAfterFrames_ == 0) {
-        quitRequested_ = true;
-    }
     constexpr double kPan = 12.0;
     double dx = -static_cast<double>(dragX_), dy = -static_cast<double>(dragY_);
     dragX_ = dragY_ = 0.0f;
@@ -483,6 +483,19 @@ SDL_AppResult App::event(const SDL_Event &ev)
         return SDL_APP_CONTINUE; // used by an on-screen button
     }
     const int originalRate = static_cast<int>(std::lround(stage_.frameRate));
+    if (game_ && game_->onTextInput) {
+        // A screen's text input has the keyboard.
+        if (ev.type == SDL_EVENT_TEXT_INPUT) {
+            game_->onTextInput(ev.text.text);
+            return SDL_APP_CONTINUE;
+        }
+        if (ev.type == SDL_EVENT_KEY_DOWN && ev.key.key != SDLK_ESCAPE && ev.key.key != SDLK_AC_BACK) {
+            if (game_->onKeyDown) {
+                game_->onKeyDown(static_cast<int>(ev.key.key));
+            }
+            return SDL_APP_CONTINUE;
+        }
+    }
     switch (ev.type) {
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
@@ -654,11 +667,23 @@ void App::tick()
         }
     }
     if (game_) {
+        // The phone's keyboard comes up while a screen wants text.
+        const bool wantsText = static_cast<bool>(game_->onTextInput);
+        if (wantsText != SDL_TextInputActive(window_)) {
+            if (wantsText) {
+                SDL_StartTextInput(window_);
+            } else {
+                SDL_StopTextInput(window_);
+            }
+        }
         game_->updateScreens(pointer_);
         game_->obf_7C->advanceTime(1000.0 / stage_.frameRate);
     }
     pointer_.pressed = false;
     pointer_.released = false;
+    if (quitAfterFrames_ >= 0 && --quitAfterFrames_ == 0) {
+        quitRequested_ = true; // DEV: --frames N counts app logic frames (menus too)
+    }
     audio_.update();
     if (trace_) {
         std::string sounds;
@@ -723,7 +748,8 @@ void App::render(float alpha)
         SDL_SetRenderLogicalPresentation(renderer_, lw, lh, lmode);
     }
     renderOverlay();
-    if (!capturePath_.empty() && SDL_GetTicksNS() - startNs_ > 3000000000ull) {
+    const bool captureNow = captureFrame_ > 0 ? frame_ >= captureFrame_ : SDL_GetTicksNS() - startNs_ > 3000000000ull;
+    if (!capturePath_.empty() && captureNow) {
         captureFrame();
         capturePath_.clear();
         quitRequested_ = true;

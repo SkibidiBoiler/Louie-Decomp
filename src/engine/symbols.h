@@ -63,6 +63,8 @@ public:
     const Timeline *timeline(uint16_t id) const;
     // Character id linked to an AS3 class name, or -1.
     int findClass(std::string_view name) const;
+    // A class by its name without the package, when only one class has it; -1 otherwise.
+    int findShortClass(std::string_view name) const;
 
     // Reads framescripts.txt (optional). Frame scripts of timeline `id` at 0-based `frame`, or nullptr.
     void loadFrameScripts(const std::string &path);

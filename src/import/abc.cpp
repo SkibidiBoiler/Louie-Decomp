@@ -570,7 +570,9 @@ std::map<std::string, std::vector<Abc::FrameOp>> Abc::frameScripts(size_t &skipp
         if (ctor == bodies_.end()) {
             continue;
         }
-        const std::string className = multinameName(inst.name);
+        // The SymbolClass linkage name: package.Class (timeline classes live in "<file>_fla" packages).
+        const std::string ns = multinameNs(inst.name);
+        const std::string className = ns.empty() ? multinameName(inst.name) : ns + "." + multinameName(inst.name);
         std::map<std::string, uint32_t> methodByName;
         for (const Trait &t : inst.traits) {
             if ((t.kind & 0x0F) == 1) {

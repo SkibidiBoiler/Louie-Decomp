@@ -209,6 +209,30 @@ Checked: title screen in Spanish (capture), Play -> iris -> stage intro (capture
 by trace. SKELETON: SlotSelectScreen and MainMenuScreen (save slots, map, character select: "SlotSelect" goes
 straight to the stage intro), ScoreTallyScreen, NewCustomerScreen, the boss / outro / parade screens, the
 puppet's GlowFilter outline, BitmapManager.createCagedSprites, the bars' slide-in animation.
+(24) Save data and slots (task 13 and menus, part 2). `engine::SharedObject`: flash.net.SharedObject as JSON
+files in <pref path>/saves/<name>.json (written through a temporary file), with `writeJson`. `UserData` translated
+whole except the Flipline API calls: tallies, scores and time bonus, high scores and best times, warp coins and
+world unlocks, challenges and badges records, customers and outfits, key settings, training flags, slot labels and
+completion, createNewSlot / loadData / saveProgress (all its field sets) / eraseSlot. Every starting value comes
+from userdata.json (createNewSlot resets to the field initialisers). QUIRKs kept: getCompletionPercentage is
+always NaN (it divides by an unset variable), so hasEarnedEverything is never true; the challenge count is a fixed
+49; a slot without enemyKills gets 44 zeros. `ChallengeManager`: resetAllTallies, medal progress, badge count
+(recordTag & co. are empty until task 15). `DataManager`: outfitPrices, coinsToUnlockWorld, getOutfitPrice.
+Screens: `SlotSelectScreen` (three slots with name, puppet and totals, delete with confirmation, new game:
+Marty or Rita, then the name, typed with the keyboard or the phone's keyboard; the backup buttons and the
+"missing save" widget were API features and stay hidden) and `GameIntroScreen` (the story, Skip). Flow: title ->
+slots -> new game: story -> level 1 / existing slot: (SKELETON: the map) its latest area; §_-9k§ now ends in §_-8O§
+as in the original, so finishing a level goes through the stage intro too. Engine: TextFields made by code
+(`MovieClip::addTextField`), `mouseChildren`, `engine::makeApiButton` (the API's button, for the name entry),
+`MenuBar::setTitle`, keyboard text for screens, letters built from marks in the SWF's edit texts too. Fixes: frame
+scripts of timeline classes in a package (`<file>_fla.Class`) were never attached (the importer wrote the short
+name; it now writes the linkage name, and the loader also matches a unique short name); `--frames` now counts every
+app frame (it only counted level frames, so menu tests never ended). DEV `--capture-frame N`.
+Checked: title -> slots -> New Game -> character (Marty / Rita puppets) -> name (CONTINUE) -> save written ->
+story -> Skip -> stage intro -> level 1; loading the slot -> level; slot card with the saved game (captures).
+SKELETON: MainMenuScreen (map, character select, outfits, badges, help, credits), ScoreTallyScreen (the level
+score is not saved yet), the menus' thumbnails (generateCustomerBitmap / generateEnemyBitmap), translated static
+texts of the SWF ("New Game", "Enter your name below:", task 16).
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

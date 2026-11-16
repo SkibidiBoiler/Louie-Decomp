@@ -25,5 +25,7 @@ struct JsonValue {
 
 // Parses a document; false on malformed input.
 bool parseJson(std::string_view text, JsonValue &out);
+// Writes a value as compact JSON (numbers with up to 17 significant digits).
+std::string writeJson(const JsonValue &value);
 
 } // namespace engine

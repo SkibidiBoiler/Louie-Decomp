@@ -106,6 +106,22 @@ public:
     // Mouse events (flash.events.MouseEvent) registered by the game: CLICK, MOUSE_DOWN, ROLL_OVER.
     std::function<void()> onClick, onMouseDown, onRollOver;
     bool mouseEnabled = true;
+    bool mouseChildren = true; // false: the children take no mouse events (this clip may, with a handler)
+
+    // A TextField created by code (`new TextField()` + addChild) in one of the SWF's fonts, drawn above the
+    // children in this clip's space. The single line is aligned in [x, x + width] (align 0 left, 1 right,
+    // 2 centre); y is the top of the line.
+    struct TextField {
+        std::string font = "Arial";
+        float size = 12;
+        SDL_FColor color{0, 0, 0, 1};
+        float x = 0, y = 0, width = 100;
+        int align = 0;
+        std::string text;
+        bool visible = true;
+    };
+    TextField &addTextField(const std::string &name, const TextField &field);
+    TextField *textField(std::string_view name);
     bool isButton() const { return isButton_; } // a SimpleButton (DefineButton): frames up/over/down/hit
     // The topmost instance under (x, y) that takes mouse events: a button, or a clip with a handler.
     MovieClip *hitTest(const Affine &parent, float x, float y);
@@ -128,6 +144,11 @@ private:
     void renderChild(const RenderContext &ctx, const Child &child, const Affine &parent,
                      const ColorTransform &parentColor) const;
     bool hasHandler() const { return onClick || onMouseDown || onRollOver; }
+    // An attached clip's own transform: its code-set position and scale (identity otherwise).
+    Affine ownLocal() const
+    {
+        return Affine{hasScale_ ? scaleX_ : 1.0f, 0, 0, hasScale_ ? scaleY_ : 1.0f, hasPos_ ? x_ : 0.0f, hasPos_ ? y_ : 0.0f};
+    }
     void goTo(int frame, bool play);
     void runScript(int depth);
 
@@ -144,6 +165,7 @@ private:
     std::vector<Attached> attached_;
     std::vector<std::pair<std::string, std::string>> texts_; // text field instance -> its text
     std::vector<std::pair<std::string, float>> alphas_;      // instance -> alpha set from code
+    std::vector<std::pair<std::string, TextField>> fields_;  // text fields made by code
     bool visible_ = true;
     int scriptDepth_ = 0;
     bool hasPos_ = false, hasScale_ = false;

@@ -162,15 +162,16 @@ void obf_4R::obf_9k()
     obf_3Z->loadTables(gameDir + "/items.json");
     obf_V->loadTables(gameDir + "/effects.json");
     obf_6Z = std::make_unique<papaGame::models::GameHUD>(this);
+    obf_8O();
 }
 
+// Port: the next level after finishLevel / §_-2K§ (SKELETON: their screens), through §_-9k§ and the stage intro.
 void obf_4R::runPending()
 {
     if (pendingLevel >= 0) {
-        const double level = pendingLevel;
+        obf_8W = pendingLevel;
         pendingLevel = -1;
         obf_9k();
-        obf_6V(level);
     }
 }
 
@@ -192,6 +193,21 @@ void obf_4R::obf_q()
     if (obf_7L) {
         obf_7L->destroy();
         pendingDestroyIntro_ = std::move(obf_7L); // port: it may be running; freed on the next frame
+    }
+}
+
+// AS: §_-4R§.§_-19§
+void obf_4R::obf_19()
+{
+    obf_3U = std::make_unique<papaGame::screens::GameIntroScreen>(this);
+}
+
+// AS: §_-4R§.§_-5a§ — SKELETON: GameControls.resetKeyFocus.
+void obf_4R::obf_5a()
+{
+    if (obf_3U) {
+        obf_3U->destroy();
+        pendingDestroyStory_ = std::move(obf_3U);
     }
 }
 
@@ -221,6 +237,10 @@ void obf_4R::showApiScreen(const std::string &name)
         splashScreen->destroy();
         pendingDestroySplash_ = std::move(splashScreen);
     }
+    if (slotSelectScreen) {
+        slotSelectScreen->destroy();
+        pendingDestroySlots_ = std::move(slotSelectScreen);
+    }
     menuBar.clear();
     SDL_Log("API screen: %s", name.c_str());
     apiScreen = name;
@@ -233,22 +253,31 @@ void obf_4R::showApiScreen(const std::string &name)
                       {{Kind::Action, "menu.play", "clickStart"}, {Kind::Tab, "menu.credits", "clickCredits"}},
                       layout);
     } else if (name == "SlotSelect") {
-        // SKELETON: SlotSelectScreen and MainMenuScreen (save slots, the map, character select) are not ported
-        // yet: the game goes straight to the stage intro of the current level.
+        slotSelectScreen = std::make_unique<papaGame::screens::SlotSelectScreen>(this, obf_5h.get());
+        engine::MenuBar::Layout layout;
+        menuBar.setup(*symbols, text, lang, "title.choose_slot", {{Kind::Back, "menu.back", "clickBack"}}, layout);
+    } else if (name == "MainMenu") {
+        // SKELETON: MainMenuScreen (the map, character select, badges, help, credits). Until it is ported the
+        // loaded game goes to its latest area's stage intro.
         apiScreen.clear();
-        obf_8O();
+        obf_8W = obf_51->lastAreaRevealed;
+        obf_9k();
+    } else {
+        apiScreen.clear();
     }
 }
 
 bool obf_4R::screensActive() const
 {
-    return !apiScreen.empty() || obf_7L != nullptr;
+    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr;
 }
 
 bool obf_4R::updateScreens(const engine::PointerState &pointer)
 {
     pendingDestroySplash_.reset();
     pendingDestroyIntro_.reset();
+    pendingDestroySlots_.reset();
+    pendingDestroyStory_.reset();
     const bool onBar = menuBar.update(pointer, [this](const std::string &event) { dispatchContainerEvent(event); });
     if (!onBar) {
         engine::MovieClip::dispatchPointer(*obf_5h, engine::Affine{}, pointer);
@@ -256,6 +285,12 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     obf_5h->advance();
     if (splashScreen) {
         splashScreen->animateScreen();
+    }
+    if (slotSelectScreen) {
+        slotSelectScreen->animateScreen();
+    }
+    if (obf_3U) {
+        obf_3U->updateScreen();
     }
     if (obf_7L) {
         obf_7L->updateScreen();

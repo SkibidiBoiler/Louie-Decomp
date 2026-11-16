@@ -37,6 +37,7 @@ public:
     void initializeScreenObjects(double whichScreen);
     void saveCheckpoint(double tileX = -1, double tileY = -1);
     void clearCheckpoint();
+    double getOutfitPrice(double customer, double outfit) const; // AS: DataManager.getOutfitPrice
     void clearLevelScreens();
     bool isOnTrain() const;
     bool isAnimatedBackground() const;
@@ -56,6 +57,8 @@ public:
 
     // Constant tables (see loadTables).
     using Grid = std::vector<std::vector<double>>;
+    Grid outfitPrices;                     // from datamanager.json
+    std::vector<double> coinsToUnlockWorld; // from datamanager.json
     Grid standardCollisionArray, standardThruArray, standardGrabArray;
     const Grid *collisionArray = nullptr;
     const Grid *thruArray = nullptr;

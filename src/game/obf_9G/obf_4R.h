@@ -32,6 +32,8 @@
 #include "game/papaGame/managers/SoundManager.h"
 #include "game/papaGame/models/GameHUD.h"
 #include "game/papaGame/models/characters/CustomerChar.h"
+#include "game/papaGame/screens/GameIntroScreen.h"
+#include "game/papaGame/screens/SlotSelectScreen.h"
 #include "game/papaGame/screens/SplashScreen.h"
 #include "game/papaGame/screens/StageIntroScreen.h"
 
@@ -66,6 +68,9 @@ public:
     // AS: §_-4R§.§_-Q§ / §_-q§ — create / destroy the StageIntroScreen.
     void obf_Q();
     void obf_q();
+    // AS: §_-4R§.§_-19§ / §_-5a§ — create / destroy the GameIntroScreen (the story).
+    void obf_19();
+    void obf_5a();
 
     // Port: the Flipline API's screen manager is not ported (it was part of the online API). These stand in for
     // the parts of it the game uses: api.§_-1G§(name) switches between its screens (SplashScreen, SlotSelect,
@@ -79,6 +84,9 @@ public:
     // ENTER_FRAME handlers. True while a menu screen is up.
     bool updateScreens(const engine::PointerState &pointer);
     bool screensActive() const;
+    // Port: keyboard text for a screen's text input (the name entry): set while one has focus.
+    std::function<void(const std::string &)> onTextInput;
+    std::function<void(int key)> onKeyDown; // SDL keycode
     void renderScreens(engine::RenderContext &ctx);
 
     SDL_Renderer *renderer = nullptr; // port
@@ -108,6 +116,8 @@ public:
     std::unique_ptr<engine::MovieClip> obf_5h; // AS: §_-5h§, the container the screens add their clips to
     std::unique_ptr<papaGame::screens::StageIntroScreen> obf_7L;
     std::unique_ptr<papaGame::screens::SplashScreen> splashScreen; // port: the API's SplashScreen instance
+    std::unique_ptr<papaGame::screens::SlotSelectScreen> slotSelectScreen; // port: the API's SlotSelect
+    std::unique_ptr<papaGame::screens::GameIntroScreen> obf_3U;
     const engine::Lang *lang = nullptr;      // port: the menu bars' texts
     engine::MaskLayers *masks = nullptr;     // port: offscreen layers for masks
     engine::MenuBar menuBar;                 // port: see showApiScreen
@@ -118,6 +128,8 @@ private:
     // Port: screens destroyed from their own update are freed at the start of the next frame.
     std::unique_ptr<papaGame::screens::SplashScreen> pendingDestroySplash_;
     std::unique_ptr<papaGame::screens::StageIntroScreen> pendingDestroyIntro_;
+    std::unique_ptr<papaGame::screens::SlotSelectScreen> pendingDestroySlots_;
+    std::unique_ptr<papaGame::screens::GameIntroScreen> pendingDestroyStory_;
 };
 
 } // namespace obf_9G

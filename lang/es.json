@@ -16,5 +16,11 @@
   "title.choose_slot": "ELIGE UNA RANURA",
   "title.level_complete": "¡NIVEL COMPLETADO!",
   "title.map": "MAPA",
-  "title.info": "INFO"
+  "title.info": "INFO",
+  "menu.name_back": "< ATRÁS",
+  "menu.name_continue": "SEGUIR >",
+  "title.enter_name": "ESCRIBE TU NOMBRE",
+  "title.choose_character": "ELIGE UN PERSONAJE",
+  "slot.empty": "Ranura vacía",
+  "slot.player": "Jugador"
 }

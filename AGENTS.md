@@ -120,7 +120,9 @@ build\windows\papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
 #   --mute: sin salida de sonido (con --trace, la línea S lista los sonidos de cada fotograma)
 #   --customer N: jugar con el cliente N (orden de CustomerData; 0 Marty, 9 Kahuna, 26 Papa Louie)
 #   Sin esas opciones de nivel el juego empieza en la pantalla de título. --lang es: idioma de la interfaz;
-#   --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por texto
+#   --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por texto;
+#   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. Partidas guardadas de Windows:
+#   %APPDATA%\SkibidiBoiler\PapaLouieRecomp\saves\PapaLouie2_<ranura>.json
 # Leer una función del código original deofuscado (solo local):
 python -I tools/as_func.py "C:/Users/alfre/Proyectos/datos-papas/extracted/pl2-deob/scripts" GameControls keyCheckPlayer
 

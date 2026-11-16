@@ -465,20 +465,16 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
     }
     for (const Attached &a : attached_) {
         if (a.clip->visible_) {
-            Affine m = parent;
-            if (a.clip->hasPos_ || a.clip->hasScale_) {
-                Affine local;
-                if (a.clip->hasScale_) {
-                    local.a = a.clip->scaleX_;
-                    local.d = a.clip->scaleY_;
-                }
-                if (a.clip->hasPos_) {
-                    local.tx = a.clip->x_;
-                    local.ty = a.clip->y_;
-                }
-                m = parent * local;
+            a.clip->render(ctx, parent * a.clip->ownLocal(), parentColor);
+        }
+    }
+    // Text fields made by code were added last: they are drawn above the other children.
+    if (ctx.text) {
+        for (const auto &[name, f] : fields_) {
+            if (f.visible && !f.text.empty()) {
+                const float x = f.align == 1 ? f.x + f.width : (f.align == 2 ? f.x + f.width / 2 : f.x);
+                ctx.text->drawString(f.font, f.size, f.text, x, f.y + f.size, f.color, f.align, parent);
             }
-            a.clip->render(ctx, m, parentColor);
         }
     }
 }
@@ -498,16 +494,12 @@ MovieClip *MovieClip::hitTest(const Affine &parent, float px, float py)
         return inside(minX, minY, maxX, maxY) ? this : nullptr;
     }
     // Topmost first: attached clips, then the timeline children from the highest depth.
-    for (auto it = attached_.rbegin(); it != attached_.rend(); ++it) {
-        Affine m = parent;
-        if (it->clip->hasPos_) {
-            m = parent * Affine::translate(it->clip->x_, it->clip->y_);
-        }
-        if (MovieClip *hit = it->clip->hitTest(m, px, py)) {
+    for (auto it = attached_.rbegin(); it != attached_.rend() && mouseChildren; ++it) {
+        if (MovieClip *hit = it->clip->hitTest(parent * it->clip->ownLocal(), px, py)) {
             return hit;
         }
     }
-    for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+    for (auto it = children_.rbegin(); it != children_.rend() && mouseChildren; ++it) {
         if (it->clip && it->track->clipDepth == 0) {
             if (MovieClip *hit = it->clip->hitTest(parent * childLocal(*it, false, 1.0f), px, py)) {
                 return hit;
@@ -542,6 +534,7 @@ void MovieClip::dispatchPointer(MovieClip &root, const Affine &parent, const Poi
     }
     lastOver = target;
     if (pointer.pressed) {
+        SDL_Log("POINTER %.0f,%.0f on %s", static_cast<double>(pointer.x), static_cast<double>(pointer.y), target ? (target->isButton_ ? "button" : "clip") : "nothing");
         pressedOn = target;
         if (target && target->onMouseDown) {
             target->onMouseDown();
@@ -589,9 +582,25 @@ void MovieClip::accumulateBounds(const Affine &parent, float &minX, float &minY,
     }
     for (const Attached &a : attached_) {
         if (a.clip->visible_) {
-            a.clip->accumulateBounds(parent, minX, minY, maxX, maxY);
+            a.clip->accumulateBounds(parent * a.clip->ownLocal(), minX, minY, maxX, maxY);
         }
     }
+}
+
+MovieClip::TextField &MovieClip::addTextField(const std::string &name, const TextField &field)
+{
+    fields_.emplace_back(name, field);
+    return fields_.back().second;
+}
+
+MovieClip::TextField *MovieClip::textField(std::string_view name)
+{
+    for (auto &[n, f] : fields_) {
+        if (n == name) {
+            return &f;
+        }
+    }
+    return nullptr;
 }
 
 std::unique_ptr<MovieClip> MovieClip::create(const SymbolLibrary &symbols, std::string_view className)

@@ -78,6 +78,7 @@ set(PL_SOURCES
     src/engine/json.cpp
     src/engine/lang.cpp
     src/engine/menu_bar.cpp
+    src/engine/shared_object.cpp
     src/engine/xml.cpp
     src/import/abc.cpp
     src/import/importer.cpp
@@ -155,6 +156,8 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy6.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
+    src/game/papaGame/screens/GameIntroScreen.cpp
+    src/game/papaGame/screens/SlotSelectScreen.cpp
     src/game/papaGame/screens/SplashScreen.cpp
     src/game/papaGame/screens/StageIntroScreen.cpp
 )

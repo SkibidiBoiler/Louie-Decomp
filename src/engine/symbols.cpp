@@ -198,6 +198,21 @@ int SymbolLibrary::findClass(std::string_view name) const
     return it == classIndex_.end() ? -1 : it->second;
 }
 
+int SymbolLibrary::findShortClass(std::string_view name) const
+{
+    int found = -1;
+    for (const auto &[full, id] : classes_) {
+        const size_t dot = full.rfind('.');
+        if (dot != std::string::npos && std::string_view(full).substr(dot + 1) == name) {
+            if (found >= 0) {
+                return -1; // ambiguous
+            }
+            found = id;
+        }
+    }
+    return found;
+}
+
 void SymbolLibrary::loadFrameScripts(const std::string &path)
 {
     scripts_.clear();
@@ -222,7 +237,11 @@ void SymbolLibrary::loadFrameScripts(const std::string &path)
         if (std::sscanf(line.c_str(), "%255s %u %31s %255s %lf", cls, &frame, op, target, &number) != 5) {
             continue;
         }
-        const int id = findClass(cls);
+        int id = findClass(cls);
+        if (id < 0) {
+            // Older imports wrote the class name without its package: match it when only one class has it.
+            id = findShortClass(cls);
+        }
         if (id < 0) {
             continue;
         }

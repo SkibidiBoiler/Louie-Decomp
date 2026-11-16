@@ -83,6 +83,8 @@ private:
     Font *font(uint16_t id);
     Font *variant(uint16_t id, const std::string &face, bool bold);
     Font *fontByName(std::string_view name);
+    float drawCodePoint(const Font &f, uint32_t code, float pen, float baseline, float size, const Affine &m,
+                        SDL_FColor color, bool draw);
     void drawGlyph(const Font &f, const Glyph &g, float penX, float baseline, float size, const Affine &m,
                    SDL_FColor color);
     static std::string parseHtml(std::string_view html, Style &style);

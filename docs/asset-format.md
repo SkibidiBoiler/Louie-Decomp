@@ -60,7 +60,7 @@ stays alive keep their own state (and, for sprites, their own playhead); others 
 ## framescripts.txt
 
 Timeline frame scripts converted to data by the importer (`src/import/abc.cpp`, `Abc::frameScripts`). One
-statement per line, in script order: `<class> <frame (0-based)> <op> <target> <number>`, where `op` is `stop`,
+statement per line, in script order: `<class (package.Class, as linked)> <frame (0-based)> <op> <target> <number>`, where `op` is `stop`,
 `play`, `gotoAndPlay`/`gotoAndStop` (target = label or `-`, number = 1-based frame) or `child` (target = container
 instance name; `MovieClip(this.<target>.getChildAt(0)).gotoAndStop(<number>)`). Statements the converter does not
 recognise are skipped and counted in the import log.

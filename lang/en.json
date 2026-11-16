@@ -16,5 +16,11 @@
   "title.choose_slot": "CHOOSE A SLOT",
   "title.level_complete": "LEVEL COMPLETE",
   "title.map": "MAP",
-  "title.info": "INFO"
+  "title.info": "INFO",
+  "menu.name_back": "< BACK",
+  "menu.name_continue": "CONTINUE >",
+  "title.enter_name": "ENTER YOUR NAME",
+  "title.choose_character": "CHOOSE A CHARACTER",
+  "slot.empty": "Empty Slot",
+  "slot.player": "Player"
 }

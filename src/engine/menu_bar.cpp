@@ -44,6 +44,43 @@ float clipHeight(const MovieClip &clip)
 
 } // namespace
 
+std::unique_ptr<MovieClip> makeApiButton(const SymbolLibrary &symbols, TextLibrary *text, const std::string &label,
+                                         bool large, float width)
+{
+    const float piece = large ? kLargePiece : kSmallPiece;
+    const float size = large ? kLargeSize : kSmallSize;
+    const float textWidth = text ? text->drawString(kFont, size, label, 0, 0, SDL_FColor{}, 0, Affine{}, false) : 0;
+    float w = width > 0 ? width : textWidth + 4 + kPadding * 2;
+    w = std::ceil(w / piece) * piece;
+    auto button = MovieClip::createEmpty(symbols);
+    const std::string set = large ? "api_largebutton_" : "api_smallbutton_";
+    const int middles = std::max(0, static_cast<int>(w / piece) - 2);
+    for (int i = 0; i < middles + 2; ++i) {
+        const char *part = i == 0 ? "left" : (i == middles + 1 ? "right" : "middle");
+        if (auto p = instance(symbols, set + part)) {
+            p->setPosition(static_cast<float>(i) * piece, 0);
+            p->mouseEnabled = false;
+            button->addChild(std::move(p), "");
+        }
+    }
+    MovieClip::TextField field;
+    field.font = kFont;
+    field.size = size;
+    field.color = rgb(0x6E3B0A);
+    field.x = 0;
+    field.y = 3;
+    field.width = w;
+    field.align = 2;
+    field.text = label;
+    button->addTextField("label", field);
+    return button;
+}
+
+void MenuBar::setTitle(const Lang *lang, const std::string &titleKey)
+{
+    title_ = lang ? lang->get(titleKey) : titleKey;
+}
+
 void MenuBar::clear()
 {
     active_ = false;

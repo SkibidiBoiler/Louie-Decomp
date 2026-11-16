@@ -18,6 +18,16 @@ public:
     // Port: the `challenges` and `badges` field initialisers, which the importer writes to challenges.json.
     bool loadTables(const std::string &path);
     std::string getChallengeTargetAmount(double whichWorld, double whichChallenge) const;
+    double getNumberOfBadges() const { return static_cast<double>(badges.size()); } // AS
+    std::vector<double> getMedalProgressArray() const;        // AS: ChallengeManager.getMedalProgressArray
+    void populateMedalProgress(const std::vector<double> &progress); // AS: ChallengeManager.populateMedalProgress
+    void resetAllTallies();                                   // AS: ChallengeManager.resetAllTallies
+    void fixBadges() {}                                       // AS: ChallengeManager.fixBadges (empty)
+    // SKELETON (task 15, challenges): recording what the player does and completing challenges and badges.
+    void recordTag(const std::string & /*tag*/) {}
+    void recordSpecialItem(double /*amount*/) {}
+    void recordBurgerzilla(double /*amount*/) {}
+    void recordEnemyKill(double /*type*/, const std::string & /*weapon*/, const std::string & /*category*/) {}
 
     obf_9G::obf_4R *gameObj = nullptr;
     std::vector<data::Challenge> challenges;

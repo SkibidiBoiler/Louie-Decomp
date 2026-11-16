@@ -1,5 +1,6 @@
 #include "engine/json.h"
 
+#include <cstdio>
 #include <cstdlib>
 
 namespace engine {
@@ -159,6 +160,80 @@ bool parseJson(std::string_view text, JsonValue &out)
 {
     out = JsonValue{};
     return Parser(text).value(out);
+}
+
+namespace {
+
+void writeString(std::string &out, const std::string &s)
+{
+    out += '"';
+    for (const char c : s) {
+        switch (c) {
+        case '"': out += "\\\""; break;
+        case '\\': out += "\\\\"; break;
+        case '\n': out += "\\n"; break;
+        case '\r': out += "\\r"; break;
+        case '\t': out += "\\t"; break;
+        default:
+            if (static_cast<unsigned char>(c) < 0x20) {
+                char buf[8];
+                std::snprintf(buf, sizeof(buf), "\\u%04x", c);
+                out += buf;
+            } else {
+                out += c;
+            }
+        }
+    }
+    out += '"';
+}
+
+void writeValue(std::string &out, const JsonValue &v)
+{
+    switch (v.type) {
+    case JsonValue::Type::Null: out += "null"; break;
+    case JsonValue::Type::Bool: out += v.boolean ? "true" : "false"; break;
+    case JsonValue::Type::Number: {
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%.17g", v.number);
+        out += buf;
+        break;
+    }
+    case JsonValue::Type::String: writeString(out, v.string); break;
+    case JsonValue::Type::Array:
+        out += '[';
+        for (size_t i = 0; i < v.items.size(); ++i) {
+            if (i) {
+                out += ',';
+            }
+            writeValue(out, v.items[i]);
+        }
+        out += ']';
+        break;
+    case JsonValue::Type::Object: {
+        out += '{';
+        bool first = true;
+        for (const auto &[key, item] : v.fields) {
+            if (!first) {
+                out += ',';
+            }
+            first = false;
+            writeString(out, key);
+            out += ':';
+            writeValue(out, item);
+        }
+        out += '}';
+        break;
+    }
+    }
+}
+
+} // namespace
+
+std::string writeJson(const JsonValue &value)
+{
+    std::string out;
+    writeValue(out, value);
+    return out;
 }
 
 } // namespace engine

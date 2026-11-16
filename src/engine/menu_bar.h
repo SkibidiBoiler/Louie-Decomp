@@ -13,6 +13,12 @@ namespace engine {
 
 class Lang;
 
+// The Flipline API's button (§_-7s§.§_-g§), rebuilt for the screens that place one themselves (the name entry's
+// BACK / CONTINUE): an empty clip holding the left, middle and right pieces and the label. Its onClick is the
+// API button's event. `width` > 0 fixes the width (the API's last argument).
+std::unique_ptr<MovieClip> makeApiButton(const SymbolLibrary &symbols, TextLibrary *text, const std::string &label,
+                                         bool large, float width = 0);
+
 class MenuBar {
 public:
     enum class Kind { Action, Tab, Back };
@@ -30,6 +36,8 @@ public:
                const std::vector<Item> &items, const Layout &layout);
     void clear();
     bool active() const { return active_; }
+    // api.§_-AG§(title): a new title for the current screen.
+    void setTitle(const Lang *lang, const std::string &titleKey);
     // The pointer for one logic frame: calls `onEvent(event)` when a button is clicked. True when the pointer
     // is over the bars (the screen below should not get it).
     bool update(const PointerState &pointer, const std::function<void(const std::string &)> &onEvent);

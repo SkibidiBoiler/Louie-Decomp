@@ -89,4 +89,35 @@ std::string ChallengeManager::getChallengeTargetAmount(double whichWorld, double
     return {};
 }
 
+// AS: ChallengeManager.getMedalProgressArray
+std::vector<double> ChallengeManager::getMedalProgressArray() const
+{
+    std::vector<double> out;
+    for (const data::Challenge &badge : badges) {
+        out.push_back(badge.tally);
+    }
+    return out;
+}
+
+// AS: ChallengeManager.populateMedalProgress
+void ChallengeManager::populateMedalProgress(const std::vector<double> &progress)
+{
+    for (size_t i = 0; i < progress.size(); ++i) {
+        if (i < badges.size()) {
+            badges[i].tally = progress[i]; // Challenge.setTally
+        }
+    }
+}
+
+// AS: ChallengeManager.resetAllTallies (Challenge.clearTally(true) on every badge and challenge)
+void ChallengeManager::resetAllTallies()
+{
+    for (data::Challenge &badge : badges) {
+        badge.tally = 0;
+    }
+    for (data::Challenge &challenge : challenges) {
+        challenge.tally = 0;
+    }
+}
+
 } // namespace papaGame::managers
