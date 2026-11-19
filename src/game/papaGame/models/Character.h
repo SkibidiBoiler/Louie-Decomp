@@ -2,7 +2,7 @@
 // AS: papaGame.models.Character — position, tile collision and movement shared by the player and enemies.
 // Ported so far: getMyCorners, cloud/ladder/edge checks, fallChar, jumpChar, moveChar.
 // Also checkForSlopes / checkForCeilingSlopes, the sprite animation (updateSprite, spriteChangeFrame), health
-// and sprite collisions. SKELETON: moving tiles, crawl gaps and doors.
+// and sprite collisions. SKELETON: crawl gaps and doors.
 #include <climits>
 #include <map>
 #include <string>

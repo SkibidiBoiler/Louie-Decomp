@@ -609,7 +609,7 @@ void GameDisplay::reblitEnemies(bool foreground)
     }
 }
 
-// AS: GameDisplay.reblitObjects (SKELETON: blitTilingObject, moving tiles the player rides, blitCollisionArea)
+// AS: GameDisplay.reblitObjects (SKELETON: blitTilingObject, blitCollisionArea)
 void GameDisplay::reblitObjects(bool foreground)
 {
     managers::ObjectManager &manager = *gameObj->obf_7u;
