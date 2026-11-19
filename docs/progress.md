@@ -376,3 +376,7 @@ getEnemyIDsFromGroup, checkGroupOnScreen), `Enemy17` dill worm (hangs, drops on 
 Checked by trace: room 0 kaiser onions, room 1 party subs, room 2 `--at 36,56 --input L40-80` the worms drop.
 Next: GameObject2 (pushable boulder), GameObject14 (drop berry), then Sarge (Enemy35, SargePepper, GiantPepper,
 GameObject29/30).
+(38) `GameObject14` drop berry: stood on, it drops after 20 frames carrying the player, splats (bouncing them off)
+and refills where it hung. Checked: `--level 3 --room 0 --at 7,21`. QUIRK kept: splatBerry skips every other rider.
+Next: GameObject2 (pushable boulder: needs the player's pushing — canPush, checkPushingObject, the looping push
+sound), then Sarge.
