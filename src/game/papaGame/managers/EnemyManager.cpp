@@ -9,6 +9,10 @@
 #include "game/papaGame/models/enemies/Enemy3.h"
 #include "game/papaGame/models/enemies/Enemy34.h"
 #include "game/papaGame/models/enemies/Enemy4.h"
+#include "game/papaGame/models/enemies/Enemy5.h"
+#include "game/papaGame/models/enemies/Enemy9.h"
+#include "game/papaGame/models/enemies/Enemy10.h"
+#include "game/papaGame/models/enemies/Enemy11.h"
 #include "game/papaGame/models/enemies/Enemy6.h"
 #include "game/papaGame/models/enemies/Enemy7.h"
 #include "game/papaGame/models/enemies/Enemy12.h"
@@ -30,9 +34,13 @@ std::unique_ptr<models::Enemy> createEnemy(obf_9G::obf_4R *gameObj, double type)
     case 2: return std::make_unique<Enemy2>(gameObj);
     case 3: return std::make_unique<Enemy3>(gameObj);
     case 4: return std::make_unique<Enemy4>(gameObj);
+    case 5: return std::make_unique<Enemy5>(gameObj);
     case 6: return std::make_unique<Enemy6>(gameObj);
     case 7: return std::make_unique<Enemy7>(gameObj);
     case 8: return std::make_unique<Enemy8>(gameObj);
+    case 9: return std::make_unique<Enemy9>(gameObj);
+    case 10: return std::make_unique<Enemy10>(gameObj);
+    case 11: return std::make_unique<Enemy11>(gameObj);
     case 12: return std::make_unique<Enemy12>(gameObj);
     case 14: return std::make_unique<Enemy14>(gameObj);
     case 15: return std::make_unique<Enemy15>(gameObj);
@@ -222,6 +230,43 @@ bool EnemyManager::checkEnemyTypeOnScreen(double type) const
     const display::GameDisplay &d = *gameObj->obf_71;
     for (models::Enemy *e : enemies) {
         if (e && e->type == type && d.checkOnScreen(*e)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// AS: EnemyManager.sendMessageToEnemyGroup — to every other enemy of the group, last to first.
+void EnemyManager::sendMessageToEnemyGroup(double fromID, double groupID, const std::string &message)
+{
+    for (int i = static_cast<int>(enemies.size()) - 1; i >= 0; --i) {
+        models::Enemy *e = enemies[static_cast<size_t>(i)];
+        if (e && e->groupID == groupID && e->id != fromID) {
+            e->receiveGroupMessage(message, fromID);
+        }
+    }
+}
+
+// AS: EnemyManager.getEnemyIDsFromGroup — the ids of the group's enemies (the caller too), last to first.
+std::vector<double> EnemyManager::getEnemyIDsFromGroup(double /*fromID*/, double groupID) const
+{
+    std::vector<double> ids;
+    for (int i = static_cast<int>(enemies.size()) - 1; i >= 0; --i) {
+        const models::Enemy *e = enemies[static_cast<size_t>(i)];
+        if (e && e->groupID == groupID) {
+            ids.push_back(e->id);
+        }
+    }
+    return ids;
+}
+
+// AS: EnemyManager.checkGroupOnScreen — is any of these enemies (still here) on screen?
+bool EnemyManager::checkGroupOnScreen(const std::vector<double> &ids) const
+{
+    const display::GameDisplay &d = *gameObj->obf_71;
+    for (double enemyID : ids) {
+        auto it = byID_.find(enemyID);
+        if (it != byID_.end() && it->second && d.checkOnScreen(*it->second)) {
             return true;
         }
     }
