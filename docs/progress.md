@@ -299,6 +299,17 @@ SKELETON: the drop-down that announces challenges and badges (checkForDisplaying
 and `§_-99§` (died riding an elevator: the level again), chosen by `GameDisplay` when its death iris ends. The
 display calls them from its own update, so their bodies run at the start of the next frame (`runPending`, now
 before the level's tick). Checked with a forced death (temporary DEV code, removed): DEAD -> saved -> map.
+(30) Bullets, part 1 (task 6). Importer: `bullets.json` (the field constants of Bullet and the 19 bullet
+classes). `Bullet` (extends Character): hitting enemies, the player and objects, bouncing, the direction's row
+block, dead zones. `BulletManager` (§_-4l§): add / process / clear / remove, one sheet per type, addToPreblit and
+preblitSheets (from DataManager.initializeScreenObjects). `CustomerChar.hasProjectile` / `shootWeapon` (the muzzle
+offsets from customerchar.json; Xandra's three stars), fired from checkIfAttacking. `GameDisplay.reblitBullets`
+(behind and in front). `Basketball` (Connor): the arc, two bounces, the burst that hits around it.
+`Character.checkIfOnSlope`; `checkIfOnCloud` is virtual (Basketball overrides it). DEV: `--trace` prints a B line
+with each bullet's id, type, position and frame.
+Checked: `--customer 16 --input A100-104` -> the ball arcs right and bounces (trace and capture).
+SKELETON: the other 18 bullet classes (PepperBomb, BlueberryShot, DogToy, Cookie, GummyOnion, ChiliCan,
+RomanCandle, Banana, XandraStar; the enemies' and the cheese cannon's), the bazooka's camera jiggle.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

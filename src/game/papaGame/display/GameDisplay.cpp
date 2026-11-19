@@ -164,6 +164,7 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitObjects(false);
     reblitItems(false, false);
     reblitEnemies(false);
+    reblitBullets(false);
     if (gameObj->playerObj && gameObj->playerObj->blitter) {
         reblitMultispritePlayer();
     }
@@ -172,7 +173,7 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitEnemies(true);
     reblitEffects(true);
     reblitItems(false, true);
-    // SKELETON: bullets and overlays.
+    reblitBullets(true);
     drawTransition();
     // AS: blitEffectsOverlay — the white flash when the player enters the end portal.
     // SKELETON: the rain and lightning of level 11.
@@ -508,6 +509,32 @@ void GameDisplay::reblitMultispritePlayer()
     cell(b.frontFootSheet, p.footAnimationFrame, b.footSpriteWidth, b.footSpriteHeight, b.footSpritesPerRow, footFlip,
          footX, footY);
     // SKELETON: blitCollisionArea (debug bounds) is not drawn.
+}
+
+// AS: GameDisplay.reblitBullets — each bullet's frame, in the row block for its direction (grabFlipOffset).
+void GameDisplay::reblitBullets(bool foreground)
+{
+    managers::BulletManager &manager = *gameObj->obf_4l;
+    for (models::Bullet *b : manager.bullets) {
+        if (!b || !checkOnScreen(*b) || b->foreground != foreground) {
+            continue;
+        }
+        const double frame = b->animationFrame;
+        const double w = b->spritewidth, h = b->spriteheight;
+        const double sx = (frame - std::floor(frame / b->sheetWidth) * b->sheetWidth) * w;
+        const double sy = std::floor(frame / b->sheetWidth) * h + b->grabFlipOffset();
+        const double bx = b->prevX + (b->x - b->prevX) * drawAlpha_;
+        const double by = b->prevY + (b->y - b->prevY) * drawAlpha_;
+        double dx = bx - (b->spriteTargetX - b->spriteCenterX) - currentXcoord - w / 2;
+        double dy = by - (b->spriteTargetY - b->spriteCenterY) - currentYcoord - h / 2;
+        if (!smooth_) {
+            dx = std::floor(dx);
+            dy = std::floor(dy);
+        }
+        if (const engine::Sheet *sheet = b->getSheet()) {
+            blit(*sheet, sx, sy, w, h, dx, dy);
+        }
+    }
 }
 
 } // namespace papaGame::display

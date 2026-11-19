@@ -85,7 +85,7 @@ void GameControls::detectKeys()
     }
     p.updateObject();
     gameObj->obf_3Z->processItems();
-    // SKELETON: processBullets.
+    gameObj->obf_4l->processBullets();
     gameObj->obf_E->processEnemies();
     gameObj->obf_V->processEffects();
     gameObj->obf_7u->processObjects();

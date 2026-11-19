@@ -21,6 +21,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_7u = std::make_unique<papaGame::managers::ObjectManager>(this);
     obf_3Z = std::make_unique<papaGame::managers::ItemManager>(this);
     obf_V = std::make_unique<papaGame::managers::EffectManager>(this);
+    obf_4l = std::make_unique<papaGame::managers::BulletManager>(this);
     obf_94 = std::make_unique<papaGame::managers::ChallengeManager>(this);
     obf_7t = std::make_unique<papaGame::events::EventManager>(this);
     obf_5h = engine::MovieClip::createEmpty(*symbols);
@@ -35,6 +36,7 @@ bool obf_4R::loadLevelData(const std::string &gameDir_)
     obf_7u->loadTables(gameDir + "/objects.json");
     obf_3Z->loadTables(gameDir + "/items.json");
     obf_V->loadTables(gameDir + "/effects.json");
+    obf_4l->loadTables(gameDir + "/bullets.json");
     obf_94->loadTables(gameDir + "/challenges.json");
     obf_51->loadTables(gameDir + "/userdata.json");
     obf_6Z = std::make_unique<papaGame::models::GameHUD>(this);
@@ -98,7 +100,7 @@ void obf_4R::obf_4X(double roomID, double doorID, double /*xOffset*/, double /*y
     obf_E->saveEnemies();
     obf_7u->saveObjects();
     obf_3Z->saveItems();
-    // SKELETON: BulletManager.clearBullets.
+    obf_4l->clearBullets();
     obf_V->clearEffects();
     // SKELETON: BitmapManager.clearExtraSprites.
     obf_AQ->setActiveRoom(roomID);
@@ -193,6 +195,7 @@ void obf_4R::obf_Ap()
     obf_E.reset();
     obf_3Z.reset();
     obf_V.reset();
+    obf_4l.reset();
     obf_7t.reset();
     obf_71.reset();
     obf_3Y.reset();
@@ -215,6 +218,7 @@ void obf_4R::obf_99()
 void obf_4R::obf_9k()
 {
     obf_V = std::make_unique<papaGame::managers::EffectManager>(this);
+    obf_4l = std::make_unique<papaGame::managers::BulletManager>(this);
     playerObj = std::make_unique<papaGame::models::characters::CustomerChar>(this);
     obf_4i = std::make_unique<papaGame::managers::MapManager>(this);
     obf_7u = std::make_unique<papaGame::managers::ObjectManager>(this);
@@ -229,6 +233,7 @@ void obf_4R::obf_9k()
     obf_7u->loadTables(gameDir + "/objects.json");
     obf_3Z->loadTables(gameDir + "/items.json");
     obf_V->loadTables(gameDir + "/effects.json");
+    obf_4l->loadTables(gameDir + "/bullets.json");
     obf_6Z = std::make_unique<papaGame::models::GameHUD>(this);
     obf_8O();
 }

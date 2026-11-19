@@ -124,7 +124,8 @@ of that world and the ones before it (tables above).
 
 1. **Finish a level's loop:** done (tally, outro, new customer, pause, challenges, game over). Left: the drop-down
    that announces challenges and badges.
-2. **Bullets:** `Bullet` and `BulletManager`, then the customers' weapons. Several enemies and objects need them.
+2. **Bullets:** `Bullet`, `BulletManager`, shooting and Connor's `Basketball` are done; next the other customers'
+   weapons. Several enemies and objects need theirs.
 3. **World by world**, in map order: Lettuce Lane → Fort Onion → Sarge's Lair (first boss: `BossIntroScreen`,
    `GameObject29/30`) → Mount Monterey → Cheddar Hills → The Saucelands → Radley's Hideout → BBQ Bog → X Zone.
    For each, its new enemies, objects and effects, then play every room with `--level`/`--room`.

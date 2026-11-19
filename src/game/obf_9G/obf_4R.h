@@ -23,6 +23,7 @@
 #include "game/papaGame/events/GameControls.h"
 #include "game/papaGame/display/GameDisplay.h"
 #include "game/papaGame/managers/BitmapManager.h"
+#include "game/papaGame/managers/BulletManager.h"
 #include "game/papaGame/managers/ChallengeManager.h"
 #include "game/papaGame/managers/EffectManager.h"
 #include "game/papaGame/managers/EnemyManager.h"
@@ -117,6 +118,7 @@ public:
     std::unique_ptr<papaGame::managers::ObjectManager> obf_7u;
     std::unique_ptr<papaGame::managers::ItemManager> obf_3Z;
     std::unique_ptr<papaGame::managers::EffectManager> obf_V;
+    std::unique_ptr<papaGame::managers::BulletManager> obf_4l;
     std::unique_ptr<papaGame::managers::ChallengeManager> obf_94;
     std::unique_ptr<papaGame::events::EventManager> obf_7t;
     std::unique_ptr<papaGame::managers::SoundManager> obf_7C;

@@ -100,6 +100,7 @@ set(PL_SOURCES
     src/game/papaGame/events/GameControls.cpp
     src/game/papaGame/display/GameDisplay.cpp
     src/game/papaGame/managers/BitmapManager.cpp
+    src/game/papaGame/managers/BulletManager.cpp
     src/game/papaGame/managers/CharacterBlitter.cpp
     src/game/papaGame/managers/ChallengeManager.cpp
     src/game/papaGame/managers/EffectManager.cpp
@@ -109,7 +110,9 @@ set(PL_SOURCES
     src/game/papaGame/managers/ObjectManager.cpp
     src/game/papaGame/managers/SoundManager.cpp
     src/game/papaGame/models/Character.cpp
+    src/game/papaGame/models/Bullet.cpp
     src/game/papaGame/models/Effect.cpp
+    src/game/papaGame/models/bullets/Basketball.cpp
     src/game/papaGame/models/effects/CageBackBarsEffect.cpp
     src/game/papaGame/models/effects/CageFrontBarsEffect.cpp
     src/game/papaGame/models/effects/CageSpinnerEffect.cpp

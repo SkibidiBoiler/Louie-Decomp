@@ -73,7 +73,9 @@ void CustomerChar::defineVars()
         }
         canCrawl = skillType == CustomerData::SKILL_CRAWL;
         canPush = skillType == CustomerData::SKILL_PUSH;
-        // SKELETON: BulletManager.addToPreblit(bulletName) for the customers with a projectile.
+        if (hasProjectile()) {
+            gameObj->obf_4l->addToPreblit(c->bulletName);
+        }
         jumpstart = c->jumpstart;
         jumpgravity = c->jumpgravity;
         baseWalkSpeed = c->walkspeed;
@@ -119,6 +121,14 @@ bool CustomerChar::loadTables(const std::string &path)
     };
     torsoOffsetsX_ = list("torsoOffsetsX");
     torsoOffsetsY_ = list("torsoOffsetsY");
+    shootTossX_ = list("shoot_toss_offsetsX");
+    shootTossY_ = list("shoot_toss_offsetsY");
+    shootBazookaX_ = list("shoot_bazooka_offsetsX");
+    shootBazookaY_ = list("shoot_bazooka_offsetsY");
+    shootLonggunX_ = list("shoot_longgun_offsetsX");
+    shootLonggunY_ = list("shoot_longgun_offsetsY");
+    shootPistolX_ = list("shoot_pistol_offsetsX");
+    shootPistolY_ = list("shoot_pistol_offsetsY");
     stomp_collRect = rectField(tables, "stomp_collRect");
     pound_collRect = rectField(tables, "pound_collRect");
     melee_attackRect = rectField(tables, "melee_attackRect");
@@ -1007,6 +1017,70 @@ void CustomerChar::fallChar()
     }
 }
 
+// AS: CustomerChar.hasProjectile
+bool CustomerChar::hasProjectile() const
+{
+    return hasWeaponType == "longgun" || hasWeaponType == "pistol" || hasWeaponType == "bazooka" ||
+           hasWeaponType == "toss";
+}
+
+// AS: CustomerChar.shootWeapon — the bullet leaves the weapon's muzzle (per weapon type, plus the customer's own
+// offset) heading the way the player faces; Xandra throws three stars at once, every 8 frames at most.
+void CustomerChar::shootWeapon(const std::string &bulletName, bool, const char *, double, double)
+{
+    managers::BulletManager &bullets = *gameObj->obf_4l;
+    const data::CustomerDataFile *data = playerData();
+    auto first = [](const std::vector<double> &v) { return v.empty() ? 0.0 : v[0]; };
+    double offX = 0, offY = 0;
+    if (data->weaponType == CustomerData::WEAPON_TOSS) {
+        offX = first(shootTossX_) * facingDir;
+        offY = first(shootTossY_);
+    } else if (data->weaponType == CustomerData::WEAPON_BAZOOKA) {
+        offX = first(shootBazookaX_) * facingDir;
+        offY = first(shootBazookaY_);
+    } else if (data->weaponType == CustomerData::WEAPON_LONGGUN || data->customerName == "Xandra") {
+        offX = first(shootLonggunX_) * facingDir;
+        offY = first(shootLonggunY_);
+    } else if (data->weaponType == CustomerData::WEAPON_PISTOL) {
+        offX = first(shootPistolX_) * facingDir;
+        offY = first(shootPistolY_);
+    }
+    offX += data->toss_offset_extra_x * facingDir;
+    offY += data->toss_offset_extra_y;
+    double startX = std::round(x + getTorsoOffsetX() + offX);
+    const double startY = std::round(y + getTorsoOffsetY() + offY);
+    if (isWalking) {
+        startX += baseWalkSpeed * facingDir;
+    }
+    const double targetX = startX + 50 * facingDir;
+    const double angle = std::atan2(0.0, startX - targetX); // the target is level with the muzzle
+    const double dir = targetX < x ? -1 : 1;
+    if (data->customerName == "Xandra") {
+        if (gameObj->obf_8o->gameplayTimer - lastShotTime > 8) {
+            bullets.addBullet(startX, startY, dir, angle + 0.2, "XandraStar", "", true, getNormalAttackPower(), false,
+                              data->weaponClipName);
+            bullets.addBullet(startX, startY, dir, angle, "XandraStar", "", true, getNormalAttackPower(), false,
+                              data->weaponClipName);
+            bullets.addBullet(startX, startY, dir, angle - 0.2, "XandraStar", "", true, getNormalAttackPower(), false,
+                              data->weaponClipName);
+            lastShotTime = gameObj->obf_8o->gameplayTimer;
+        }
+    } else {
+        bullets.addBullet(startX, startY, dir, angle, bulletName, "", true, getNormalAttackPower(), false,
+                          data->weaponClipName);
+        lastShotTime = gameObj->obf_8o->gameplayTimer;
+    }
+    if (data->weaponType == CustomerData::WEAPON_PISTOL) {
+        gameObj->obf_7C->playSound("shoot_romancandle.wav");
+    } else if (data->weaponType == CustomerData::WEAPON_LONGGUN) {
+        gameObj->obf_7C->playSound("shoot_squirtgun.wav");
+    } else if (data->weaponType == CustomerData::WEAPON_BAZOOKA) {
+        gameObj->obf_7C->playSound("shoot_bazooka.wav");
+    }
+    ++bulletsFired;
+    // SKELETON: GameCam.setCameraJiggle(5, 5) for the bazooka.
+}
+
 // AS: CustomerChar.checkIfAttacking
 void CustomerChar::checkIfAttacking()
 {
@@ -1021,7 +1095,9 @@ void CustomerChar::checkIfAttacking()
                 canAttack = true;
             }
         } else if (isAttacking) {
-            // SKELETON: shootWeapon every bulletFrequency frames until bulletsPerRound shots are fired.
+            if (bulletTimer > 0 && std::fmod(bulletTimer, bulletFrequency) == 0 && bulletsFired < bulletsPerRound) {
+                shootWeapon(data->bulletName, false, nullptr);
+            }
             ++bulletTimer;
             if (bulletsFired > 0) {
                 ++reloadTimer;

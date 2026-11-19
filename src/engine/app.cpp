@@ -339,6 +339,7 @@ void App::tickLevel()
     savePrevious(game_->obf_7u->objects);
     savePrevious(game_->obf_3Z->items);
     savePrevious(game_->obf_V->effects);
+    savePrevious(game_->obf_4l->bullets);
     const double heldX = cam.x, heldY = cam.y;
     controls.detectKeys(); // moves the camera (GameCam.adjustCamera)
     if (trace_ && scriptFrame_ == 1) {
@@ -387,6 +388,19 @@ void App::tickLevel()
         }
         if (!enemies.empty()) {
             SDL_Log("E%s", enemies.c_str());
+        }
+        // DEV: the bullets: id:type x,y frame.
+        std::string bullets;
+        for (const papaGame::models::Bullet *b : game_->obf_4l->bullets) {
+            if (b) {
+                char buf[96];
+                SDL_snprintf(buf, sizeof(buf), " %.0f:%s %.0f,%.0f f%.0f", b->id, b->bulletType.c_str(), b->x, b->y,
+                             b->animationFrame);
+                bullets += buf;
+            }
+        }
+        if (!bullets.empty()) {
+            SDL_Log("B%s", bullets.c_str());
         }
         // DEV: the effects: id:type x,y.
         std::string effects;

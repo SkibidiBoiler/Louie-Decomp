@@ -18,6 +18,22 @@ bool Character::checkIfOnCloud()
     return (left == 1 || right == 1) && ytile != downY && (!isClimbingLadder || !checkIfLadderBelow());
 }
 
+// AS: Character.checkIfOnSlope — the slope type under the character (the tile below too, when not jumping).
+// The position arguments are not read, except that py == -1 gives 0.
+double Character::checkIfOnSlope(double /*px*/, double py, bool ignoreJump) const
+{
+    const managers::MapManager &map = *gameObj->obf_4i;
+    double row = ytile;
+    if (map.getTileProperty(xtile, row + 1, "slope") != 0 && (!jump || ignoreJump)) {
+        row += 1;
+    }
+    double slope = 0;
+    if (map.getTileProperty(xtile, row, "slope") != 0 && py != -1) {
+        slope = map.getTileProperty(xtile, row, "slope");
+    }
+    return slope;
+}
+
 // AS: Character.checkIfLadderBelow
 bool Character::checkIfLadderBelow()
 {

@@ -84,7 +84,8 @@ public:
     double getProximityVolume() const;
     double getProximityPan() const;
     bool isReallyOnScreen() const;
-    bool checkIfOnCloud();
+    virtual bool checkIfOnCloud(); // overridden by Basketball
+    double checkIfOnSlope(double px, double py, bool ignoreJump = false) const;
     bool checkIfLadderBelow();
     bool checkIfHalfOnCloud(double dir);
     bool checkMovingTiles(double y);

@@ -425,6 +425,18 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
         }
         effects += "\n}\n";
         writeFile(out + "/effects.json", effects.data(), effects.size());
+        static const char *const bulletClasses[] = {
+            "Banana",     "Basketball",   "Beaker",      "BeakerBlob",  "BlueberryShot", "CheeseBullet", "ChiliCan",
+            "Cookie",     "DogToy",       "GiantPepper", "GummyOnion",  "PepperBomb",    "RocketBBQ",    "RocketMustard",
+            "RomanCandle", "SargePepper", "SauceBullet", "ShroomArrow", "XandraStar",
+        };
+        std::string bullets = "{\n\"Bullet\": " + fieldConstantsJson(index, "papaGame.models", "Bullet");
+        for (const char *name : bulletClasses) {
+            bullets += std::string(",\n\"") + name + "\": " +
+                       fieldConstantsJson(index, "papaGame.models.bullets", name);
+        }
+        bullets += "\n}\n";
+        writeFile(out + "/bullets.json", bullets.data(), bullets.size());
     }
     report(0.43f, "Converting frame scripts");
     {

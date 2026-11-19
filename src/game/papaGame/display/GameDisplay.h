@@ -41,6 +41,7 @@ public:
     void reblitTiles();
     void reblitMultispritePlayer();
     void reblitEnemies(bool foreground = true);
+    void reblitBullets(bool foreground = true);
     void reblitObjects(bool foreground = true);
     void reblitItems(bool background, bool foreground = false);
     void reblitEffects(bool foreground = true);
