@@ -1,8 +1,10 @@
 #pragma once
 // ActionScript 3 semantics the translated code relies on.
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <limits>
+#include <random>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -29,6 +31,30 @@ inline double Number(std::string_view s)
     const double v = std::strtod(tmp.c_str(), &end);
     return (end && *end == '\0') ? v : NaN;
 }
+
+// String(Number) for the values the games use (integers, NaN, ordinary decimals).
+inline std::string String(double v)
+{
+    if (std::isnan(v)) {
+        return "NaN";
+    }
+    if (v == std::floor(v) && std::fabs(v) < 1e15) {
+        return std::to_string(static_cast<long long>(v));
+    }
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%.15g", v);
+    return buf;
+}
+
+// Math.random: uniform in [0, 1).
+inline double random()
+{
+    static std::mt19937 rng{std::random_device{}()};
+    return std::uniform_real_distribution<double>(0.0, 1.0)(rng);
+}
+
+// Math.round: halves round towards +infinity.
+inline double round(double v) { return std::floor(v + 0.5); }
 
 // String.split(sep) with a single-character separator: "" -> [""], like AS3.
 inline std::vector<std::string> split(std::string_view s, char sep)

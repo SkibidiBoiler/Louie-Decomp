@@ -1,6 +1,8 @@
 #pragma once
 // Port options (not in the original), saved to <pref path>/settings.ini.
 
+#include <string>
+
 namespace engine {
 
 struct Settings {
@@ -9,6 +11,8 @@ struct Settings {
     // Render rate cap in frames per second; 0 = as fast as the display (vsync). The game logic always runs at
     // the SWF frame rate, whatever this is set to.
     int fpsCap = 120;
+    // Interface language ("en", "es"); empty = the system's.
+    std::string language;
 
     void load();
     void save() const;

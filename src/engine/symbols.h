@@ -40,6 +40,13 @@ struct Track {
     const TimelineKey &keyAt(int frame) const;
 };
 
+// One statement of a converted timeline frame script (framescripts.txt, docs/asset-format.md).
+struct FrameScriptOp {
+    enum class Op : uint8_t { Stop, Play, GotoAndPlay, GotoAndStop, Child } op = Op::Stop;
+    std::string target; // label, or the container instance name for Child
+    int number = 0;     // 1-based frame for goto/Child
+};
+
 struct Timeline {
     uint16_t id = 0;
     uint16_t frameCount = 1;
@@ -56,6 +63,14 @@ public:
     const Timeline *timeline(uint16_t id) const;
     // Character id linked to an AS3 class name, or -1.
     int findClass(std::string_view name) const;
+    // A class by its name without the package, when only one class has it; -1 otherwise.
+    int findShortClass(std::string_view name) const;
+
+    // Reads framescripts.txt (optional). Frame scripts of timeline `id` at 0-based `frame`, or nullptr.
+    void loadFrameScripts(const std::string &path);
+    const std::vector<FrameScriptOp> *frameScript(uint16_t id, int frame) const;
+    // 0-based frame of a label in timeline `tl`, or -1.
+    static int labelFrame(const Timeline &tl, std::string_view label);
 
     const std::vector<std::string> &strings() const { return strings_; }
     const std::vector<std::pair<std::string, uint16_t>> &classes() const { return classes_; }
@@ -67,6 +82,7 @@ private:
     std::unordered_map<uint16_t, Timeline> timelines_;
     std::vector<std::pair<std::string, uint16_t>> classes_;
     std::unordered_map<std::string, uint16_t> classIndex_;
+    std::unordered_map<uint32_t, std::vector<FrameScriptOp>> scripts_; // (id << 16 | frame) -> statements
 };
 
 } // namespace engine

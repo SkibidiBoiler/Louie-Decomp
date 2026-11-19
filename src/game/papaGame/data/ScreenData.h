@@ -29,6 +29,26 @@ public:
                double roomIndex = -1);
 
     void populateData(const engine::XmlNode &xml);
+    double checkForDoorID(double x, double y) const;
+    // AS: ScreenData.saveEnemyState — a killed enemy's row becomes [0], so it is not built again.
+    // AS: ScreenData.saveObjectState
+    void saveObjectState(double index, const std::vector<as3::Value> &row, bool force = false)
+    {
+        if (index >= 0 && (force || index < static_cast<double>(objectArray.size()))) {
+            if (index >= static_cast<double>(objectArray.size())) {
+                objectArray.resize(static_cast<size_t>(index) + 1);
+            }
+            objectArray[static_cast<size_t>(index)] = row;
+        }
+    }
+    // AS: ScreenData.updateItems
+    void updateItems(const std::vector<std::vector<as3::Value>> &rows) { itemArray = rows; }
+    void saveEnemyState(double index, const std::vector<as3::Value> &row)
+    {
+        if (index >= 0 && index < static_cast<double>(enemyArray.size())) {
+            enemyArray[static_cast<size_t>(index)] = row;
+        }
+    }
 
     obf_9G::obf_4R *gameObj = nullptr;
     std::vector<std::vector<TileCell>> tileArray;
@@ -37,10 +57,11 @@ public:
     std::vector<double> startPoint;
     std::vector<std::vector<as3::Value>> enemyArray;  // first 4 fields Number, the rest String
     std::vector<std::vector<as3::Value>> objectArray; // first 4 fields Number, the rest String
-    std::vector<std::vector<double>> itemArray;
+    std::vector<std::vector<as3::Value>> itemArray; // saved rows name their item ("Coin")
     double roomID = as3::NaN;
     double whichTileset = 0;
     bool objectsInitialized = false;
+    double objectTotal = 0;
     bool loadedRoom = false;
     double roomIndex = -1;
 };

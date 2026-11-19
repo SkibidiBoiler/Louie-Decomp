@@ -5,8 +5,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/SDL/CMakeLists.txt")
-    message(FATAL_ERROR "SDL3 is missing. Run: git submodule update --init --recursive")
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/SDL/CMakeLists.txt" OR
+   NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/stb/stb_image.h" OR
+   NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/plutovg/CMakeLists.txt" OR
+   NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/minimp3/minimp3.h")
+    message(FATAL_ERROR "A submodule (SDL3, stb, PlutoVG, minimp3) is missing. Run: git submodule update --init --recursive")
 endif()
 
 # SDL3 as a shared library: SDLActivity loads libSDL3.so on Android; on Windows SDL3.dll sits next to the exe.
@@ -17,19 +20,147 @@ set(SDL_TESTS OFF CACHE BOOL "" FORCE)
 set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 
+# PlutoVG (MIT; rasteriser parts under the FreeType licence): the importer's vector rasteriser.
+set(PLUTOVG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory(external/plutovg EXCLUDE_FROM_ALL)
+if(NOT MSVC)
+    # The importer runs on the phone: keep it fast even in debug builds.
+    target_compile_options(plutovg PRIVATE -O2)
+    set_source_files_properties(src/import/raster.cpp src/import/swf.cpp src/import/symbols_export.cpp
+                                src/import/sound_export.cpp
+                                PROPERTIES COMPILE_OPTIONS "-O2")
+endif()
+
+# Sheet lists (class names baked into sheets) compiled into the importer.
+set(PL_GENERATED ${CMAKE_CURRENT_BINARY_DIR}/generated)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/tools/sheets/pl2.txt PL_SHEETS_PL2)
+file(WRITE ${PL_GENERATED}/sheet_lists.h.tmp
+     "#pragma once
+// Generated from tools/sheets/*.txt by CMake.
+static const char kSheetsPl2[] = R\"PLSHEETS(${PL_SHEETS_PL2})PLSHEETS\";
+")
+file(COPY_FILE ${PL_GENERATED}/sheet_lists.h.tmp ${PL_GENERATED}/sheet_lists.h ONLY_IF_DIFFERENT)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tools/sheets/pl2.txt)
+
+# The port's translation tables (lang/*.json), compiled in.
+file(GLOB PL_LANG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/lang/*.json)
+set(PL_LANG_HEADER "#pragma once
+// Generated from lang/*.json by CMake.
+struct LangTable { const char *code; const char *json; };
+static const LangTable kLangTables[] = {
+")
+foreach(lang_file ${PL_LANG_FILES})
+    get_filename_component(lang_code ${lang_file} NAME_WE)
+    file(READ ${lang_file} lang_json)
+    string(APPEND PL_LANG_HEADER "    {\"${lang_code}\", R\"PLLANG(${lang_json})PLLANG\"},
+")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${lang_file})
+endforeach()
+string(APPEND PL_LANG_HEADER "};
+")
+file(WRITE ${PL_GENERATED}/lang_tables.h.tmp "${PL_LANG_HEADER}")
+file(COPY_FILE ${PL_GENERATED}/lang_tables.h.tmp ${PL_GENERATED}/lang_tables.h ONLY_IF_DIFFERENT)
+
 set(PL_SOURCES
     src/main.cpp
     src/engine/app.cpp
+    src/engine/audio.cpp
+    src/engine/import_screen.cpp
+    src/engine/input.cpp
     src/engine/paths.cpp
     src/engine/symbols.cpp
+    src/engine/text.cpp
     src/engine/textures.cpp
     src/engine/movieclip.cpp
     src/engine/sheets.cpp
     src/engine/settings.cpp
+    src/engine/json.cpp
+    src/engine/lang.cpp
+    src/engine/menu_bar.cpp
+    src/engine/shared_object.cpp
     src/engine/xml.cpp
+    src/import/abc.cpp
+    src/import/importer.cpp
+    src/import/raster.cpp
+    src/import/sha256.cpp
+    src/import/swf.cpp
+    src/import/symbols_export.cpp
+    src/import/sound_export.cpp
+    src/game/obf_9G/obf_4R.cpp
+    src/game/papaGame/data/CustomerData.cpp
+    src/game/papaGame/data/DataManager.cpp
     src/game/papaGame/data/LevelData.cpp
     src/game/papaGame/data/ScreenData.cpp
+    src/game/papaGame/data/UserData.cpp
     src/game/papaGame/data/WorldData.cpp
+    src/game/papaGame/display/GameCam.cpp
+    src/game/papaGame/events/EventManager.cpp
+    src/game/papaGame/events/GameControls.cpp
+    src/game/papaGame/display/GameDisplay.cpp
+    src/game/papaGame/managers/BitmapManager.cpp
+    src/game/papaGame/managers/CharacterBlitter.cpp
+    src/game/papaGame/managers/ChallengeManager.cpp
+    src/game/papaGame/managers/EffectManager.cpp
+    src/game/papaGame/managers/EnemyManager.cpp
+    src/game/papaGame/managers/ItemManager.cpp
+    src/game/papaGame/managers/MapManager.cpp
+    src/game/papaGame/managers/ObjectManager.cpp
+    src/game/papaGame/managers/SoundManager.cpp
+    src/game/papaGame/models/Character.cpp
+    src/game/papaGame/models/Effect.cpp
+    src/game/papaGame/models/effects/CageBackBarsEffect.cpp
+    src/game/papaGame/models/effects/CageFrontBarsEffect.cpp
+    src/game/papaGame/models/effects/CageSpinnerEffect.cpp
+    src/game/papaGame/models/effects/CrackerBreakEffect.cpp
+    src/game/papaGame/models/effects/DizzyEffect.cpp
+    src/game/papaGame/models/effects/DustEffect.cpp
+    src/game/papaGame/models/effects/EndPortalEffect.cpp
+    src/game/papaGame/models/effects/ItemBalloonEffect.cpp
+    src/game/papaGame/models/effects/ItemCoinEffect.cpp
+    src/game/papaGame/models/effects/ItemDaisyEffect.cpp
+    src/game/papaGame/models/effects/ItemFizzoCanEffect.cpp
+    src/game/papaGame/models/effects/ItemGummyWormEffect.cpp
+    src/game/papaGame/models/effects/ItemHeartEffect.cpp
+    src/game/papaGame/models/effects/ItemPapaCoinEffect.cpp
+    src/game/papaGame/models/effects/ItemRadishCoinEffect.cpp
+    src/game/papaGame/models/effects/ItemSargeCoinEffect.cpp
+    src/game/papaGame/models/effects/PlayerCheckpointEffect.cpp
+    src/game/papaGame/models/effects/StarburstEffect.cpp
+    src/game/papaGame/models/effects/ZillaPartsEffect.cpp
+    src/game/papaGame/models/Enemy.cpp
+    src/game/papaGame/models/GameHUD.cpp
+    src/game/papaGame/models/GameItem.cpp
+    src/game/papaGame/models/GameObject.cpp
+    src/game/papaGame/models/items/GameItem_Balloon.cpp
+    src/game/papaGame/models/items/GameItem_Coin.cpp
+    src/game/papaGame/models/items/GameItem_Daisy.cpp
+    src/game/papaGame/models/items/GameItem_FizzoCan.cpp
+    src/game/papaGame/models/items/GameItem_GummyWorm.cpp
+    src/game/papaGame/models/items/GameItem_Heart.cpp
+    src/game/papaGame/models/items/GameItem_PapaCoin.cpp
+    src/game/papaGame/models/items/GameItem_RadishCoin.cpp
+    src/game/papaGame/models/items/GameItem_SargeCoin.cpp
+    src/game/papaGame/models/objects/GameObject3.cpp
+    src/game/papaGame/models/objects/GameObject1.cpp
+    src/game/papaGame/models/objects/GameObject19.cpp
+    src/game/papaGame/models/objects/GameObject20.cpp
+    src/game/papaGame/models/objects/GameObject21.cpp
+    src/game/papaGame/models/objects/GameObject22.cpp
+    src/game/papaGame/models/objects/GameObject23.cpp
+    src/game/papaGame/models/objects/GameObject24.cpp
+    src/game/papaGame/models/objects/GameObject25.cpp
+    src/game/papaGame/models/objects/GameObject28.cpp
+    src/game/papaGame/models/enemies/Enemy1.cpp
+    src/game/papaGame/models/enemies/Enemy2.cpp
+    src/game/papaGame/models/enemies/Enemy6.cpp
+    src/game/papaGame/models/enemies/Enemy34.cpp
+    src/game/papaGame/models/characters/CustomerChar.cpp
+    src/game/papaGame/screens/GameIntroScreen.cpp
+    src/game/papaGame/screens/MainMenuScreen.cpp
+    src/game/papaGame/screens/SlotSelectScreen.cpp
+    src/game/papaGame/screens/SplashScreen.cpp
+    src/game/papaGame/screens/StageIntroScreen.cpp
 )
 
 if(ANDROID)
@@ -41,7 +172,24 @@ else()
 endif()
 
 target_include_directories(papalouie PRIVATE src)
-target_link_libraries(papalouie PRIVATE SDL3::SDL3)
+target_include_directories(papalouie SYSTEM PRIVATE external/stb external/minimp3 ${PL_GENERATED})
+target_link_libraries(papalouie PRIVATE SDL3::SDL3 plutovg::plutovg)
+
+# Desktop command line for the importer (same conversion the game runs on the device).
+if(NOT ANDROID)
+    add_executable(pl_import src/import/cli.cpp src/import/abc.cpp src/import/importer.cpp src/import/raster.cpp
+                   src/import/sha256.cpp src/import/swf.cpp src/import/symbols_export.cpp
+                   src/import/sound_export.cpp)
+    target_include_directories(pl_import PRIVATE src)
+    target_include_directories(pl_import SYSTEM PRIVATE external/stb external/minimp3 ${PL_GENERATED})
+    target_link_libraries(pl_import PRIVATE SDL3::SDL3 plutovg::plutovg)
+    if(MSVC)
+        target_compile_options(pl_import PRIVATE /W4 /permissive- /utf-8)
+        target_compile_definitions(pl_import PRIVATE _CRT_SECURE_NO_WARNINGS)
+    else()
+        target_compile_options(pl_import PRIVATE -Wall -Wextra -Wconversion)
+    endif()
+endif()
 
 if(MSVC)
     target_compile_options(papalouie PRIVATE /W4 /permissive- /utf-8)

@@ -12,6 +12,8 @@ struct Sheet {
     float originX = 0.0f; // sheet units of the texture's top-left pixel
     float originY = 0.0f;
     float scale = 1.0f;   // texture pixels per sheet unit
+    float width = 0.0f;   // logical BitmapData size in sheet units (0 = texture size)
+    float height = 0.0f;
     bool premultiplied = false;
 };
 
@@ -39,6 +41,7 @@ public:
 private:
     struct Entry {
         float originX = 0.0f, originY = 0.0f;
+        float width = 0.0f, height = 0.0f;
         bool bitmap = false;
     };
 

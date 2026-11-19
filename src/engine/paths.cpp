@@ -32,4 +32,10 @@ bool directoryExists(const std::string &path)
     return !path.empty() && SDL_GetPathInfo(path.c_str(), &info) && info.type == SDL_PATHTYPE_DIRECTORY;
 }
 
+bool fileExists(const std::string &path)
+{
+    SDL_PathInfo info;
+    return !path.empty() && SDL_GetPathInfo(path.c_str(), &info) && info.type == SDL_PATHTYPE_FILE;
+}
+
 } // namespace engine

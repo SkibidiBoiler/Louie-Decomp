@@ -5,12 +5,17 @@
 #include <string>
 #include <vector>
 
+#include "engine/audio.h"
+#include "engine/import_screen.h"
+#include "engine/input.h"
+#include "engine/lang.h"
 #include "engine/movieclip.h"
 #include "engine/settings.h"
 #include "engine/sheets.h"
 #include "engine/stage.h"
 #include "engine/symbols.h"
 #include "engine/textures.h"
+#include "game/obf_9G/obf_4R.h"
 
 namespace engine {
 
@@ -35,6 +40,11 @@ private:
     void loadGame(const std::string &game);
     void showSymbol(int index);
     void renderBlitDemo(float alpha);
+    void nextMode();
+    void switchRoom(int delta);
+    void tickLevel();
+    void parseInputScript(const char *script);
+    void tap(float winX, float winY);
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -50,6 +60,7 @@ private:
 
     uint64_t startNs_ = 0;
     std::string capturePath_; // DEV: --capture <png>
+    uint64_t captureFrame_ = 0; // DEV: --capture-frame N (app logic frame; 0 = after 3 s)
     bool quitRequested_ = false;
     uint64_t lastRenderNs_ = 0;
     uint64_t fpsWindowStartNs_ = 0;
@@ -59,12 +70,42 @@ private:
 
     SymbolLibrary symbols_;
     ShapeTextures textures_;
+    TextLibrary text_;
     std::vector<std::pair<std::string, uint16_t>> viewerList_;
     int viewerIndex_ = 0;
     std::unique_ptr<MovieClip> viewerClip_;
     Affine viewerFit_;
     SheetLibrary sheets_;
-    bool blitDemo_ = true;
+    Audio audio_;
+    Lang lang_;
+    MaskLayers masks_;
+    PointerState pointer_;     // the pointer for the next logic frame (stage coordinates)
+    struct ScriptedTap {
+        float x = 0, y = 0;
+        uint64_t frame = 0;
+    };
+    std::vector<ScriptedTap> taps_; // DEV: --tap "x,y@frame;..." (stage coordinates, app logic frames)
+    bool devDirect_ = false;   // DEV: a level test flag was given: start in the level, no menus
+    int customer_ = -1; // DEV: --customer N
+
+    // DEV: what the app shows until the menus are ported. Level = PL2 level 0 with a free camera.
+    enum class Mode { Level, BlitDemo, Viewer, Import };
+    Mode mode_ = Mode::Level;
+    std::unique_ptr<obf_9G::obf_4R> game_;
+    std::unique_ptr<ImportScreen> importScreen_;
+    float dragX_ = 0.0f, dragY_ = 0.0f; // pending camera pan from mouse/touch drags, applied in tick
+    bool dragging_ = false;
+    bool freeCam_ = false; // DEV: the camera stays where --cam / a room switch put it until the player moves
+    Input input_;
+    // DEV: scripted input (--input / --walk-test): actions held over logic-frame ranges; per-frame trace.
+    struct ScriptedKey {
+        Action action;
+        int from, to;
+    };
+    std::vector<ScriptedKey> inputScript_;
+    int scriptFrame_ = -1;
+    bool trace_ = false;
+    int quitAfterFrames_ = -1;
 
     // DEV: Enemy35 walking back and forth in the blit demo.
     double sargeX_ = 200.0;

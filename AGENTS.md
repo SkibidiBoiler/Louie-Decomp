@@ -115,6 +115,18 @@ python -I tools/swf2assets.py --swf "C:/Users/alfre/Proyectos/datos-papas/PapaLo
 tools\build_windows.bat Debug
 build\windows\papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
 #   --capture <png>: guarda el fotograma a los 3 s y sale (comprobaciones automáticas)
+#   --input "R1-60,U61-90" (teclas LRUDJA por fotograma lógico), --trace (estado por fotograma), --frames N,
+#   --level N, --room N, --at x,y (jugador en esa casilla): pruebas por texto, más baratas que las capturas
+#   --mute: sin salida de sonido (con --trace, la línea S lista los sonidos de cada fotograma)
+#   --customer N: jugar con el cliente N (orden de CustomerData; 0 Marty, 9 Kahuna, 26 Papa Louie)
+#   Sin esas opciones de nivel el juego empieza en la pantalla de título. --lang es: idioma de la interfaz;
+#   --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por texto;
+#   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. Partidas guardadas de Windows:
+#   %APPDATA%\SkibidiBoiler\PapaLouieRecomp\saves\PapaLouie2_<ranura>.json
+# Progreso de la traducción (funciones y líneas del AS con su `// AS:` en src/game; solo local, sin tokens):
+python -I tools/progress.py                 # --by-class: por clase; --missing <Clase>: funciones que faltan
+# Leer una función del código original deofuscado (solo local):
+python -I tools/as_func.py "C:/Users/alfre/Proyectos/datos-papas/extracted/pl2-deob/scripts" GameControls keyCheckPlayer
 
 # Android (desde platform/android; JAVA_HOME = JDK 21)
 ./gradlew assembleDebug

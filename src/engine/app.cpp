@@ -1,9 +1,13 @@
 #include "engine/app.h"
 #include "engine/paths.h"
+#include "game/as3.h"
+#include "game/papaGame/managers/CharacterBlitter.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 namespace engine {
@@ -15,8 +19,11 @@ constexpr uint64_t kMaxCatchUpFrames = 5;
 
 App::~App()
 {
+    importScreen_.reset();
+    game_.reset();
     viewerClip_.reset();
     textures_.clear(); // release textures before the renderer
+    text_.clear();
     sheets_.clear();
     if (renderer_) {
         SDL_DestroyRenderer(renderer_);
@@ -31,11 +38,45 @@ SDL_AppResult App::init(int argc, char *argv[])
     SDL_SetAppMetadata("Papa's Louie Recomp", "0.1.0", "io.github.skibidiboiler.papalouie");
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
+    // Touches are handled as fingers (on-screen buttons, taps); no synthetic mouse events from them.
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
     settings_.load();
+    audio_.open();
+    lang_.select(settings_.language);
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--customer") == 0 && i + 1 < argc) {
+            customer_ = std::atoi(argv[i + 1]);
+        }
+        for (const char *dev : {"--level", "--room", "--at", "--input", "--trace", "--walk-test", "--customer"}) {
+            devDirect_ = devDirect_ || std::strcmp(argv[i], dev) == 0;
+        }
+        if (std::strcmp(argv[i], "--lang") == 0 && i + 1 < argc) { // DEV: interface language
+            lang_.select(argv[i + 1]);
+        }
+        if (std::strcmp(argv[i], "--tap") == 0 && i + 1 < argc) { // DEV: "x,y@frame;x,y@frame"
+            const char *p = argv[i + 1];
+            while (*p) {
+                ScriptedTap t;
+                unsigned long long f = 0;
+                if (std::sscanf(p, "%f,%f@%llu", &t.x, &t.y, &f) == 3) {
+                    t.frame = f;
+                    taps_.push_back(t);
+                }
+                const char *next = std::strchr(p, ';');
+                p = next ? next + 1 : p + std::strlen(p);
+            }
+        }
+        if (std::strcmp(argv[i], "--mute") == 0) {
+            audio_.setMasterVolume(0); // DEV: silent automated runs (sounds still play, and --trace lists them)
+        }
+    }
+#if defined(SDL_PLATFORM_ANDROID)
+    input_.touch.visible = true;
+#endif
 
     SDL_WindowFlags flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 #if defined(SDL_PLATFORM_ANDROID)
@@ -57,12 +98,77 @@ SDL_AppResult App::init(int argc, char *argv[])
     SDL_Log("Renderer: %s, display %.1f Hz, fps cap %d, interpolation %s", SDL_GetRendererName(renderer_),
             static_cast<double>(displayHz_), settings_.fpsCap, settings_.interpolation ? "on" : "off");
     SDL_Log("Data dir: %s (%s)", dataDir_.c_str(), hasData_ ? "found" : "missing");
-    if (hasData_) {
+    importScreen_ = std::make_unique<ImportScreen>(window_, dataDir_);
+    if (hasData_ && fileExists(dataDir_ + "/pl2/symbols.bin")) {
         loadGame("pl2");
+    } else {
+        mode_ = Mode::Import; // nothing imported yet
     }
     for (int i = 1; i + 1 < argc; ++i) {
+        if (std::strcmp(argv[i], "--walk-test") == 0) { // DEV: walk right, jump and attack (--capture checks)
+            parseInputScript("R0-199,J31-44,A82-84");
+        } else if (std::strcmp(argv[i], "--input") == 0) { // DEV: e.g. "R0-60,U61-90": keys LRUDJA, frames
+            parseInputScript(argv[i + 1]);
+        } else if (std::strcmp(argv[i], "--trace") == 0) { // DEV: log the player's state every logic frame
+            trace_ = true;
+            scriptFrame_ = std::max(scriptFrame_, 0);
+        } else if (std::strcmp(argv[i], "--frames") == 0) { // DEV: quit after N logic frames
+            quitAfterFrames_ = std::atoi(argv[i + 1]);
+        } else if (std::strcmp(argv[i], "--touch") == 0) { // DEV: show the on-screen buttons
+            input_.touch.visible = true;
+        }
+        if (std::strcmp(argv[i], "--capture-frame") == 0) {
+            captureFrame_ = std::strtoull(argv[i + 1], nullptr, 10);
+        }
         if (std::strcmp(argv[i], "--capture") == 0) {
             capturePath_ = argv[i + 1];
+        } else if (std::strcmp(argv[i], "--player-sheet") == 0 && game_) { // DEV: save the player's torso sheet
+            papaGame::managers::CharacterBlitter blitter(game_.get());
+            blitter.createPlayerSprite();
+            for (auto [sheet, suffix] : {std::pair{&blitter.torsoSheet, "torso"}, std::pair{&blitter.frontFootSheet, "front"},
+                                         std::pair{&blitter.backFootSheet, "back"}}) {
+                if (!sheet->texture) {
+                    continue;
+                }
+                SDL_Texture *previous = SDL_GetRenderTarget(renderer_);
+                SDL_SetRenderTarget(renderer_, sheet->texture);
+                SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
+                SDL_SetRenderTarget(renderer_, previous);
+                const std::string path = std::string(argv[i + 1]) + "_" + suffix + ".png";
+                if (shot) {
+                    SDL_SavePNG(shot, path.c_str());
+                    SDL_DestroySurface(shot);
+                }
+                SDL_Log("Player sheet %s: %gx%g cells, %g per row", path.c_str(), blitter.spriteWidth, blitter.spriteHeight,
+                        blitter.spritesPerRow);
+            }
+        } else if (std::strcmp(argv[i], "--view") == 0 && !viewerList_.empty()) { // DEV: show a symbol by class
+            for (size_t k = 0; k < viewerList_.size(); ++k) {
+                if (viewerList_[k].first == argv[i + 1]) {
+                    mode_ = Mode::Viewer;
+                    showSymbol(static_cast<int>(k));
+                }
+            }
+        } else if (std::strcmp(argv[i], "--level") == 0 && game_) { // DEV: start level N (0-based)
+            game_->obf_6V(std::atof(argv[i + 1]));
+        } else if (std::strcmp(argv[i], "--room") == 0 && game_) { // DEV: start in room N (0-based)
+            switchRoom(std::atoi(argv[i + 1]) - static_cast<int>(game_->obf_AQ->currentScreen));
+        } else if (std::strcmp(argv[i], "--at") == 0 && game_) { // DEV: put the player on tile "x,y"
+            double tx = 0, ty = 0;
+            if (std::sscanf(argv[i + 1], "%lf,%lf", &tx, &ty) == 2) {
+                game_->playerObj->startupPlayer(tx, ty, false, true);
+                game_->obf_3Y->adjustCamera(game_->playerObj->x, game_->playerObj->y, true, true);
+                game_->obf_3Y->savePrevious();
+            }
+        } else if (std::strcmp(argv[i], "--cam") == 0 && game_) { // DEV: camera "x,y", clamped like a pan
+            double x = 0, y = 0;
+            if (std::sscanf(argv[i + 1], "%lf,%lf", &x, &y) == 2) {
+                auto &cam = *game_->obf_3Y;
+                cam.x = std::clamp(x, cam.min_x, std::max(cam.min_x, cam.max_x));
+                cam.y = std::clamp(y, cam.min_y, std::max(cam.min_y, cam.max_y));
+                cam.savePrevious();
+                freeCam_ = true;
+            }
         }
     }
 
@@ -86,9 +192,15 @@ bool App::captureFrame()
 void App::loadGame(const std::string &game)
 {
     const std::string dir = dataDir_ + "/" + game;
+    game_.reset();
+    viewerClip_.reset();
+    viewerList_.clear();
+    textures_.clear();
+    sheets_.clear();
     if (!symbols_.load(dir + "/symbols.bin")) {
         return;
     }
+    hasData_ = true;
     // Pick the shape scale closest to the display: the stage is drawn at (window height / stage height).
     int pw = 0, ph = 0;
     SDL_GetWindowSizeInPixels(window_, &pw, &ph);
@@ -100,6 +212,7 @@ void App::loadGame(const std::string &game)
         }
     }
     textures_.init(renderer_, dir, scale);
+    text_.init(renderer_, dir);
     sheets_.init(renderer_, dir, scale);
     SDL_Log("Shapes at %dx (display needs %.2fx)", scale, static_cast<double>(wanted));
 
@@ -112,6 +225,200 @@ void App::loadGame(const std::string &game)
     auto start = std::find_if(viewerList_.begin(), viewerList_.end(),
                               [](const auto &e) { return e.first == "enemysheet_sarge"; });
     showSymbol(start == viewerList_.end() ? 0 : static_cast<int>(start - viewerList_.begin()));
+
+    symbols_.loadFrameScripts(dir + "/framescripts.txt");
+    audio_.setSoundDir(dir + "/sounds");
+    game_ = std::make_unique<obf_9G::obf_4R>(renderer_, &sheets_, &symbols_, &textures_, &text_, &audio_);
+    mode_ = Mode::Level;
+    if (customer_ >= 0) {
+        game_->obf_51->selectedCharacter = customer_; // DEV: --customer N (index in CustomerData)
+        game_->playerObj->defineVars();
+    }
+    game_->lang = &lang_;
+    game_->masks = &masks_;
+    if (game_->loadLevelData(dir)) {
+        if (devDirect_) {
+            game_->obf_6V(0);
+            SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
+                    game_->obf_AQ->currentScreens.size());
+        } else {
+            game_->showApiScreen("SplashScreen"); // the original starts at the title screen
+        }
+    } else {
+        game_.reset();
+        mode_ = Mode::BlitDemo;
+    }
+}
+
+void App::nextMode()
+{
+    switch (mode_) {
+    case Mode::Level: mode_ = Mode::BlitDemo; break;
+    case Mode::BlitDemo: mode_ = Mode::Viewer; break;
+    case Mode::Viewer: mode_ = Mode::Import; break;
+    case Mode::Import: mode_ = game_ ? Mode::Level : (hasData_ ? Mode::BlitDemo : Mode::Import); break;
+    }
+}
+
+void App::switchRoom(int delta)
+{
+    if (!game_ || game_->obf_AQ->currentScreens.empty()) {
+        return;
+    }
+    const int n = static_cast<int>(game_->obf_AQ->currentScreens.size());
+    const int room = ((static_cast<int>(game_->obf_AQ->currentScreen) + delta) % n + n) % n;
+    game_->obf_4X(room, 0, 0, 0, 0, 0); // DEV: enter through the room's first door
+}
+
+void App::parseInputScript(const char *script)
+{
+    // "<keys><from>-<to>,...": keys from LRUDJA (left, right, up, down, jump, attack), logic frames from 1.
+    inputScript_.clear();
+    for (const std::string &part : as3::split(script, ',')) {
+        size_t k = 0;
+        std::vector<Action> keys;
+        for (; k < part.size() && std::isalpha(static_cast<unsigned char>(part[k])); ++k) {
+            switch (part[k]) {
+            case 'L': keys.push_back(Action::Left); break;
+            case 'R': keys.push_back(Action::Right); break;
+            case 'U': keys.push_back(Action::Up); break;
+            case 'D': keys.push_back(Action::Down); break;
+            case 'J': keys.push_back(Action::Jump); break;
+            case 'A': keys.push_back(Action::Attack); break;
+            default: break;
+            }
+        }
+        int from = 0, to = 0;
+        if (std::sscanf(part.c_str() + k, "%d-%d", &from, &to) == 2) {
+            for (Action a : keys) {
+                inputScript_.push_back({a, from, to});
+            }
+        }
+    }
+    scriptFrame_ = 0;
+}
+
+void App::tickLevel()
+{
+    papaGame::display::GameCam &cam = *game_->obf_3Y;
+    cam.savePrevious();
+    game_->runPending();
+    game_->obf_71->advanceFrame();
+    // Actions -> GameControls.keyPressed* (the original sets them from key events).
+    auto &player = *game_->playerObj;
+    auto &controls = *game_->obf_8o;
+    const bool *keys = SDL_GetKeyboardState(nullptr);
+    const bool panning = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
+    ActionState actions = panning ? ActionState{} : input_.poll();
+    if (scriptFrame_ >= 0) {
+        ++scriptFrame_;
+        for (const ScriptedKey &k : inputScript_) {
+            if (scriptFrame_ >= k.from && scriptFrame_ <= k.to) {
+                actions.held[static_cast<size_t>(k.action)] = true;
+                if (k.action == Action::Jump) {
+                    actions.held[static_cast<size_t>(Action::Up)] = true;
+                }
+            }
+        }
+    }
+    controls.keyPressedLeft = actions[Action::Left];
+    controls.keyPressedRight = actions[Action::Right];
+    controls.keyPressedUp = actions[Action::Up];
+    controls.keyPressedDown = actions[Action::Down];
+    controls.keyPressedJump = actions[Action::Jump];
+    controls.keyPressedAction = actions[Action::Attack];
+    player.savePrevious();
+    // Port: every moving thing remembers where it was, for the interpolated render.
+    auto savePrevious = [](const auto &list) {
+        for (auto *c : list) {
+            if (c) {
+                c->savePrevious();
+            }
+        }
+    };
+    savePrevious(game_->obf_E->enemies);
+    savePrevious(game_->obf_7u->objects);
+    savePrevious(game_->obf_3Z->items);
+    savePrevious(game_->obf_V->effects);
+    const double heldX = cam.x, heldY = cam.y;
+    controls.detectKeys(); // moves the camera (GameCam.adjustCamera)
+    if (trace_ && scriptFrame_ == 1) {
+        // DEV: the room's doors (tile x, y, w, h, dirX, dirY) and ladder tiles, to plan --input scripts.
+        const auto &dm = *game_->obf_AQ;
+        for (const auto &d : dm.currentScreenData->doorArray) {
+            std::string row;
+            for (double v : d) {
+                row += as3::String(v) + " ";
+            }
+            SDL_Log("DOOR %s", row.c_str());
+        }
+        const auto &tiles = dm.currentScreenData->tileArray;
+        std::string ladders;
+        for (size_t ty = 0; ty < tiles.size(); ++ty) {
+            for (size_t tx = 0; tx < tiles[ty].size(); ++tx) {
+                if (game_->obf_4i->getTileProperty(static_cast<double>(tx), static_cast<double>(ty), "ladder") > 0) {
+                    ladders += std::to_string(tx) + "," + std::to_string(ty) + " ";
+                }
+            }
+        }
+        SDL_Log("LADDERS %s", ladders.c_str());
+    }
+    if (trace_) {
+        const auto &dm = *game_->obf_AQ;
+        SDL_Log("T %d room %.0f x %.1f y %.1f tile %.0f,%.0f hp %.0f $%.0f sp %.0f %s/%s%s%s%s%s%s%s%s%s%s%s", scriptFrame_,
+                dm.currentScreen, player.x,
+                player.y, player.xtile, player.ytile, player.currentHealth, game_->obf_51->money,
+                game_->obf_51->specialitems, player.cycleName.c_str(), player.footCycleName.c_str(),
+                player.jump ? " jump" : "", player.isClimbingLadder ? " ladder" : "",
+                player.waitToEnterDoor ? " door" : "",
+                game_->obf_71->isTransitionOut ? " out" : (game_->obf_71->isTransitioningIn ? " in" : ""),
+                player.isDoubleJumping ? " dj" : "", player.isGliding ? " glide" : "",
+                player.isGroundPounding ? " pound" : "", player.isSliding ? " slide" : "",
+                player.isWallSliding ? " wallslide" : "", player.isWallJumping ? " walljump" : "");
+        // DEV: the room's enemies: id:type x,y cycle and flags (d dead, s stunned, h hit).
+        std::string enemies;
+        for (const papaGame::models::Enemy *e : game_->obf_E->enemies) {
+            if (e) {
+                char buf[96];
+                SDL_snprintf(buf, sizeof(buf), " %.0f:%.0f %.0f,%.0f %s%s%s%s", e->id, e->type, e->x, e->y,
+                             e->cycleName.c_str(), e->isDead ? " d" : "", e->isStunned ? " s" : "",
+                             e->isHit ? " h" : "");
+                enemies += buf;
+            }
+        }
+        if (!enemies.empty()) {
+            SDL_Log("E%s", enemies.c_str());
+        }
+        // DEV: the effects: id:type x,y.
+        std::string effects;
+        for (const papaGame::models::Effect *fx : game_->obf_V->effects) {
+            if (fx) {
+                char buf[96];
+                SDL_snprintf(buf, sizeof(buf), " %.0f:%s %.0f,%.0f", fx->id, fx->effectType.c_str(), fx->x, fx->y);
+                effects += buf;
+            }
+        }
+        if (!effects.empty()) {
+            SDL_Log("FX%s", effects.c_str());
+        }
+    }
+    constexpr double kPan = 12.0;
+    double dx = -static_cast<double>(dragX_), dy = -static_cast<double>(dragY_);
+    dragX_ = dragY_ = 0.0f;
+    if (panning) {
+        if (keys[SDL_SCANCODE_LEFT]) dx -= kPan;
+        if (keys[SDL_SCANCODE_RIGHT]) dx += kPan;
+        if (keys[SDL_SCANCODE_UP]) dy -= kPan;
+        if (keys[SDL_SCANCODE_DOWN]) dy += kPan;
+    }
+    // DEV: Shift + arrows (or a mouse drag) pans freely; on release the game camera chases the player again.
+    if (actions[Action::Left] || actions[Action::Right] || actions[Action::Jump] || actions[Action::Down]) {
+        freeCam_ = false;
+    }
+    if (panning || dragging_ || freeCam_) {
+        cam.x = std::clamp(heldX + dx, cam.min_x, std::max(cam.min_x, cam.max_x));
+        cam.y = std::clamp(heldY + dy, cam.min_y, std::max(cam.min_y, cam.max_y));
+    }
 }
 
 void App::showSymbol(int index)
@@ -142,7 +449,53 @@ void App::showSymbol(int index)
 
 SDL_AppResult App::event(const SDL_Event &ev)
 {
+    input_.event(ev, window_);
+    // The pointer in stage coordinates, for the menus (mouse, or the first finger).
+    if (ev.type == SDL_EVENT_MOUSE_MOTION || ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
+        ev.type == SDL_EVENT_MOUSE_BUTTON_UP || ev.type == SDL_EVENT_FINGER_DOWN || ev.type == SDL_EVENT_FINGER_UP ||
+        ev.type == SDL_EVENT_FINGER_MOTION) {
+        SDL_Event local = ev;
+        SDL_ConvertEventToRenderCoordinates(renderer_, &local);
+        const bool finger = ev.type == SDL_EVENT_FINGER_DOWN || ev.type == SDL_EVENT_FINGER_UP ||
+                            ev.type == SDL_EVENT_FINGER_MOTION;
+        if (finger) {
+            pointer_.x = local.tfinger.x;
+            pointer_.y = local.tfinger.y;
+        } else if (ev.type == SDL_EVENT_MOUSE_MOTION) {
+            pointer_.x = local.motion.x;
+            pointer_.y = local.motion.y;
+        } else {
+            pointer_.x = local.button.x;
+            pointer_.y = local.button.y;
+        }
+        const bool isDown = ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN || ev.type == SDL_EVENT_FINGER_DOWN;
+        const bool isUp = ev.type == SDL_EVENT_MOUSE_BUTTON_UP || ev.type == SDL_EVENT_FINGER_UP;
+        if (isDown && (finger || ev.button.button == SDL_BUTTON_LEFT)) {
+            pointer_.down = true;
+            pointer_.pressed = true;
+        } else if (isUp && (finger || ev.button.button == SDL_BUTTON_LEFT)) {
+            pointer_.down = false;
+            pointer_.released = true;
+        }
+    }
+    if ((ev.type == SDL_EVENT_FINGER_DOWN || ev.type == SDL_EVENT_FINGER_UP || ev.type == SDL_EVENT_FINGER_MOTION) &&
+        mode_ == Mode::Level && input_.touch.event(ev, window_)) {
+        return SDL_APP_CONTINUE; // used by an on-screen button
+    }
     const int originalRate = static_cast<int>(std::lround(stage_.frameRate));
+    if (game_ && game_->onTextInput) {
+        // A screen's text input has the keyboard.
+        if (ev.type == SDL_EVENT_TEXT_INPUT) {
+            game_->onTextInput(ev.text.text);
+            return SDL_APP_CONTINUE;
+        }
+        if (ev.type == SDL_EVENT_KEY_DOWN && ev.key.key != SDLK_ESCAPE && ev.key.key != SDLK_AC_BACK) {
+            if (game_->onKeyDown) {
+                game_->onKeyDown(static_cast<int>(ev.key.key));
+            }
+            return SDL_APP_CONTINUE;
+        }
+    }
     switch (ev.type) {
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
@@ -152,7 +505,13 @@ SDL_AppResult App::event(const SDL_Event &ev)
         case SDLK_AC_BACK:
             return SDL_APP_SUCCESS;
         case SDLK_TAB:
-            blitDemo_ = !blitDemo_;
+            nextMode();
+            break;
+        case SDLK_LEFTBRACKET:
+            switchRoom(-1);
+            break;
+        case SDLK_RIGHTBRACKET:
+            switchRoom(1);
             break;
         case SDLK_F:
             settings_.nextFpsCap(originalRate);
@@ -164,36 +523,82 @@ SDL_AppResult App::event(const SDL_Event &ev)
             break;
         case SDLK_RIGHT:
         case SDLK_SPACE:
-            showSymbol(viewerIndex_ + 1);
+            if (mode_ == Mode::Viewer) {
+                showSymbol(viewerIndex_ + 1);
+            }
             break;
         case SDLK_LEFT:
-            showSymbol(viewerIndex_ - 1);
+            if (mode_ == Mode::Viewer) {
+                showSymbol(viewerIndex_ - 1);
+            }
             break;
         default:
             break;
         }
         break;
-    case SDL_EVENT_MOUSE_BUTTON_UP: { // touches arrive here too (SDL synthesises mouse events)
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        dragging_ = false;
+        break;
+    case SDL_EVENT_MOUSE_MOTION:
+        if (mode_ == Mode::Level && (ev.motion.state & SDL_BUTTON_LMASK)) {
+            // Window pixels -> stage pixels.
+            int w = 0, h = 0;
+            SDL_GetWindowSize(window_, &w, &h);
+            const float k = std::max(static_cast<float>(stage_.width) / static_cast<float>(w),
+                                     static_cast<float>(stage_.height) / static_cast<float>(h));
+            dragX_ += ev.motion.xrel * k;
+            dragY_ += ev.motion.yrel * k;
+            if (std::fabs(ev.motion.xrel) + std::fabs(ev.motion.yrel) > 0.0f) {
+                dragging_ = true;
+            }
+        }
+        break;
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        if (dragging_) {
+            dragging_ = false;
+            break;
+        }
+        tap(ev.button.x, ev.button.y);
+        break;
+    case SDL_EVENT_FINGER_UP: {
+        // A touch that did not start on an on-screen button is a tap.
         int w = 0, h = 0;
         SDL_GetWindowSize(window_, &w, &h);
-        const float fx = ev.button.x / static_cast<float>(w), fy = ev.button.y / static_cast<float>(h);
-        if (fy < 0.2f) { // top band: switch demo/viewer
-            blitDemo_ = !blitDemo_;
-        } else if (fy > 0.8f && fx < 0.33f) { // bottom-left: FPS cap
-            settings_.nextFpsCap(originalRate);
-            settings_.save();
-        } else if (fy > 0.8f && fx > 0.67f) { // bottom-right: interpolation
-            settings_.interpolation = !settings_.interpolation;
-            settings_.save();
-        } else if (!blitDemo_) {
-            showSymbol(viewerIndex_ + (fx >= 0.5f ? 1 : -1));
-        }
+        tap(ev.tfinger.x * static_cast<float>(w), ev.tfinger.y * static_cast<float>(h));
         break;
     }
     default:
         break;
     }
     return SDL_APP_CONTINUE;
+}
+
+void App::tap(float winX, float winY)
+{
+    int w = 0, h = 0;
+    SDL_GetWindowSize(window_, &w, &h);
+    const float fx = winX / static_cast<float>(w), fy = winY / static_cast<float>(h);
+    const int originalRate = static_cast<int>(std::lround(stage_.frameRate));
+    if (mode_ == Mode::Level && game_ && game_->screensActive()) {
+        return; // the menus take the pointer
+    }
+    if (fy < 0.15f) { // DEV top band: FPS cap | next mode | interpolation
+        if (fx < 0.33f) {
+            settings_.nextFpsCap(originalRate);
+            settings_.save();
+        } else if (fx > 0.67f) {
+            settings_.interpolation = !settings_.interpolation;
+            settings_.save();
+        } else {
+            nextMode();
+        }
+    } else if (mode_ == Mode::Import) {
+        float sx = 0.0f, sy = 0.0f;
+        SDL_RenderCoordinatesFromWindow(renderer_, winX, winY, &sx, &sy);
+        importScreen_->tap(sx, sy);
+    } else if (mode_ == Mode::Viewer) {
+        showSymbol(viewerIndex_ + (fx >= 0.5f ? 1 : -1));
+    }
 }
 
 SDL_AppResult App::iterate()
@@ -222,6 +627,12 @@ SDL_AppResult App::iterate()
         lastRenderNs_ = now;
     }
 
+    if (importScreen_) {
+        const std::string imported = importScreen_->takeFinished();
+        if (imported == "pl2") { // SKELETON: only PL2 is playable so far
+            loadGame(imported);
+        }
+    }
     render(static_cast<float>(accumulatorNs_) / static_cast<float>(stepNs_));
     if (quitRequested_) {
         return SDL_APP_SUCCESS;
@@ -239,6 +650,50 @@ SDL_AppResult App::iterate()
 void App::tick()
 {
     ++frame_;
+    if (game_ && game_->obf_AQ->currentScreenData) {
+        tickLevel();
+    }
+    for (const ScriptedTap &t : taps_) {
+        if (frame_ == t.frame || frame_ == t.frame + 2) {
+            pointer_.x = t.x;
+            pointer_.y = t.y;
+            pointer_.down = frame_ == t.frame;
+            (frame_ == t.frame ? pointer_.pressed : pointer_.released) = true;
+            SDL_Log("TAP %.0f,%.0f %s", static_cast<double>(t.x), static_cast<double>(t.y),
+                    frame_ == t.frame ? "down" : "up");
+        } else if (frame_ == t.frame + 1) {
+            pointer_.x = t.x;
+            pointer_.y = t.y;
+        }
+    }
+    if (game_) {
+        // The phone's keyboard comes up while a screen wants text.
+        const bool wantsText = static_cast<bool>(game_->onTextInput);
+        if (wantsText != SDL_TextInputActive(window_)) {
+            if (wantsText) {
+                SDL_StartTextInput(window_);
+            } else {
+                SDL_StopTextInput(window_);
+            }
+        }
+        game_->updateScreens(pointer_);
+        game_->obf_7C->advanceTime(1000.0 / stage_.frameRate);
+    }
+    pointer_.pressed = false;
+    pointer_.released = false;
+    if (quitAfterFrames_ >= 0 && --quitAfterFrames_ == 0) {
+        quitRequested_ = true; // DEV: --frames N counts app logic frames (menus too)
+    }
+    audio_.update();
+    if (trace_) {
+        std::string sounds;
+        for (const std::string &name : audio_.takeStarted()) {
+            sounds += " " + name;
+        }
+        if (!sounds.empty()) {
+            SDL_Log("S%s", sounds.c_str()); // DEV: sounds started this frame
+        }
+    }
     if (viewerClip_) {
         viewerClip_->advance();
     }
@@ -263,16 +718,38 @@ void App::render(float alpha)
     }
     SDL_RenderClear(renderer_);
 
-    if (blitDemo_ && hasData_) {
+    if (mode_ == Mode::Import) {
+        importScreen_->render(renderer_, static_cast<float>(stage_.width), static_cast<float>(stage_.height));
+    } else if (mode_ == Mode::Level && game_) {
+        if (game_->obf_AQ->currentScreenData) {
+            game_->obf_71->redrawScreen(alpha, settings_.interpolation);
+        }
+        RenderContext ctx{renderer_, &symbols_, &textures_, &text_};
+        ctx.interpolate = settings_.interpolation;
+        ctx.alpha = alpha;
+        game_->renderScreens(ctx);
+    } else if (mode_ == Mode::BlitDemo && hasData_) {
         renderBlitDemo(alpha);
-    } else if (viewerClip_) {
-        RenderContext ctx{renderer_, &symbols_, &textures_};
+    } else if (mode_ == Mode::Viewer && viewerClip_) {
+        RenderContext ctx{renderer_, &symbols_, &textures_, &text_};
         ctx.interpolate = settings_.interpolation;
         ctx.alpha = alpha;
         viewerClip_->render(ctx, viewerFit_, ColorTransform{});
     }
+    if (mode_ == Mode::Level) {
+        // The on-screen buttons are drawn in window pixels, anchored to the window corners.
+        int lw = 0, lh = 0;
+        SDL_RendererLogicalPresentation lmode;
+        SDL_GetRenderLogicalPresentation(renderer_, &lw, &lh, &lmode);
+        SDL_SetRenderLogicalPresentation(renderer_, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+        int pw = 0, ph = 0;
+        SDL_GetRenderOutputSize(renderer_, &pw, &ph);
+        input_.touch.render(renderer_, pw, ph);
+        SDL_SetRenderLogicalPresentation(renderer_, lw, lh, lmode);
+    }
     renderOverlay();
-    if (!capturePath_.empty() && SDL_GetTicksNS() - startNs_ > 3000000000ull) {
+    const bool captureNow = captureFrame_ > 0 ? frame_ >= captureFrame_ : SDL_GetTicksNS() - startNs_ > 3000000000ull;
+    if (!capturePath_.empty() && captureNow) {
         captureFrame();
         capturePath_.clear();
         quitRequested_ = true;
@@ -324,6 +801,18 @@ void App::renderOverlay()
     SDL_RenderFillRect(renderer_, &box);
     SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
     SDL_RenderDebugText(renderer_, 4, 4, line);
+
+    if (mode_ == Mode::Level && game_ && game_->obf_AQ->currentScreenData) {
+        const auto &dm = *game_->obf_AQ;
+        const auto &cam = *game_->obf_3Y;
+        std::snprintf(line, sizeof(line), "level %.0f room %.0f/%zu (id %.0f) cam %.0f,%.0f", dm.currentLevel,
+                      dm.currentScreen + 1, dm.currentScreens.size(), dm.currentScreenData->roomID, cam.x, cam.y);
+        const SDL_FRect box2{2, 16, static_cast<float>(std::strlen(line) * 8 + 4), 12};
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 160);
+        SDL_RenderFillRect(renderer_, &box2);
+        SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+        SDL_RenderDebugText(renderer_, 4, 18, line);
+    }
 }
 
 } // namespace engine
