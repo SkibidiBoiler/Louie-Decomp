@@ -45,6 +45,7 @@ void GameDisplay::setupPreBlit()
     levelPxHeight = static_cast<double>(tiles.size()) * tileWidth;
     levelTileWidth = static_cast<double>(tiles[0].size());
     levelTileHeight = static_cast<double>(tiles.size());
+    tileStamps_.clear(); // port: tileBMP is made anew (createBitmap)
     createBackground(whichTileset);
     currentXcoord = 0;
     currentYcoord = 0;
@@ -284,6 +285,12 @@ void GameDisplay::blit(const engine::Sheet &sheet, double sx, double sy, double 
                                          static_cast<float>(dy));
 }
 
+void GameDisplay::stampOnTiles(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx,
+                               double dy)
+{
+    tileStamps_.push_back(TileStamp{&sheet, sx, sy, sw, sh, dx, dy});
+}
+
 // AS: GameDisplay.reblitSky
 void GameDisplay::reblitSky()
 {
@@ -447,6 +454,9 @@ void GameDisplay::reblitTiles()
         }
     }
     SDL_SetTextureScaleMode(tileSheet->texture, SDL_SCALEMODE_LINEAR);
+    for (const TileStamp &st : tileStamps_) {
+        blit(*st.sheet, st.sx, st.sy, st.sw, st.sh, st.dx - x0, st.dy - y0);
+    }
     SDL_SetRenderTarget(renderer, screen);
     const SDL_FRect src{0, 0, static_cast<float>(screenPxWidth + 1) * s, static_cast<float>(screenPxHeight + 1) * s};
     const SDL_FRect dst{static_cast<float>(x0 - currentXcoord), static_cast<float>(y0 - currentYcoord),

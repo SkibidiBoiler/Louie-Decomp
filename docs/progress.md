@@ -314,7 +314,14 @@ lands; `ExplosionEffect`), `GummyOnion` (Sarge Fan: four bounces, higher then lo
 where it lands; `CookieBitEffect`). Checked by trace with `--customer 2 / 8 / 13 / 19`.
 `RomanCandle` (Boomer: a curving rocket with a smoke trail that stuns; `RomanSparkEffect`, `RomanTrailEffect`).
 `XandraStar` (three stars in a fan, twinkling; `StarEffect`).
-SKELETON: Banana, BlueberryShot, ChiliCan, and the enemies' and the cheese cannon's bullets.
+(32) Bullets, part 3: `Banana` (Akari: curves until it hits a wall or the floor, then bounces and bursts on the
+second bounce; `SmokeRingEffect` following the player, `CheeseBitEffect`), `ChiliCan` (Rico: lobbed, bursts
+with `ChiliBitEffect`, `BBQBitEffect`, `ChiliSplatEffect`), `BlueberryShot` (Penny: straight, then curves down;
+`BlueberryBitEffect`, `BlueberrySplatEffect`). Their `addSplatter` stains are `GameDisplay::stampOnTiles` (the
+port has no pre-rendered tileBMP: stamps in level coordinates, drawn after the tiles, cleared by setupPreBlit).
+Checked by trace with `--customer 6 / 22 / 12` and a capture of the chili stain.
+Note: `--trace` must not be the last argument (the option loop reads pairs).
+SKELETON: the enemies' and the cheese cannon's bullets.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

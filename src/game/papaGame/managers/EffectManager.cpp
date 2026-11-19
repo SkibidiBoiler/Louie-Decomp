@@ -25,6 +25,13 @@
 #include "game/papaGame/models/effects/PlayerCheckpointEffect.h"
 #include "game/papaGame/models/effects/RomanSparkEffect.h"
 #include "game/papaGame/models/effects/RomanTrailEffect.h"
+#include "game/papaGame/models/effects/BBQBitEffect.h"
+#include "game/papaGame/models/effects/BlueberryBitEffect.h"
+#include "game/papaGame/models/effects/BlueberrySplatEffect.h"
+#include "game/papaGame/models/effects/CheeseBitEffect.h"
+#include "game/papaGame/models/effects/ChiliBitEffect.h"
+#include "game/papaGame/models/effects/ChiliSplatEffect.h"
+#include "game/papaGame/models/effects/SmokeRingEffect.h"
 #include "game/papaGame/models/effects/StarEffect.h"
 #include "game/papaGame/models/effects/StarburstEffect.h"
 #include "game/papaGame/models/effects/ZillaPartsEffect.h"
@@ -108,6 +115,27 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "StarEffect") {
         return std::make_unique<StarEffect>(gameObj);
+    }
+    if (type == "SmokeRingEffect") {
+        return std::make_unique<SmokeRingEffect>(gameObj);
+    }
+    if (type == "CheeseBitEffect") {
+        return std::make_unique<CheeseBitEffect>(gameObj);
+    }
+    if (type == "ChiliBitEffect") {
+        return std::make_unique<ChiliBitEffect>(gameObj);
+    }
+    if (type == "BBQBitEffect") {
+        return std::make_unique<BBQBitEffect>(gameObj);
+    }
+    if (type == "ChiliSplatEffect") {
+        return std::make_unique<ChiliSplatEffect>(gameObj);
+    }
+    if (type == "BlueberryBitEffect") {
+        return std::make_unique<BlueberryBitEffect>(gameObj);
+    }
+    if (type == "BlueberrySplatEffect") {
+        return std::make_unique<BlueberrySplatEffect>(gameObj);
     }
     return nullptr; // SKELETON: the other effect classes (CageCustomerEffect among them) are not ported yet
 }

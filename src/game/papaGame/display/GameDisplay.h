@@ -5,6 +5,7 @@
 #include <string>
 
 #include <memory>
+#include <vector>
 
 #include "engine/movieclip.h"
 #include "engine/sheets.h"
@@ -101,6 +102,10 @@ public:
     std::unique_ptr<engine::MovieClip> deadIrisMC;
     double deadIrisX = 0, deadIrisY = 0; // AS: deadIrisMC.x / .y
 
+    // Port: stands in for currentScreenData.tileBMP.copyPixels(sheet, rect, point, null, null, true); the stain
+    // lasts until the room's tiles are set up again.
+    void stampOnTiles(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx, double dy);
+
 private:
     void blit(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx, double dy) const;
 
@@ -110,6 +115,12 @@ private:
     double drawCamX_ = 0, drawCamY_ = 0, drawTrainX_ = 0;
     bool smooth_ = false;
     double drawAlpha_ = 1;
+    // Port: a stain painted on the room's tiles (tileBMP.copyPixels with mergeAlpha), in level coordinates.
+    struct TileStamp {
+        const engine::Sheet *sheet;
+        double sx, sy, sw, sh, dx, dy;
+    };
+    std::vector<TileStamp> tileStamps_;
     // Port: the visible tiles, drawn texel-exact before being placed on screen (stands in for tileBMP).
     SDL_Texture *tileLayer_ = nullptr;
     float tileLayerScale_ = 0.0f;

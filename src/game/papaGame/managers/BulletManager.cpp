@@ -6,7 +6,10 @@
 
 #include "engine/json.h"
 #include "game/obf_9G/obf_4R.h"
+#include "game/papaGame/models/bullets/Banana.h"
 #include "game/papaGame/models/bullets/Basketball.h"
+#include "game/papaGame/models/bullets/BlueberryShot.h"
+#include "game/papaGame/models/bullets/ChiliCan.h"
 #include "game/papaGame/models/bullets/DogToy.h"
 #include "game/papaGame/models/bullets/PepperBomb.h"
 #include "game/papaGame/models/bullets/RomanCandle.h"
@@ -43,7 +46,16 @@ std::unique_ptr<models::Bullet> createBullet(obf_9G::obf_4R *gameObj, const std:
     if (type == "XandraStar") {
         return std::make_unique<XandraStar>(gameObj);
     }
-    return nullptr; // SKELETON: the other bullet classes are not ported yet
+    if (type == "Banana") {
+        return std::make_unique<Banana>(gameObj);
+    }
+    if (type == "ChiliCan") {
+        return std::make_unique<ChiliCan>(gameObj);
+    }
+    if (type == "BlueberryShot") {
+        return std::make_unique<BlueberryShot>(gameObj);
+    }
+    return nullptr; // SKELETON: the enemies' bullets and the cheese cannon's are not ported yet
 }
 
 } // namespace

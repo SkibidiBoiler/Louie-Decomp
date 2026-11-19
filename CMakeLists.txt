@@ -112,7 +112,10 @@ set(PL_SOURCES
     src/game/papaGame/models/Character.cpp
     src/game/papaGame/models/Bullet.cpp
     src/game/papaGame/models/Effect.cpp
+    src/game/papaGame/models/bullets/Banana.cpp
     src/game/papaGame/models/bullets/Basketball.cpp
+    src/game/papaGame/models/bullets/BlueberryShot.cpp
+    src/game/papaGame/models/bullets/ChiliCan.cpp
     src/game/papaGame/models/bullets/DogToy.cpp
     src/game/papaGame/models/bullets/PepperBomb.cpp
     src/game/papaGame/models/bullets/RomanCandle.cpp
@@ -122,7 +125,14 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/CageBackBarsEffect.cpp
     src/game/papaGame/models/effects/CageFrontBarsEffect.cpp
     src/game/papaGame/models/effects/CageSpinnerEffect.cpp
+    src/game/papaGame/models/effects/BBQBitEffect.cpp
+    src/game/papaGame/models/effects/BlueberryBitEffect.cpp
+    src/game/papaGame/models/effects/BlueberrySplatEffect.cpp
+    src/game/papaGame/models/effects/CheeseBitEffect.cpp
+    src/game/papaGame/models/effects/ChiliBitEffect.cpp
+    src/game/papaGame/models/effects/ChiliSplatEffect.cpp
     src/game/papaGame/models/effects/CookieBitEffect.cpp
+    src/game/papaGame/models/effects/SmokeRingEffect.cpp
     src/game/papaGame/models/effects/CrackerBreakEffect.cpp
     src/game/papaGame/models/effects/DizzyEffect.cpp
     src/game/papaGame/models/effects/DustEffect.cpp
