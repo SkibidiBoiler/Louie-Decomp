@@ -370,3 +370,9 @@ the others shuttle. `stepOnObject` is virtual. Next: GameObject17 (switch), Game
 door (solid while shut, opens with papow.wav; `DoorFrontEffect` is drawn over the player). Checked in
 `--level 2 --room 0 --at 21,23 --input "R100-300,J115-118"`: the switch sinks, the three doors open, the player runs
 through (trace and a capture). Not checked: the gold helmet drop. Next world: Sarge's Lair.
+(37) Sarge's Lair, part 1 (`--level 3`): `Enemy5` kaiser onion (walks, cannot be stunned), the party sub `Enemy9`
+(back) / `Enemy10` (middle) / `Enemy11` (front) walking as a group (EnemyManager sendMessageToEnemyGroup,
+getEnemyIDsFromGroup, checkGroupOnScreen), `Enemy17` dill worm (hangs, drops on the player, crawls after them).
+Checked by trace: room 0 kaiser onions, room 1 party subs, room 2 `--at 36,56 --input L40-80` the worms drop.
+Next: GameObject2 (pushable boulder), GameObject14 (drop berry), then Sarge (Enemy35, SargePepper, GiantPepper,
+GameObject29/30).

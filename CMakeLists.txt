@@ -201,6 +201,7 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy14.cpp
     src/game/papaGame/models/enemies/Enemy15.cpp
     src/game/papaGame/models/enemies/Enemy16.cpp
+    src/game/papaGame/models/enemies/Enemy17.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
     src/game/papaGame/screens/GameIntroScreen.cpp
