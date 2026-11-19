@@ -39,16 +39,19 @@ void MainMenuScreen::setupScreen()
     gameObj->addContainerListener("clickStartLevel", [this] { clickStartLevel(); });
     gameObj->addContainerListener("clickBackToMap", [this] { clickBackToMap(); });
     gameObj->addContainerListener("clickExitMapSelect", [this] { clickExitMapSelect(); });
+    gameObj->addContainerListener("clickInfo", [this] { clickInfo(); });
+    gameObj->addContainerListener("clickBackToGame", [this] { clickBackToGame(); });
+    gameObj->addContainerListener("clickQuit", [this] { clickQuit(); });
     setupMap();
     if (isOnCharSelect) {
         setupCharacter();
     }
-    // SKELETON: setupInfo, setupBaddies, setupControls, setupHelp, setupMedals. setupConfirmQuit (the pause
-    // menu's YES / NO) only hides its panel for now.
-    if (engine::MovieClip *confirm = section("confirmquit")) {
-        confirm->setVisible(false);
+    if (!isOnCharSelect) {
+        setupInfo();
     }
+    // SKELETON: setupBaddies, setupControls, setupHelp, setupMedals.
     setupCredits();
+    setupConfirmQuit();
     if (gameObj->obf_AQ->currentScreenData == nullptr && gameObj->obf_7C->currentTrack != "otherscreens.wav") {
         gameObj->obf_7C->playTrack("AlternateTrack", 1, 0, "outin");
     }
@@ -648,9 +651,14 @@ void MainMenuScreen::setupCredits()
 void MainMenuScreen::destroy()
 {
     for (const char *event : {"clickCredits", "clickExit", "clickCreditsRedirect", "clickCreditsRedirectBack",
-                              "clickMap", "clickStartLevel", "clickBackToMap", "clickExitMapSelect"}) {
+                              "clickMap", "clickStartLevel", "clickBackToMap", "clickExitMapSelect", "clickInfo",
+                              "clickBackToGame", "clickQuit"}) {
         gameObj->removeContainerListener(event);
     }
+    if (!isOnCharSelect) {
+        setupInfo(false);
+    }
+    setupConfirmQuit(false);
     container->removeChild(clip);
     clip = nullptr;
 }
@@ -748,11 +756,12 @@ void MainMenuScreen::tweenSections()
 void MainMenuScreen::startClosingScreen()
 {
     isClosing = true;
+    gameObj->menuBar.clear(); // api.§_-69§: the open API bars transition out
     setSection("none");
 }
 
-// AS: MainMenuScreen.closeMainMenuScreen — start the level (the analytics calls are dropped), or go back.
-// SKELETON: quitting a level and resuming the game (the pause menu).
+// AS: MainMenuScreen.closeMainMenuScreen — start the level, quit it, go back, or resume the game. The analytics
+// and leaderboard calls are dropped.
 void MainMenuScreen::closeMainMenuScreen()
 {
     if (isStartingLevel) {
@@ -765,11 +774,279 @@ void MainMenuScreen::closeMainMenuScreen()
         next.section = "area";
         next.useLevel = whichLevel;
         gameObj->showApiScreen("MapSelectMenu", next);
+    } else if (isQuittingLevel) {
+        if (!gameObj->obf_7C->isMute) {
+            gameObj->obf_7C->unmuteSound(false);
+        }
+        if (gameObj->obf_8o) {
+            gameObj->obf_51->totalTimePlayed += gameObj->obf_8o->currentLevelTimer;
+            SDL_Log("(Updated Time Played)");
+        }
+        gameObj->obf_51->saveProgress("quitlevel");
+        gameObj->obf_Ap();
+        MainMenuParams next;
+        next.section = "map";
+        gameObj->showApiScreen("MainMenu", next); // also closes the PauseMenu (this screen)
     } else if (isReturningToMap || isContinuingToMap) {
         MainMenuParams next;
         next.section = "map";
         gameObj->showApiScreen("MainMenu", next);
+    } else {
+        gameObj->obf_8o->resumeGame(keysWereChanged);
+        gameObj->showApiScreen(""); // api.§_-61§("PauseMenu")
     }
+}
+
+// AS: MainMenuScreen.clickBackToGame
+void MainMenuScreen::clickBackToGame()
+{
+    if (engine::MovieClip *bg = clip->findChild("blackbg")) {
+        bg->setVisible(false);
+    }
+    startClosingScreen();
+}
+
+// AS: MainMenuScreen.clickQuit — "are you sure?" over the menu; the bars stop taking clicks.
+void MainMenuScreen::clickQuit()
+{
+    if (engine::MovieClip *confirm = section("confirmquit")) {
+        confirm->setVisible(true);
+    }
+    gameObj->menuBar.setEnabled(false);
+}
+
+// AS: MainMenuScreen.clickConfirmQuit
+void MainMenuScreen::clickConfirmQuit()
+{
+    isQuittingLevel = true;
+    if (engine::MovieClip *confirm = section("confirmquit")) {
+        confirm->setVisible(false);
+    }
+    gameObj->menuBar.setEnabled(true); // port: the bar is cleared next (the API's buttons are rebuilt per screen)
+    startClosingScreen();
+}
+
+// AS: MainMenuScreen.clickCancelQuit
+void MainMenuScreen::clickCancelQuit()
+{
+    if (engine::MovieClip *confirm = section("confirmquit")) {
+        confirm->setVisible(false);
+    }
+    gameObj->menuBar.setEnabled(true);
+}
+
+// AS: MainMenuScreen.setupConfirmQuit — the YES / NO buttons (the API's small buttons, 80 wide).
+void MainMenuScreen::setupConfirmQuit(bool setup)
+{
+    engine::MovieClip *confirm = section("confirmquit");
+    if (!confirm) {
+        return;
+    }
+    if (setup) {
+        std::unique_ptr<engine::MovieClip> yes = engine::makeApiButton(*gameObj->symbols, gameObj->text,
+                                                                       gameObj->lang->get("menu.yes"), false, 80);
+        std::unique_ptr<engine::MovieClip> no = engine::makeApiButton(*gameObj->symbols, gameObj->text,
+                                                                      gameObj->lang->get("menu.no"), false, 80);
+        if (yes && no) {
+            yes->setPosition(234, 220);
+            no->setPosition(385, 220);
+            yes->onClick = [this] { clickConfirmQuit(); };
+            no->onClick = [this] { clickCancelQuit(); };
+            confirmYesButton = &confirm->addChild(std::move(yes), "");
+            confirmNoButton = &confirm->addChild(std::move(no), "");
+        }
+        confirm->setVisible(false);
+    } else {
+        if (confirmYesButton) {
+            confirm->removeChild(confirmYesButton);
+            confirmYesButton = nullptr;
+        }
+        if (confirmNoButton) {
+            confirm->removeChild(confirmNoButton);
+            confirmNoButton = nullptr;
+        }
+    }
+}
+
+// AS: MainMenuScreen.setupInfo — the pause menu's AREA INFO: the area, the customer being played, the six
+// challenges (with their tallies), and this level's and the game's totals.
+void MainMenuScreen::setupInfo(bool setup)
+{
+    engine::MovieClip *info = section("info");
+    if (!info) {
+        return;
+    }
+    data::UserData &user = *gameObj->obf_51;
+    data::DataManager &dm = *gameObj->obf_AQ;
+    if (setup && dm.currentWorldData != nullptr) {
+        const double level = dm.currentLevel;
+        info->setText("title_txt", dm.getWorldTitle(level));
+        info->setText("levelnum_txt", level == 9 ? "X" : as3::String(level + 1));
+        info->setText("score_txt", obf_AF::obf_81::obf_7w(user.getLevelHighScore(level)));
+        const data::CustomerDataFile *c = gameObj->obf_3A->getCustomerData(user.selectedCharacter);
+        if (engine::MovieClip *style = info->findChild("currentstyle")) {
+            style->gotoAndStop(static_cast<int>(user.selectedStyle));
+        }
+        if (c) {
+            info->setText("name_txt", c->customerName);
+            info->setText("weaponname_txt",
+                          c->weaponName == "Pizza Paddle" && user.selectedStyle == 3 ? "Beach Umbrella" : c->weaponName);
+            if (engine::MovieClip *icon = info->findChild("skillicon")) {
+                icon->gotoLabel(c->skillType, false);
+            }
+            const std::string skill = c->skillType;
+            const char *key = skill == CustomerData::SKILL_CRAWL        ? "skill.crawl"
+                              : skill == CustomerData::SKILL_DOUBLEJUMP ? "skill.doublejump"
+                              : skill == CustomerData::SKILL_WALLJUMP   ? "skill.walljump"
+                              : skill == CustomerData::SKILL_GLIDE      ? "skill.glide"
+                              : skill == CustomerData::SKILL_POUND      ? "skill.pound"
+                              : skill == CustomerData::SKILL_PUSH       ? "skill.push"
+                                                                        : "skill.none";
+            info->setText("skillname_txt", gameObj->lang->get(key));
+        }
+        SDL_Log("Setup Challenges for level: %s", as3::String(level).c_str());
+        for (int i = 1; i <= 6; ++i) {
+            engine::MovieClip *icon = info->findChild("icon" + std::to_string(i));
+            engine::MovieClip *panel = info->findChild("panel" + std::to_string(i));
+            if (!icon || !panel) {
+                continue;
+            }
+            icon->gotoAndStop(user.hasCompletedChallenge(level, i) ? 2 : 1);
+            icon->setText("num_txt", std::to_string(i));
+            const std::string type = gameObj->obf_94->getChallengeType(level, i);
+            const std::string skill = gameObj->obf_94->getChallengeSkillNeeded(level, i);
+            engine::MovieClip *panelIcon = panel->findChild("icon");
+            if (type == data::Challenge::RESCUE) {
+                panel->setText("description_txt", gameObj->lang->get("challenge.rescue"));
+                const double trapped = gameObj->obf_3A->getTrappedCustomerIndex(level, i);
+                engine::MovieClip::BitmapChild face = gameObj->obf_3A->getCustomerBitmap(trapped);
+                face.x = -8;
+                face.y = -8;
+                const std::string name = gameObj->obf_3A->getCustomerName(trapped);
+                if (name == "Georgito" || name == "Yippy" || name == "Greg") {
+                    face.y -= 8;
+                }
+                if (panelIcon) {
+                    panelIcon->gotoAndStop(1);
+                    if (engine::MovieClip *holder = panelIcon->findChild("holder")) {
+                        holder->addBitmap(face);
+                        holder->setMask(panelIcon->findChild("masker"));
+                    }
+                }
+            } else {
+                panel->setText("description_txt", gameObj->obf_94->getChallengeTallyString(level, i));
+                if (panelIcon) {
+                    panelIcon->gotoAndStop(type == data::Challenge::BURGERZILLAS ? 2
+                                           : type == data::Challenge::COINS      ? 3
+                                                                                 : 4 + static_cast<int>(level));
+                }
+            }
+            engine::MovieClip *skillClip = panel->findChild("skill");
+            if (skill == CustomerData::SKILL_NONE || skill.empty()) {
+                if (skillClip) {
+                    skillClip->stop();
+                    skillClip->setVisible(false);
+                }
+                if (engine::MovieClip *needs = panel->findChild("needs")) {
+                    needs->setVisible(false);
+                }
+            } else if (skillClip) {
+                skillClip->gotoLabel(skill, false);
+            }
+            if (type.empty()) {
+                panel->setVisible(false);
+                icon->setVisible(false);
+            }
+        }
+        info->setText("points_txt", obf_AF::obf_81::obf_7w(user.getCurrentPoints()));
+        const double timer = gameObj->obf_8o ? gameObj->obf_8o->gameplayTimer : 0;
+        info->setText("time_txt", obf_AF::obf_81::obf_2i(timer, true));
+        info->setText("coins_txt", obf_AF::obf_81::obf_7w(user.getCurrentMoney()));
+        info->setText("totalpoints_txt", obf_AF::obf_81::obf_7w(user.getTotalScore()));
+        info->setText("totaltime_txt", obf_AF::obf_81::obf_2i(user.totalTimePlayed, true, true));
+        info->setText("totalcoins_txt", obf_AF::obf_81::obf_7w(user.getTotalMoney()));
+        info->setText("totalwarpcoins_txt", as3::String(user.getWarpCoins()) + "/50");
+        info->setText("totalcustomers_txt", as3::String(user.getTotalCustomersUnlocked()) + "/28");
+        if (std::unique_ptr<engine::MovieClip> model = buildInfoModel(user.selectedCharacter, user.selectedStyle)) {
+            model->setPosition(555, 80);
+            model->mouseEnabled = false;
+            model->mouseChildren = false;
+            infoModel = &info->addChild(std::move(model), "");
+        }
+    } else if (setup) {
+        SDL_Log("No area screen.");
+    } else if (infoModel) {
+        info->removeChild(infoModel);
+        infoModel = nullptr;
+    }
+}
+
+// AS: MainMenuScreen.buildInfoModel — the customer being played, standing, in the info section.
+std::unique_ptr<engine::MovieClip> MainMenuScreen::buildInfoModel(double whichCharacter, double style)
+{
+    const engine::SymbolLibrary &symbols = *gameObj->symbols;
+    const std::string type = gameObj->obf_3A->getCustomerType(whichCharacter);
+    const char *puppet = type == CustomerData::WEAPON_SWING2    ? "customerTwoSwingMC"
+                         : type == CustomerData::WEAPON_SCOOTER ? "customerScooterMC"
+                         : type == CustomerData::WEAPON_KAHUNA  ? "customerKahunaMC"
+                         : type == CustomerData::WEAPON_WHIP    ? "customerWhipMC"
+                         : type == CustomerData::WEAPON_MELEE   ? "customerMeleeMC"
+                         : type == CustomerData::WEAPON_TOSS    ? "customerTossMC"
+                         : type == CustomerData::WEAPON_LONGGUN ? "customerLongGunMC"
+                         : type == CustomerData::WEAPON_PISTOL  ? "customerPistolMC"
+                         : type == CustomerData::WEAPON_BAZOOKA ? "customerBazookaMC"
+                                                                : "customerOneSwingMC";
+    std::unique_ptr<engine::MovieClip> model = engine::MovieClip::create(symbols, puppet);
+    if (!model) {
+        return nullptr;
+    }
+    model->setScale(-0.55f, 0.55f);
+    const std::string clipName = gameObj->obf_3A->getCustomerClipName(whichCharacter);
+    std::string name = clipName;
+    if (style == 2) {
+        name += "2";
+    } else if (style == 3) {
+        name += "3";
+    }
+    auto attach = [&](const char *slot, const std::string &cls) {
+        engine::MovieClip *s = model->findChild(slot);
+        std::unique_ptr<engine::MovieClip> part = engine::MovieClip::create(symbols, cls);
+        if (s && part) {
+            s->addChild(std::move(part), "clip");
+        }
+    };
+    const std::string prefix = "customer_" + name + "_";
+    attach("body", prefix + "body");
+    attach("head", prefix + "head");
+    attach("eyes", prefix + "eyes");
+    attach("mouth", prefix + "mouth");
+    attach("neck", prefix + "neck");
+    attach("hair", prefix + "hair");
+    attach("back_hair", prefix + "back_hair");
+    attach("front_shoe", prefix + "foot");
+    attach("back_shoe", prefix + "foot");
+    attach("fronthand", prefix + "hand");
+    attach("backhand", prefix + "hand2");
+    attach("front_upperarm", prefix + "upperarm");
+    attach("back_upperarm", prefix + "upperarm");
+    attach("front_forearm", prefix + "forearm");
+    attach("back_forearm", prefix + "forearm");
+    attach("cross_backforearm", prefix + "forearm");
+    attach("cross_back_hand", prefix + "hand2");
+    const std::string weapon = "weapon_" + gameObj->obf_3A->getWeaponClipName(whichCharacter, style);
+    attach("weapon", weapon);
+    attach("cross_back_weap", weapon);
+    if (clipName == "Boomer") {
+        attach("glider", "glider_" + clipName);
+    } else if (engine::MovieClip *glider = model->findChild("glider")) {
+        glider->addChild(engine::MovieClip::createEmpty(symbols), "clip");
+    }
+    model->gotoAndStop(1);
+    model->gotoLabel("stand", true);
+    if (clipName == "Connor") {
+        model->gotoLabel("standconnor", true);
+    }
+    return model;
 }
 
 // AS: MainMenuScreen.getSectionTitle (a translation key in the port)

@@ -2,6 +2,7 @@
 
 #include "game/obf_9G/obf_4R.h"
 #include "game/obf_AF/obf_81.h"
+#include "game/papaGame/screens/MainMenuScreen.h"
 
 using obf_AF::obf_81;
 
@@ -13,7 +14,7 @@ GameHUD::GameHUD(obf_9G::obf_4R *gameObj_) : gameObj(gameObj_)
     setupHUD();
 }
 
-// AS: GameHUD.setupHUD (SKELETON: button listeners, mute state, portrait and bubbles)
+// AS: GameHUD.setupHUD (SKELETON: the FPS toggle, the portrait and the bubbles)
 void GameHUD::setupHUD()
 {
     const engine::SymbolLibrary &symbols = *gameObj->symbols;
@@ -27,9 +28,20 @@ void GameHUD::setupHUD()
     if (!interfaceClip) {
         return;
     }
+    interfaceClip->mouseEnabled = false;
     updateDisplay();
     updateTimer();
+    if (engine::MovieClip *menu = interfaceClip->findChild("menu_btn")) {
+        menu->onClick = [this] { clickMenu(); };
+    }
+    if (engine::MovieClip *mute = interfaceClip->findChild("mute_btn")) {
+        mute->onClick = [this] { clickMute(); };
+    }
+    if (engine::MovieClip *unmute = interfaceClip->findChild("unmute_btn")) {
+        unmute->onClick = [this] { clickUnmute(); };
+    }
     interfaceClip->setChildAlpha("fps_txt", 0);
+    updateMuteButton();
     if (const data::CustomerDataFile *c = gameObj->obf_3A->getCustomerData(gameObj->obf_51->selectedCharacter)) {
         if (engine::MovieClip *skill = interfaceClip->findChild("skill")) {
             skill->gotoLabel(c->skillType, false);
@@ -93,6 +105,44 @@ void GameHUD::showHUD()
 {
     if (interfaceClip) {
         interfaceClip->setVisible(true);
+    }
+}
+
+// AS: GameHUD.clickMenu — the game pauses and the pause menu opens on the area's info.
+void GameHUD::clickMenu()
+{
+    if (!gameObj->obf_71->isTransitioningIn && !gameObj->obf_71->isTransitionOut) {
+        gameObj->obf_8o->pauseGame();
+        papaGame::screens::MainMenuParams params;
+        params.section = "info";
+        gameObj->showApiScreen("PauseMenu", params);
+    }
+}
+
+// AS: GameHUD.clickMute
+void GameHUD::clickMute()
+{
+    gameObj->obf_7C->muteSound(true);
+    updateMuteButton();
+}
+
+// AS: GameHUD.clickUnmute
+void GameHUD::clickUnmute()
+{
+    gameObj->obf_7C->unmuteSound(true);
+    updateMuteButton();
+}
+
+// AS: GameHUD.updateMuteButton
+void GameHUD::updateMuteButton()
+{
+    if (interfaceClip) {
+        if (engine::MovieClip *mute = interfaceClip->findChild("mute_btn")) {
+            mute->setVisible(!gameObj->obf_7C->isMute);
+        }
+        if (engine::MovieClip *unmute = interfaceClip->findChild("unmute_btn")) {
+            unmute->setVisible(gameObj->obf_7C->isMute);
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 // AS: papaGame.models.GameHUD (§_-6Z§ on the game object) — the bar at the bottom: hearts, time, points, coins,
-// Burgerzillas and special items. SKELETON: the menu / mute / pause buttons, the player portrait, the challenge
+// Burgerzillas and special items, the MENU (pause) and sound buttons. SKELETON: the player portrait, the challenge
 // bubbles and the FPS toggle.
 #include <memory>
 
@@ -20,6 +20,10 @@ public:
     void hideHUD();
     void showHUD();
     void updatePlayerHealth(double health);
+    void clickMenu();
+    void clickMute();
+    void clickUnmute();
+    void updateMuteButton();
     // Port: the HUD is drawn over the game in stage pixels (the original's display list does it).
     void render(const engine::RenderContext &ctx) const;
 

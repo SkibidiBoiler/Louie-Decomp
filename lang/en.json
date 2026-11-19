@@ -34,5 +34,7 @@
   "skill.push": "Push",
   "skill.none": "None",
   "title.area_info": "AREA INFO",
-  "title.choose_your_character": "CHOOSE YOUR CHARACTER"
+  "title.choose_your_character": "CHOOSE YOUR CHARACTER",
+  "menu.yes": "YES",
+  "menu.no": "NO"
 }

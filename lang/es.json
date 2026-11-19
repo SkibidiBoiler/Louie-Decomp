@@ -34,5 +34,7 @@
   "skill.push": "Empujar",
   "skill.none": "Ninguna",
   "title.area_info": "INFO DE LA ZONA",
-  "title.choose_your_character": "ELIGE TU PERSONAJE"
+  "title.choose_your_character": "ELIGE TU PERSONAJE",
+  "menu.yes": "SÍ",
+  "menu.no": "NO"
 }

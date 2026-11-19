@@ -115,6 +115,22 @@ std::string ChallengeManager::getChallengeSkillNeeded(double whichWorld, double 
     return {};
 }
 
+// AS: ChallengeManager.getChallengeTallyString — "(tally/target)" while a counted challenge is unfinished.
+std::string ChallengeManager::getChallengeTallyString(double whichWorld, double whichChallenge) const
+{
+    std::string text;
+    if (whichWorld > -1) {
+        for (const data::Challenge &c : challenges) {
+            if (c.whichWorld == whichWorld && c.whichChallenge == whichChallenge) {
+                if (c.showTally && c.tally < c.targetAmount) {
+                    text = "(" + as3::String(c.tally) + "/" + as3::String(c.targetAmount) + ")";
+                }
+            }
+        }
+    }
+    return text;
+}
+
 // AS: ChallengeManager.getMedalProgressArray
 std::vector<double> ChallengeManager::getMedalProgressArray() const
 {

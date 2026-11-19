@@ -269,8 +269,21 @@ the level down (the port keeps BitmapManager: it holds the sheet textures) and t
 `Lang::get(key, value)` for "{0}" texts.
 Checked: `--level 0 --room 2 --at 12,33` -> cage -> outro -> tally (capture) -> tap Continue -> map; the slot
 saved the high score and time.
-SKELETON: NewCustomerScreen (§_-4Z§ opens the map), the parade at level 8 (§_-14§ shows the tally),
-BossIntroScreen, ChallengeManager.resetCurrentChallenges, the glow outline of the puppets.
+SKELETON: the parade at level 8 (§_-14§ shows the tally), BossIntroScreen,
+ChallengeManager.resetCurrentChallenges, the glow outline of the puppets.
+(27) New customer and pause (menus, part 5). `NewCustomerScreen` (§_-4Z§ / §_-6s§): a customer rescued for the
+first time runs in with their name and skill, then the map. Pause: the HUD's MENU and sound buttons
+(`GameHUD.clickMenu` / `clickMute` / `clickUnmute` / `updateMuteButton`; the HUD takes the pointer during a level),
+`GameControls.pauseGame` / `resumeGame`, the API's PauseMenu (Back to Game, INFO, CREDITS, QUIT LEVEL) on
+`MainMenuScreen`: `setupInfo` (the area, the customer being played, the challenges with their tallies,
+`ChallengeManager.getChallengeTallyString`, this level's and the game's totals, `buildInfoModel`),
+`setupConfirmQuit` (YES / NO; the bars stop taking clicks meanwhile, `MenuBar::setEnabled`), `clickBackToGame`,
+`clickQuit` / `clickConfirmQuit` / `clickCancelQuit`, and `closeMainMenuScreen` quitting the level (time played,
+save, §_-Ap§, the map) or resuming. Port: P opens the pause menu too. Engine fix: `mouseEnabled = false` no longer
+hides a clip's children from the pointer (Flash: that is `mouseChildren`).
+Checked by taps: MENU -> pause (capture) -> Back to Game -> MENU again; QUIT LEVEL -> confirm (capture) -> YES ->
+map. Level 0 cage -> tally -> Continue -> "Customer unlocked!" Taylor (capture) -> map.
+SKELETON: the BADDIES, BADGES, CONTROLS and HELP tabs.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

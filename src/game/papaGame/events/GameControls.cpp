@@ -468,4 +468,30 @@ void GameControls::travelThroughDoor(double roomID, double doorID, double xOffse
     stopCycle = true;
 }
 
+// AS: GameControls.pauseGame
+void GameControls::pauseGame()
+{
+    isPaused = true;
+    gameObj->obf_7C->muteSound(false);
+    if (gameObj->obf_6Z && gameObj->obf_6Z->interfaceClip) {
+        if (engine::MovieClip *paused = gameObj->obf_6Z->interfaceClip->findChild("pausedMC")) {
+            paused->setVisible(true);
+        }
+    }
+}
+
+// AS: GameControls.resumeGame — SKELETON: ObjectManager.updateTrainingSigns after the keys were changed.
+void GameControls::resumeGame(bool /*keysWereChanged*/)
+{
+    isPaused = false;
+    if (!gameObj->obf_7C->isMute) {
+        gameObj->obf_7C->unmuteSound(false);
+    }
+    if (gameObj->obf_6Z && gameObj->obf_6Z->interfaceClip) {
+        if (engine::MovieClip *paused = gameObj->obf_6Z->interfaceClip->findChild("pausedMC")) {
+            paused->setVisible(false);
+        }
+    }
+}
+
 } // namespace papaGame::events

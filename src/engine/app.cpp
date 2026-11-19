@@ -507,6 +507,12 @@ SDL_AppResult App::event(const SDL_Event &ev)
         case SDLK_TAB:
             nextMode();
             break;
+        case SDLK_P: // port: P opens the pause menu, as the HUD's MENU button does
+            if (mode_ == Mode::Level && game_ && !game_->screensActive() && game_->obf_6Z &&
+                game_->obf_AQ->currentScreenData) {
+                game_->obf_6Z->clickMenu();
+            }
+            break;
         case SDLK_LEFTBRACKET:
             switchRoom(-1);
             break;

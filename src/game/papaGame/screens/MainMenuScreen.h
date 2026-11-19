@@ -2,8 +2,7 @@
 // AS: papaGame.screens.MainMenuScreen — the map of areas and, before a level, the customer and outfit choice,
 // with the credits, badges, baddies, controls and help sections the bar's tabs open.
 // The store, social and "first game" links went to web sites and are not shown.
-// SKELETON: the info (pause), baddies, medals (badges), controls, help and confirm-quit sections, and the tutorial
-// pop-ups (§_-6n§ / §_-c§).
+// SKELETON: the baddies, medals (badges), controls and help sections, and the tutorial pop-ups (§_-6n§ / §_-c§).
 #include <memory>
 #include <string>
 #include <vector>
@@ -38,6 +37,13 @@ public:
     void clickPlayMap(int world);
     void clickStartLevel();
     void setupCredits();
+    void setupInfo(bool setup = true);
+    void setupConfirmQuit(bool setup = true);
+    void clickInfo() { setSection("info"); }
+    void clickBackToGame();
+    void clickQuit();
+    void clickConfirmQuit();
+    void clickCancelQuit();
     void destroy();
     void clickMap() { setSection("map"); }
     void clickCredits() { setSection("credits"); }
@@ -69,10 +75,15 @@ public:
     double characterStartX = 500, characterLeaveX = -100, characterTargetX = 210, characterTargetY = 80;
     double characterSpeed = 18;
     bool willRevealMap = false;
+    bool keysWereChanged = false;
+    engine::MovieClip *infoModel = nullptr;        // owned by clip.info
+    engine::MovieClip *confirmYesButton = nullptr; // owned by clip.confirmquit
+    engine::MovieClip *confirmNoButton = nullptr;  // owned by clip.confirmquit
     double mapLastUnlocked = 0;
 
 private:
     void buildModel(bool sameCharacter = false);
+    std::unique_ptr<engine::MovieClip> buildInfoModel(double whichCharacter, double style);
     engine::MovieClip *section(const std::string &name) { return clip->findChild(name); }
     bool tweening_ = false;     // port: the tweenSections ENTER_FRAME listener is on
     bool updatingChar_ = false; // port: the updateCharacter ENTER_FRAME listener is on

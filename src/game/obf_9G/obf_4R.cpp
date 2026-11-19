@@ -341,6 +341,16 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
                       {{Kind::Action, "menu.start_level", "clickStartLevel"},
                        {Kind::Tab, "menu.back_to_map", "clickBackToMap"}},
                       layout);
+    } else if (name == "PauseMenu") {
+        // SKELETON: the BADDIES, BADGES, CONTROLS and HELP tabs (their sections are not ported yet).
+        mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
+        engine::MenuBar::Layout layout;
+        menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
+                      {{Kind::Action, "menu.back_to_game", "clickBackToGame"},
+                       {Kind::Tab, "menu.info", "clickInfo"},
+                       {Kind::Tab, "menu.credits", "clickCredits"},
+                       {Kind::Back, "menu.quit_level", "clickQuit"}},
+                      layout);
     } else if (name == "EndOfDay") {
         scoreTallyScreen = std::make_unique<papaGame::screens::ScoreTallyScreen>(this, obf_5h.get());
         engine::MenuBar::Layout layout;
@@ -369,7 +379,14 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     pendingDestroyNewCustomer_.reset();
     engine::MovieClip::collectGarbage();
     const bool onBar = menuBar.update(pointer, [this](const std::string &event) { dispatchContainerEvent(event); });
-    if (!onBar) {
+    // Port: the HUD sits in the original's display list above the game; here it is drawn by the display, so it
+    // takes the pointer while a level is played without a screen over it (one root per frame: the pointer's
+    // press and roll-over targets are shared).
+    const bool hudTakesPointer = apiScreen.empty() && !screensActive() && obf_AQ->currentScreenData && obf_6Z &&
+                                 obf_6Z->interfaceClip && obf_6Z->interfaceClip->visible();
+    if (hudTakesPointer) {
+        engine::MovieClip::dispatchPointer(*obf_6Z->interfaceClip, engine::Affine{}, pointer);
+    } else if (!onBar) {
         engine::MovieClip::dispatchPointer(*obf_5h, engine::Affine{}, pointer);
     }
     obf_5h->advance();
