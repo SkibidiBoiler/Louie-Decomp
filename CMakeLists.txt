@@ -113,13 +113,19 @@ set(PL_SOURCES
     src/game/papaGame/models/Bullet.cpp
     src/game/papaGame/models/Effect.cpp
     src/game/papaGame/models/bullets/Basketball.cpp
+    src/game/papaGame/models/bullets/DogToy.cpp
+    src/game/papaGame/models/bullets/PepperBomb.cpp
+    src/game/papaGame/models/bullets/GummyOnion.cpp
+    src/game/papaGame/models/bullets/Cookie.cpp
     src/game/papaGame/models/effects/CageBackBarsEffect.cpp
     src/game/papaGame/models/effects/CageFrontBarsEffect.cpp
     src/game/papaGame/models/effects/CageSpinnerEffect.cpp
+    src/game/papaGame/models/effects/CookieBitEffect.cpp
     src/game/papaGame/models/effects/CrackerBreakEffect.cpp
     src/game/papaGame/models/effects/DizzyEffect.cpp
     src/game/papaGame/models/effects/DustEffect.cpp
     src/game/papaGame/models/effects/EndPortalEffect.cpp
+    src/game/papaGame/models/effects/ExplosionEffect.cpp
     src/game/papaGame/models/effects/ItemBalloonEffect.cpp
     src/game/papaGame/models/effects/ItemCoinEffect.cpp
     src/game/papaGame/models/effects/ItemDaisyEffect.cpp

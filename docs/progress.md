@@ -308,8 +308,11 @@ offsets from customerchar.json; Xandra's three stars), fired from checkIfAttacki
 `Character.checkIfOnSlope`; `checkIfOnCloud` is virtual (Basketball overrides it). DEV: `--trace` prints a B line
 with each bullet's id, type, position and frame.
 Checked: `--customer 16 --input A100-104` -> the ball arcs right and bounces (trace and capture).
-SKELETON: the other 18 bullet classes (PepperBomb, BlueberryShot, DogToy, Cookie, GummyOnion, ChiliCan,
-RomanCandle, Banana, XandraStar; the enemies' and the cheese cannon's), the bazooka's camera jiggle.
+SKELETON: the bazooka's camera jiggle.
+(31) Bullets, part 2: `DogToy` (Prudence: squeaks, three bounces), `PepperBomb` (Big Pauly: explodes where it
+lands; `ExplosionEffect`), `GummyOnion` (Sarge Fan: four bounces, higher then lower), `Cookie` (Yippy: crumbles
+where it lands; `CookieBitEffect`). Checked by trace with `--customer 2 / 8 / 13 / 19`.
+SKELETON: Banana, BlueberryShot, ChiliCan, RomanCandle, XandraStar, and the enemies' and the cheese cannon's bullets.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

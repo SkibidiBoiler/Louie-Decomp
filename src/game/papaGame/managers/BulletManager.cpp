@@ -7,6 +7,10 @@
 #include "engine/json.h"
 #include "game/obf_9G/obf_4R.h"
 #include "game/papaGame/models/bullets/Basketball.h"
+#include "game/papaGame/models/bullets/DogToy.h"
+#include "game/papaGame/models/bullets/PepperBomb.h"
+#include "game/papaGame/models/bullets/GummyOnion.h"
+#include "game/papaGame/models/bullets/Cookie.h"
 
 namespace papaGame::managers {
 
@@ -18,6 +22,18 @@ std::unique_ptr<models::Bullet> createBullet(obf_9G::obf_4R *gameObj, const std:
     using namespace models::bullets;
     if (type == "Basketball") {
         return std::make_unique<Basketball>(gameObj);
+    }
+    if (type == "DogToy") {
+        return std::make_unique<DogToy>(gameObj);
+    }
+    if (type == "PepperBomb") {
+        return std::make_unique<PepperBomb>(gameObj);
+    }
+    if (type == "GummyOnion") {
+        return std::make_unique<GummyOnion>(gameObj);
+    }
+    if (type == "Cookie") {
+        return std::make_unique<Cookie>(gameObj);
     }
     return nullptr; // SKELETON: the other bullet classes are not ported yet
 }

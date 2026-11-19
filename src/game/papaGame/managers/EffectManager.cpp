@@ -7,10 +7,12 @@
 #include "game/papaGame/models/effects/CageBackBarsEffect.h"
 #include "game/papaGame/models/effects/CageFrontBarsEffect.h"
 #include "game/papaGame/models/effects/CageSpinnerEffect.h"
+#include "game/papaGame/models/effects/CookieBitEffect.h"
 #include "game/papaGame/models/effects/CrackerBreakEffect.h"
 #include "game/papaGame/models/effects/DizzyEffect.h"
 #include "game/papaGame/models/effects/DustEffect.h"
 #include "game/papaGame/models/effects/EndPortalEffect.h"
+#include "game/papaGame/models/effects/ExplosionEffect.h"
 #include "game/papaGame/models/effects/ItemBalloonEffect.h"
 #include "game/papaGame/models/effects/ItemCoinEffect.h"
 #include "game/papaGame/models/effects/ItemDaisyEffect.h"
@@ -88,6 +90,12 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "CageSpinnerEffect") {
         return std::make_unique<CageSpinnerEffect>(gameObj);
+    }
+    if (type == "CookieBitEffect") {
+        return std::make_unique<CookieBitEffect>(gameObj);
+    }
+    if (type == "ExplosionEffect") {
+        return std::make_unique<ExplosionEffect>(gameObj);
     }
     return nullptr; // SKELETON: the other effect classes (CageCustomerEffect among them) are not ported yet
 }
