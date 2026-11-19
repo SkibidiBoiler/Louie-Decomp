@@ -25,6 +25,7 @@
 #include "game/papaGame/models/effects/PlayerCheckpointEffect.h"
 #include "game/papaGame/models/effects/RomanSparkEffect.h"
 #include "game/papaGame/models/effects/RomanTrailEffect.h"
+#include "game/papaGame/models/effects/StarEffect.h"
 #include "game/papaGame/models/effects/StarburstEffect.h"
 #include "game/papaGame/models/effects/ZillaPartsEffect.h"
 
@@ -104,6 +105,9 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "RomanTrailEffect") {
         return std::make_unique<RomanTrailEffect>(gameObj);
+    }
+    if (type == "StarEffect") {
+        return std::make_unique<StarEffect>(gameObj);
     }
     return nullptr; // SKELETON: the other effect classes (CageCustomerEffect among them) are not ported yet
 }

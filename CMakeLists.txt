@@ -116,6 +116,7 @@ set(PL_SOURCES
     src/game/papaGame/models/bullets/DogToy.cpp
     src/game/papaGame/models/bullets/PepperBomb.cpp
     src/game/papaGame/models/bullets/RomanCandle.cpp
+    src/game/papaGame/models/bullets/XandraStar.cpp
     src/game/papaGame/models/bullets/GummyOnion.cpp
     src/game/papaGame/models/bullets/Cookie.cpp
     src/game/papaGame/models/effects/CageBackBarsEffect.cpp
@@ -139,6 +140,7 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/PlayerCheckpointEffect.cpp
     src/game/papaGame/models/effects/RomanSparkEffect.cpp
     src/game/papaGame/models/effects/RomanTrailEffect.cpp
+    src/game/papaGame/models/effects/StarEffect.cpp
     src/game/papaGame/models/effects/StarburstEffect.cpp
     src/game/papaGame/models/effects/ZillaPartsEffect.cpp
     src/game/papaGame/models/Enemy.cpp
