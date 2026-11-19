@@ -380,3 +380,9 @@ GameObject29/30).
 and refills where it hung. Checked: `--level 3 --room 0 --at 7,21`. QUIRK kept: splatBerry skips every other rider.
 Next: GameObject2 (pushable boulder: needs the player's pushing — canPush, checkPushingObject, the looping push
 sound), then Sarge.
+(39) Tile seams: the vector tilesheet parts are baked with their bounds as the pixel origin (e.g. -24.67), so the
+32-unit grid falls between pixels and each tile's edge pixel is half transparent; tiles side by side showed thin
+see-through lines. `SheetLibrary::repairCellEdges` runs once on the composed tilesheet: each cell's outermost pixel
+that is more transparent than the one just inside takes that pixel (two pixels deep thickened art crossing an edge,
+so only one). Checked by captures of `--level 2 --room 4` and `--level 0 --room 2`. A proper fix would bake the
+parts at a whole-pixel origin in the importer (FFDec has no option for it).

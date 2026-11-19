@@ -39,6 +39,8 @@ public:
     void blit(const Sheet &sheet, float sx, float sy, float sw, float sh, float dx, float dy) const;
 
 private:
+    void repairCellEdges(Sheet &sheet, float cell);
+
     struct Entry {
         float originX = 0.0f, originY = 0.0f;
         float width = 0.0f, height = 0.0f;

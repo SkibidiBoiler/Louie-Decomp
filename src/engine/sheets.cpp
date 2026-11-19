@@ -29,7 +29,61 @@ SDL_Texture *loadTexture(SDL_Renderer *renderer, const std::string &path)
     return texture;
 }
 
+// Port: the vector parts are baked with their own bounds as the pixel origin (e.g. -24.67), so the 32-unit tile
+// grid falls between pixels and each tile edge is a half-covered, see-through pixel; side by side the tiles show
+// a seam. Flash drew the clip at a whole-pixel origin, where the edges are solid. Each edge pixel of a cell that
+// is more transparent than the pixel just inside takes that pixel instead.
+void repairPixelPair(Uint32 *edge, const Uint32 *inside)
+{
+    if ((*inside >> 24) > (*edge >> 24)) {
+        *edge = *inside;
+    }
+}
+
 } // namespace
+
+// Port: see repairPixelPair. Runs once on the composed tilesheet (the render target is set to it).
+void SheetLibrary::repairCellEdges(Sheet &sheet, float cell)
+{
+    SDL_Surface *read = SDL_RenderReadPixels(renderer_, nullptr);
+    if (!read) {
+        return;
+    }
+    SDL_Surface *px = SDL_ConvertSurface(read, SDL_PIXELFORMAT_ARGB8888);
+    SDL_DestroySurface(read);
+    if (!px) {
+        return;
+    }
+    const int w = px->w, h = px->h, c = static_cast<int>(cell);
+    auto at = [px](int x, int y) {
+        return reinterpret_cast<Uint32 *>(static_cast<Uint8 *>(px->pixels) + y * px->pitch) + x;
+    };
+    // Only the outermost pixel: repairing two pixels deep also thickens art that merely crosses a cell edge.
+    if (c >= 4) {
+        for (int y = 0; y < h; ++y) {
+            for (int x = 0; x + c <= w; x += c) {
+                repairPixelPair(at(x, y), at(x + 1, y));
+                repairPixelPair(at(x + c - 1, y), at(x + c - 2, y));
+            }
+        }
+        for (int y = 0; y + c <= h; y += c) {
+            for (int x = 0; x < w; ++x) {
+                repairPixelPair(at(x, y), at(x, y + 1));
+                repairPixelPair(at(x, y + c - 1), at(x, y + c - 2));
+            }
+        }
+    }
+    SDL_Texture *fixed = SDL_CreateTextureFromSurface(renderer_, px);
+    SDL_DestroySurface(px);
+    if (!fixed) {
+        return;
+    }
+    SDL_SetTextureScaleMode(fixed, SDL_SCALEMODE_LINEAR);
+    SDL_SetTextureBlendMode(fixed, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    SDL_SetRenderTarget(renderer_, nullptr); // the caller restores its own target next
+    SDL_DestroyTexture(sheet.texture);
+    sheet.texture = fixed;
+}
 
 bool SheetLibrary::init(SDL_Renderer *renderer, const std::string &gameDir, int scale)
 {
@@ -157,6 +211,7 @@ const Sheet *SheetLibrary::composeTilesheet(const std::string &name)
         top += kTilesheetHeights[i];
     }
     SDL_SetRenderClipRect(renderer_, nullptr);
+    repairCellEdges(out, 32.0f * s);
     SDL_SetRenderTarget(renderer_, previous);
 
     // The parts are only needed to build the composite.
