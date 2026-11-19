@@ -1,6 +1,8 @@
 # Progress and next steps
 
 Read this first when resuming. Rules and commands: [AGENTS.md](../AGENTS.md).
+Map of the original code (systems, enemies and objects per world, order for what is left):
+[architecture.md](architecture.md).
 
 Translation progress, counted locally: `python -I tools/progress.py` (functions and lines of the game's AS
 whose `// AS:` tag exists in `src/game`; SKELETON code counts, so it is an upper bound). On 2026-11-16, PL2:
