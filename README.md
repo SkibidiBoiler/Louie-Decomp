@@ -4,12 +4,16 @@ Decompilation of every Papa's Louie Attack for Windows and Android: a native C++
 *Papa Louie: When Pizzas Attack!*, *Papa Louie 2: When Burgers Attack!* and *Papa Louie 3: When Sundaes Attack!*.
 
 This repository contains **no game code, assets or binaries**. You need your own copy of the original `.swf`
-files; the tools in `tools/` read them locally and the game loads the converted assets at runtime.
+files. When you choose your copy, the app converts it locally, on your PC or phone: graphics, sounds, levels and
+the game's data tables go to the app's data folder, and nothing is uploaded anywhere. The game logic itself is
+not extracted from your copy: it is translated to C++ by hand and lives in `src/game/`.
 
 - Project rules, code profile and build commands: [AGENTS.md](AGENTS.md)
 - Asset format: [docs/asset-format.md](docs/asset-format.md) · Renderer notes: [docs/renderer.md](docs/renderer.md)
-- Status: engine groundwork (asset extractor, timeline player, sheet blitting, interpolation/FPS options) running
-  on Windows and Android with Papa Louie 2 data. No gameplay yet.
+- Status: Papa Louie 2 is playable from the title screen: slot select and saving, the story, the map and the
+  customer choice, and the levels with their enemies, items, objects, effects, HUD and sound. Still missing: the
+  level-complete score screen, the pause menu, bullets, some menu sections, and checking every level and the boss.
+  `python -I tools/progress.py` shows how much of the original code is translated (about a third of PL2).
 
 ## Why a native port
 
@@ -27,9 +31,12 @@ with no Flash emulator and no browser.
   small bitmaps.
 - ✅ Works offline. No ads, no online services, no tracking.
 - ✅ Imports your own copy inside the app: pick the game, choose its `.swf`, and the app converts it on the
-  phone or the PC (no Java, no extra tools).
-- 🚧 Widescreen, translations into other languages, and an options menu for all of these settings.
-- 🚧 Controller and keyboard support through remappable actions.
+  phone or the PC (graphics, sounds, levels and data tables; no Java, no extra tools, nothing sent online).
+- ✅ Saved games on your device, three slots per game, as in the original.
+- ✅ Keyboard and controller play through actions (left, jump, attack…) instead of fixed keys.
+- ✅ Menus in English or Spanish (from the system language), including accented letters the original fonts lack.
+- 🚧 Widescreen, more languages, and an options menu for all of these settings.
+- 🚧 Remappable controls.
 
 **On Windows**
 
@@ -42,17 +49,18 @@ with no Flash emulator and no browser.
 - ✅ The games run as a real app: no Flash Player, no browser, full screen in landscape.
 - ✅ Asks the phone for its highest refresh rate (tested at 120 Hz on a POCO X5 Pro).
 - ✅ Hardware-accelerated rendering (OpenGL ES) for low battery use.
-- 🚧 On-screen touch controls you can edit: position, size, transparency and which buttons are shown, saved as
+- ✅ Translucent on-screen touch buttons.
+- 🚧 An editor for the touch controls: position, size, transparency and which buttons are shown, saved as
   profiles.
 - 🚧 Physical controller support.
 
 ## Getting the source
 
 ```bash
-git clone --recursive https://github.com/SkibidiBoiler/Papas-Louie-Recomp.git
+git clone --recursive https://github.com/SkibidiBoiler/Papas-Louie-Decomp.git
 ```
 
-If you cloned without `--recursive`, run `git submodule update --init --recursive` to fetch SDL3.
+If you cloned without `--recursive`, run `git submodule update --init --recursive` to fetch SDL3 and minimp3.
 
 ## Building
 
@@ -60,7 +68,6 @@ If you cloned without `--recursive`, run `git submodule update --init --recursiv
 
 | for | you need |
 |---|---|
-| asset extraction | Python 3.10+, Java 17+ (21 tested), [JPEXS FFDec](https://github.com/jindrapetrik/jpexs-decompiler) 26.x |
 | Windows | Visual Studio 2022+ or Build Tools (C++ workload, Windows SDK), CMake ≥ 3.24, Ninja |
 | Android | Android SDK (platform 36), NDK, CMake 3.30 from the SDK, JDK 17+ |
 
@@ -76,7 +83,8 @@ The same converter runs from the command line on desktop, for checks or to prepa
 build/windows/pl_import.exe --swf "path/to/PapaLouie2.swf" --out "path/to/data"
 ```
 
-`tools/swf2assets.py` (Python + JPEXS FFDec) is the older reference extractor and is no longer needed.
+`tools/swf2assets.py` (Python 3.10+, Java 17+ and [JPEXS FFDec](https://github.com/jindrapetrik/jpexs-decompiler)
+26.x) is the older reference extractor and is no longer needed to play.
 
 ### 2. Windows
 
