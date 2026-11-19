@@ -160,12 +160,19 @@ void obf_4R::obf_58()
     }
 }
 
-// AS: §_-4R§.§_-4Z§ — SKELETON: NewCustomerScreen is not ported; the map opens as when no customer joins.
-void obf_4R::obf_4Z(double /*whichCustomer*/)
+// AS: §_-4R§.§_-4Z§
+void obf_4R::obf_4Z(double whichCustomer)
 {
-    papaGame::screens::MainMenuParams params;
-    params.section = "map";
-    showApiScreen("MainMenu", params);
+    obf_6p = std::make_unique<papaGame::screens::NewCustomerScreen>(this, whichCustomer);
+}
+
+// AS: §_-4R§.§_-6s§
+void obf_4R::obf_6s()
+{
+    if (obf_6p) {
+        obf_6p->destroy();
+        pendingDestroyNewCustomer_ = std::move(obf_6p); // port: it may be running; freed on the next frame
+    }
 }
 
 // AS: §_-4R§.§_-14§ — SKELETON: ParadeScreen is not ported; the level-complete tally shows instead.
@@ -347,7 +354,7 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
 
 bool obf_4R::screensActive() const
 {
-    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr;
+    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr;
 }
 
 bool obf_4R::updateScreens(const engine::PointerState &pointer)
@@ -359,6 +366,7 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     pendingDestroyMenu_.reset();
     pendingDestroyOutro_.reset();
     pendingDestroyTally_.reset();
+    pendingDestroyNewCustomer_.reset();
     engine::MovieClip::collectGarbage();
     const bool onBar = menuBar.update(pointer, [this](const std::string &event) { dispatchContainerEvent(event); });
     if (!onBar) {
@@ -385,6 +393,9 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     }
     if (scoreTallyScreen) {
         scoreTallyScreen->updateScreen();
+    }
+    if (obf_6p) {
+        obf_6p->updateScreen();
     }
     return screensActive();
 }

@@ -158,6 +158,7 @@ set(PL_SOURCES
     src/game/papaGame/models/characters/CustomerChar.cpp
     src/game/papaGame/screens/GameIntroScreen.cpp
     src/game/papaGame/screens/MainMenuScreen.cpp
+    src/game/papaGame/screens/NewCustomerScreen.cpp
     src/game/papaGame/screens/ScoreTallyScreen.cpp
     src/game/papaGame/screens/StageOutroScreen.cpp
     src/game/papaGame/screens/SlotSelectScreen.cpp
