@@ -60,7 +60,7 @@ void obf_4R::obf_6V(double whichLevel)
     obf_3Y->setCameraBounds();
     obf_6Z->updateDisplay();
     obf_6Z->updateTimer();
-    // SKELETON: ChallengeManager.resetCurrentChallenges.
+    obf_94->resetCurrentChallenges();
     if (!playerObj->blitter) {
         // SKELETON: the original blits the player sprite on the screens before the level starts.
         playerObj->blitter = std::make_unique<papaGame::managers::CharacterBlitter>(this);

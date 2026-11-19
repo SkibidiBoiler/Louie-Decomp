@@ -139,8 +139,10 @@ public:
     std::string footCycleName = "none";
     double footAnimationFrame = 0, footCycleFrame = 0;
 
-private:
+    // AS: PlayerChar.playerData (the selected customer's CustomerDataFile)
     const data::CustomerDataFile *playerData() const;
+
+private:
     std::string slideCycleName(const std::string &customerName) const;
 
     CycleTable cycles_; // by field name, e.g. "runCycleFrames"

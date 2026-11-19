@@ -284,6 +284,17 @@ hides a clip's children from the pointer (Flash: that is `mouseChildren`).
 Checked by taps: MENU -> pause (capture) -> Back to Game -> MENU again; QUIT LEVEL -> confirm (capture) -> YES ->
 map. Level 0 cage -> tally -> Continue -> "Customer unlocked!" Taylor (capture) -> map.
 SKELETON: the BADDIES, BADGES, CONTROLS and HELP tabs.
+(28) Challenges (task 15, part 1). `ChallengeManager`: recordTag / unrecordTag, recordCustomerCage,
+recordBurgerzilla, recordCoin, recordSpecialItem (QUIRK: these three add one whatever the amount),
+recordMultiExplosion / Rocket / Juggle, recordCombo, recordCompletionTime, recordEnemyKill, recordMastery,
+checkCustomChallenges, the checkpoint tallies, resetCurrentChallenges (each level starts from 0), the completion
+and badge queues; badges are earned with their reward. `Challenge`: every type's fields (read from the importer's
+params), the tally methods, meetsEnemyRequirements, meetsMasteryRequirements. Hooked: coins (and Georgito's tag),
+cages (and Xandra's in level 9), stuns, cracker blocks, Marty's and Greg's tags, combos, the finish time and the
+custom challenges at the end of a level.
+Checked: level 0 cage -> "COMPLETE CHALLENGE #2", the tally shows it gold with its 500 bonus and one warp key.
+SKELETON: the drop-down that announces challenges and badges (checkForDisplayingDropdown), juggles
+(meetsJuggleRequirements), ObjectManager.getWeaponType for mastery.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

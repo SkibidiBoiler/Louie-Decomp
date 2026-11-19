@@ -94,7 +94,9 @@ void Enemy34::killMe(double dir)
     if (!isDead) {
         gameObj->obf_51->killBurgerzilla();
     }
-    // SKELETON: ChallengeManager.recordTag("martyzilla") when the player is Marty.
+    if (gameObj->playerObj && gameObj->playerObj->playerData() && gameObj->playerObj->playerData()->customerName == "Marty") {
+        gameObj->obf_94->recordTag("martyzilla");
+    }
     Enemy::killMe(dir);
 }
 

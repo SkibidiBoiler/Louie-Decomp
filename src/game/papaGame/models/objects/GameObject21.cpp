@@ -95,7 +95,7 @@ void GameObject21::getHit(double damage)
         blocksBullets = true;
         addBreakEffects();
         removeCollision();
-        // SKELETON: ChallengeManager.recordTag("breakBlock").
+        gameObj->obf_94->recordTag("breakBlock");
         if (rememberBroken) {
             gameObj->obf_AQ->currentScreenData->saveObjectState(id - 1, {as3::Value::num(0)});
         }

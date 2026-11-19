@@ -84,7 +84,7 @@ void Enemy6::stunEnemy()
     stunStartTime = 0;
     jumpspeed = 0;
     if (!didTagStun) {
-        // SKELETON: ChallengeManager.recordTag("enemyStun").
+        gameObj->obf_94->recordTag("enemyStun");
         didTagStun = true;
     }
 }
@@ -217,7 +217,9 @@ void Enemy6::updateObject()
 void Enemy6::killMe(double dir)
 {
     Enemy::killMe(dir);
-    // SKELETON: ChallengeManager.recordTag("gregtomato") when the player is Greg.
+    if (gameObj->playerObj && gameObj->playerObj->playerData() && gameObj->playerObj->playerData()->customerName == "Greg") {
+        gameObj->obf_94->recordTag("gregtomato");
+    }
 }
 
 } // namespace papaGame::models::enemies

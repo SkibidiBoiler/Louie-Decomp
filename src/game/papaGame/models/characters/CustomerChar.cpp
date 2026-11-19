@@ -974,7 +974,9 @@ void CustomerChar::addToCombo(double amount)
 {
     comboTally += amount;
     comboTimer = 0;
-    // SKELETON: ChallengeManager.recordCombo(comboTally) when comboTally > 1.
+    if (comboTally > 1) {
+        gameObj->obf_94->recordCombo(comboTally);
+    }
 }
 
 // AS: PlayerChar.updateComboTimer
@@ -1973,8 +1975,11 @@ void CustomerChar::finishLevel(const std::string &how)
         gameObj->obf_7C->playTrack("", INT_MAX);
         gameObj->obf_7C->playSound("papalouie2_fanfare.wav");
     }
-    // SKELETON: ChallengeManager.recordCompletionTime / checkCustomChallenges when the finish is not "fake".
     SDL_Log("-- FINISH LEVEL: %s", how.c_str());
+    if (how != "fake") {
+        gameObj->obf_94->recordCompletionTime(gameObj->obf_8o->gameplayTimer);
+        gameObj->obf_94->checkCustomChallenges();
+    }
 }
 
 } // namespace papaGame::models::characters

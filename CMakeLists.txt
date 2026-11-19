@@ -88,6 +88,7 @@ set(PL_SOURCES
     src/import/symbols_export.cpp
     src/import/sound_export.cpp
     src/game/obf_9G/obf_4R.cpp
+    src/game/papaGame/data/Challenge.cpp
     src/game/papaGame/data/CustomerData.cpp
     src/game/papaGame/data/DataManager.cpp
     src/game/papaGame/data/LevelData.cpp

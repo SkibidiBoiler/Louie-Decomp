@@ -41,7 +41,10 @@ void GameItem_Coin::collectItem()
 {
     gameObj->obf_51->earnMoney(moneyValue);
     gameObj->obf_51->earnPoints(points);
-    // SKELETON: ChallengeManager.recordCoin (and recordTag("georgito") for Georgito).
+    gameObj->obf_94->recordCoin();
+    if (gameObj->playerObj && gameObj->playerObj->playerData() && gameObj->playerObj->playerData()->customerName == "Georgito") {
+        gameObj->obf_94->recordTag("georgito");
+    }
     gameObj->obf_V->addEffect(0, 0, "ItemCoinEffect", "", true, 0, -50);
     gameObj->obf_7C->playSound("getcoin.wav");
     gameObj->obf_3Z->removeItem(id);

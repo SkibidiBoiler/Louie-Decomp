@@ -102,7 +102,7 @@ void Enemy2::stunEnemy()
     isJumpUnstunning = false;
     stunStartTime = 0;
     if (!didTagStun) {
-        // SKELETON: ChallengeManager.recordTag("enemyStun").
+        gameObj->obf_94->recordTag("enemyStun");
         didTagStun = true;
     }
 }
