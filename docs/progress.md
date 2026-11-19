@@ -312,7 +312,8 @@ SKELETON: the bazooka's camera jiggle.
 (31) Bullets, part 2: `DogToy` (Prudence: squeaks, three bounces), `PepperBomb` (Big Pauly: explodes where it
 lands; `ExplosionEffect`), `GummyOnion` (Sarge Fan: four bounces, higher then lower), `Cookie` (Yippy: crumbles
 where it lands; `CookieBitEffect`). Checked by trace with `--customer 2 / 8 / 13 / 19`.
-SKELETON: Banana, BlueberryShot, ChiliCan, RomanCandle, XandraStar, and the enemies' and the cheese cannon's bullets.
+`RomanCandle` (Boomer: a curving rocket with a smoke trail that stuns; `RomanSparkEffect`, `RomanTrailEffect`).
+SKELETON: Banana, BlueberryShot, ChiliCan, XandraStar, and the enemies' and the cheese cannon's bullets.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

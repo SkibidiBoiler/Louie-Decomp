@@ -9,6 +9,7 @@
 #include "game/papaGame/models/bullets/Basketball.h"
 #include "game/papaGame/models/bullets/DogToy.h"
 #include "game/papaGame/models/bullets/PepperBomb.h"
+#include "game/papaGame/models/bullets/RomanCandle.h"
 #include "game/papaGame/models/bullets/GummyOnion.h"
 #include "game/papaGame/models/bullets/Cookie.h"
 
@@ -34,6 +35,9 @@ std::unique_ptr<models::Bullet> createBullet(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "Cookie") {
         return std::make_unique<Cookie>(gameObj);
+    }
+    if (type == "RomanCandle") {
+        return std::make_unique<RomanCandle>(gameObj);
     }
     return nullptr; // SKELETON: the other bullet classes are not ported yet
 }

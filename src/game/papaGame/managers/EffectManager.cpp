@@ -23,6 +23,8 @@
 #include "game/papaGame/models/effects/ItemRadishCoinEffect.h"
 #include "game/papaGame/models/effects/ItemSargeCoinEffect.h"
 #include "game/papaGame/models/effects/PlayerCheckpointEffect.h"
+#include "game/papaGame/models/effects/RomanSparkEffect.h"
+#include "game/papaGame/models/effects/RomanTrailEffect.h"
 #include "game/papaGame/models/effects/StarburstEffect.h"
 #include "game/papaGame/models/effects/ZillaPartsEffect.h"
 
@@ -96,6 +98,12 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "ExplosionEffect") {
         return std::make_unique<ExplosionEffect>(gameObj);
+    }
+    if (type == "RomanSparkEffect") {
+        return std::make_unique<RomanSparkEffect>(gameObj);
+    }
+    if (type == "RomanTrailEffect") {
+        return std::make_unique<RomanTrailEffect>(gameObj);
     }
     return nullptr; // SKELETON: the other effect classes (CageCustomerEffect among them) are not ported yet
 }
