@@ -302,7 +302,6 @@ void App::tickLevel()
 {
     papaGame::display::GameCam &cam = *game_->obf_3Y;
     cam.savePrevious();
-    game_->runPending();
     game_->obf_71->advanceFrame();
     // Actions -> GameControls.keyPressed* (the original sets them from key events).
     auto &player = *game_->playerObj;
@@ -656,6 +655,9 @@ SDL_AppResult App::iterate()
 void App::tick()
 {
     ++frame_;
+    if (game_) {
+        game_->runPending(); // may end the level
+    }
     if (game_ && game_->obf_AQ->currentScreenData) {
         tickLevel();
     }

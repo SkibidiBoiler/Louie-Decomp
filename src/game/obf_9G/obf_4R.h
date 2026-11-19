@@ -61,6 +61,7 @@ public:
     void finishLevel();
     // AS: §_-4R§.§_-2K§ — out of lives. SKELETON: the game over screen; the level starts again instead.
     void obf_2K();
+    void obf_99(); // AS: §_-99§, the level again (died in an elevator)
     // AS: §_-4R§.§_-9k§ — a fresh player, HUD and managers for a level (the original builds them per level).
     void obf_9k();
     // Port: a level change asked for from inside the game loop (finishLevel / §_-2K§ run from GameDisplay) happens
@@ -121,7 +122,10 @@ public:
     std::unique_ptr<papaGame::managers::SoundManager> obf_7C;
     double obf_8W = 0; // AS: §_-8W§, the world (level) being played
     std::string gameDir;      // port: where loadLevelData read the tables
-    double pendingLevel = -1; // port: see runPending
+    // Port: §_-2K§ / §_-99§ tear the level down; the display calls them from its own update, so they run at the
+    // start of the next frame (runPending).
+    enum class Pending { None, GameOver, ResetLevel };
+    Pending pending = Pending::None;
     std::unique_ptr<papaGame::models::GameHUD> obf_6Z; // created by loadLevelData, once the tables exist
     std::unique_ptr<engine::MovieClip> obf_5h; // AS: §_-5h§, the container the screens add their clips to
     std::unique_ptr<papaGame::screens::StageIntroScreen> obf_7L;

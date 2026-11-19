@@ -102,8 +102,11 @@ void GameDisplay::advanceFrame()
             } else if (p.isFinishingLevel) {
                 SDL_Log("Should Beat Level:");
                 gameObj->finishLevel();
+            } else if (p.isDead && p.isRidingElevator) {
+                SDL_Log("Should Reset Level (Died in Elevator)");
+                gameObj->obf_99();
             } else {
-                SDL_Log("Should Die"); // SKELETON: §_-99§ when the player died in an elevator
+                SDL_Log("Should Die");
                 gameObj->obf_2K();
             }
         }

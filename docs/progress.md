@@ -295,6 +295,10 @@ custom challenges at the end of a level.
 Checked: level 0 cage -> "COMPLETE CHALLENGE #2", the tally shows it gold with its 500 bonus and one warp key.
 SKELETON: the drop-down that announces challenges and badges (checkForDisplayingDropdown), juggles
 (meetsJuggleRequirements), ObjectManager.getWeaponType for mastery.
+(29) Game over. `§_-4R§.§_-2K§` (out of lives: time played, save, §_-Ap§, the map; PL2 has no game over screen)
+and `§_-99§` (died riding an elevator: the level again), chosen by `GameDisplay` when its death iris ends. The
+display calls them from its own update, so their bodies run at the start of the next frame (`runPending`, now
+before the level's tick). Checked with a forced death (temporary DEV code, removed): DEAD -> saved -> map.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

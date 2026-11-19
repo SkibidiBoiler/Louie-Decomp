@@ -199,12 +199,16 @@ void obf_4R::obf_Ap()
     obf_8o.reset();
 }
 
-// AS: §_-4R§.§_-2K§
+// AS: §_-4R§.§_-2K§ — out of lives: the time is kept, the slot saved, and the map opens. (Deferred: runPending.)
 void obf_4R::obf_2K()
 {
-    // SKELETON: the game over screen (continue from the checkpoint or quit).
-    obf_51->resetLives();
-    pendingLevel = obf_AQ->currentLevel;
+    pending = Pending::GameOver;
+}
+
+// AS: §_-4R§.§_-99§ — (Deferred: runPending.)
+void obf_4R::obf_99()
+{
+    pending = Pending::ResetLevel;
 }
 
 // AS: §_-4R§.§_-9k§ (the managers' tables are read again: in the original they are class constants)
@@ -229,12 +233,25 @@ void obf_4R::obf_9k()
     obf_8O();
 }
 
-// Port: the level again after §_-2K§ (SKELETON: the game over screen), through §_-9k§ and the stage intro.
+// Port: the bodies of §_-2K§ and §_-99§, at the start of the frame after the display asked for them.
 void obf_4R::runPending()
 {
-    if (pendingLevel >= 0) {
-        obf_8W = pendingLevel;
-        pendingLevel = -1;
+    const Pending what = pending;
+    pending = Pending::None;
+    if (what == Pending::GameOver) {
+        SDL_Log("DEAD");
+        if (obf_8o) {
+            obf_51->totalTimePlayed += obf_8o->currentLevelTimer;
+            SDL_Log("(Updated Time Played)");
+        }
+        obf_51->saveProgress("quitlevel");
+        // (api.§_-6i§, an analytics call, is left out.)
+        obf_Ap();
+        papaGame::screens::MainMenuParams params;
+        params.section = "map";
+        showApiScreen("MainMenu", params);
+    } else if (what == Pending::ResetLevel) {
+        obf_Ap();
         obf_9k();
     }
 }
