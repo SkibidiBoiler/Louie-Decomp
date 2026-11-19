@@ -92,8 +92,8 @@ public:
     bool checkIfHalfOnCloud(double dir);
     bool checkMovingTiles(double y);
     void checkIfAtEdge(double speed, double dir);
-    bool moveChar(double dirx, double diry, double jumpDir, bool bounceAtWalls = false, bool checkEdges = false,
-                  bool collide = true, double fixedSpeed = INT_MAX);
+    virtual bool moveChar(double dirx, double diry, double jumpDir, bool bounceAtWalls = false, bool checkEdges = false,
+                          bool collide = true, double fixedSpeed = INT_MAX); // overridden by Enemy16
     virtual void fallChar();
     virtual void jumpChar(bool collide = true);
     void getMyCorners(double px, double py);
@@ -150,7 +150,7 @@ public:
     GameObject *whichMovingTile = nullptr; // the object it stands on
     double onSlope = 0;  // slope type under the character (1-10), 0 = none
     double slopeDir = 0;
-    bool onCeiling = false, onlyCheckSolidSlopes = false;
+    bool onCeiling = false, onlyCheckSolidSlopes = false, onGround = false;
     bool onWall = false, canClimbUp = false, bounceX = false, bounceY = false;
     bool shouldCheckCeilingSlopes = false;
     double bounceDecayX = 1, bounceDecayY = 1, numBounces = 0;

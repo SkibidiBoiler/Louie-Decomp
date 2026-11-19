@@ -356,3 +356,9 @@ player at the room's `startPoint`; then `Character`/`PlayerChar`/`CustomerChar` 
 
 Enemies, objects, items, HUD/menus (needs masks/filters/text → SDL_GPU renderer), widescreen, options
 menu, translations, touch-control editor, PL3 (shares the engine), PL1 (AS2, separate).
+(34) Fort Onion, part 1 (work in progress): `Enemy3` army onion (collapses into its helmet when stomped), `Enemy4`
+gold army onion (drops `GameItem_GoldHelmet`, `ItemGoldHelmetEffect`), `Enemy8` runt tomato, `Enemy15` leafy lark,
+`Enemy16` dill wheel (its own `moveChar` round floors, walls and ceilings; `obf_8J` linear easing). `moveChar` and
+`adjustSpeedForSlopes` are virtual; EnemyManager gives subclasses their parent's cycle arrays. Fort Onion is
+`--level 2`. Checked by trace: only the army onions of room 1. Next: test 8/15/16 and the helmet, then GameObject6,
+7, 17, 18.

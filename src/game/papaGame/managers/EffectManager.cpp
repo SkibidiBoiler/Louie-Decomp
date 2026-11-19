@@ -17,6 +17,7 @@
 #include "game/papaGame/models/effects/ItemCoinEffect.h"
 #include "game/papaGame/models/effects/ItemDaisyEffect.h"
 #include "game/papaGame/models/effects/ItemFizzoCanEffect.h"
+#include "game/papaGame/models/effects/ItemGoldHelmetEffect.h"
 #include "game/papaGame/models/effects/ItemGummyWormEffect.h"
 #include "game/papaGame/models/effects/ItemHeartEffect.h"
 #include "game/papaGame/models/effects/ItemPapaCoinEffect.h"
@@ -89,6 +90,9 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "ItemFizzoCanEffect") {
         return std::make_unique<ItemFizzoCanEffect>(gameObj);
+    }
+    if (type == "ItemGoldHelmetEffect") {
+        return std::make_unique<ItemGoldHelmetEffect>(gameObj);
     }
     if (type == "ItemGummyWormEffect") {
         return std::make_unique<ItemGummyWormEffect>(gameObj);

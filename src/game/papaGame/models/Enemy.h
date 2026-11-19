@@ -50,7 +50,7 @@ public:
     void setEventData(const std::vector<std::vector<double>> &triggers, double pan, double panTarget);
     void setEventTriggers(double necessary, const std::vector<std::vector<double>> &from = {});
     void updateSprite() override;
-    double adjustSpeedForSlopes(double speed) const;
+    virtual double adjustSpeedForSlopes(double speed) const;
     virtual void receiveGroupMessage(const std::string & /*message*/, double /*value*/) {}
 
     double whichScreen = -1;

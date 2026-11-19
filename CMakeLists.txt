@@ -143,6 +143,7 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/ItemCoinEffect.cpp
     src/game/papaGame/models/effects/ItemDaisyEffect.cpp
     src/game/papaGame/models/effects/ItemFizzoCanEffect.cpp
+    src/game/papaGame/models/effects/ItemGoldHelmetEffect.cpp
     src/game/papaGame/models/effects/ItemGummyWormEffect.cpp
     src/game/papaGame/models/effects/ItemHeartEffect.cpp
     src/game/papaGame/models/effects/ItemPapaCoinEffect.cpp
@@ -162,6 +163,7 @@ set(PL_SOURCES
     src/game/papaGame/models/items/GameItem_Coin.cpp
     src/game/papaGame/models/items/GameItem_Daisy.cpp
     src/game/papaGame/models/items/GameItem_FizzoCan.cpp
+    src/game/papaGame/models/items/GameItem_GoldHelmet.cpp
     src/game/papaGame/models/items/GameItem_GummyWorm.cpp
     src/game/papaGame/models/items/GameItem_Heart.cpp
     src/game/papaGame/models/items/GameItem_PapaCoin.cpp
@@ -182,9 +184,14 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy1.cpp
     src/game/papaGame/models/enemies/Enemy2.cpp
     src/game/papaGame/models/enemies/Enemy6.cpp
+    src/game/papaGame/models/enemies/Enemy3.cpp
+    src/game/papaGame/models/enemies/Enemy4.cpp
     src/game/papaGame/models/enemies/Enemy7.cpp
+    src/game/papaGame/models/enemies/Enemy8.cpp
     src/game/papaGame/models/enemies/Enemy12.cpp
     src/game/papaGame/models/enemies/Enemy14.cpp
+    src/game/papaGame/models/enemies/Enemy15.cpp
+    src/game/papaGame/models/enemies/Enemy16.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
     src/game/papaGame/screens/GameIntroScreen.cpp

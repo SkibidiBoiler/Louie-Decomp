@@ -30,6 +30,7 @@ public:
     void buildEnemies(double whichScreen);
     void removeEnemy(double enemyID, bool nosplice = false);
     models::Enemy *getEnemy(double screenObjID, double whichScreen) const;
+    bool checkEnemyTypeOnScreen(double type) const;
     void addToPreblit(double type, const std::string &sheetName);
     // The original finds these by `manager["Enemy" + id]`: the enemy id, which equals the screen object id when the
     // room's enemies are built from a cleared manager.
