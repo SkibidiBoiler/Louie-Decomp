@@ -106,6 +106,7 @@ public:
     void setY(float v) { hasPos_ = true; y_ = v; }
     void setPosition(float x, float y) { hasPos_ = true; x_ = x; y_ = y; }
     void setScale(float sx, float sy) { hasScale_ = true; scaleX_ = sx; scaleY_ = sy; }
+    void setRotation(float degrees) { rotation_ = degrees; } // DisplayObject.rotation (code-set, attached clips)
     float x() const { return x_; }
     float y() const { return y_; }
     bool hasPosition() const { return hasPos_; }
@@ -165,10 +166,16 @@ private:
     void renderChild(const RenderContext &ctx, const Child &child, const Affine &parent,
                      const ColorTransform &parentColor) const;
     bool hasHandler() const { return onClick || onMouseDown || onRollOver; }
-    // An attached clip's own transform: its code-set position and scale (identity otherwise).
+    // An attached clip's own transform: its code-set position, scale and rotation (identity otherwise).
     Affine ownLocal() const
     {
-        return Affine{hasScale_ ? scaleX_ : 1.0f, 0, 0, hasScale_ ? scaleY_ : 1.0f, hasPos_ ? x_ : 0.0f, hasPos_ ? y_ : 0.0f};
+        const float sx = hasScale_ ? scaleX_ : 1.0f, sy = hasScale_ ? scaleY_ : 1.0f;
+        const float tx = hasPos_ ? x_ : 0.0f, ty = hasPos_ ? y_ : 0.0f;
+        if (rotation_ == 0.0f) {
+            return Affine{sx, 0, 0, sy, tx, ty};
+        }
+        const float r = rotation_ * 3.14159265f / 180.0f, cs = SDL_cosf(r), sn = SDL_sinf(r);
+        return Affine{sx * cs, sx * sn, -sy * sn, sy * cs, tx, ty};
     }
     void goTo(int frame, bool play);
     void runScript(int depth);
@@ -195,7 +202,7 @@ private:
     bool visible_ = true;
     int scriptDepth_ = 0;
     bool hasPos_ = false, hasScale_ = false;
-    float x_ = 0, y_ = 0, scaleX_ = 1, scaleY_ = 1;
+    float x_ = 0, y_ = 0, scaleX_ = 1, scaleY_ = 1, rotation_ = 0;
     bool isButton_ = false;
     uint64_t hoverTick_ = 0; // pointer tick when last under the pointer (buttons go back to "up" otherwise)
     bool hoverDown_ = false;

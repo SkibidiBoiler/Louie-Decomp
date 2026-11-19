@@ -115,11 +115,14 @@ void GameObject19::deactivateObject()
     user.savedCharacterIndex = customerActualIndex;
     user.savedCharacterWasUnlocked = user.hasCustomerUnlocked(customerActualIndex);
     user.unlockCustomer(customerActualIndex);
-    // SKELETON: ChallengeManager.recordCustomerCage(cageCustomerIndex) and Xandra's tag in level 9.
+    gameObj->obf_94->recordCustomerCage(cageCustomerIndex);
     auto &p = *gameObj->playerObj;
     p.finishTargetX = playerEndX;
     p.finishCustomerFXIndex = customerFXID;
     p.finishLevel("cage");
+    if (p.playerData() && p.playerData()->customerName == "Xandra" && gameObj->obf_AQ->currentLevel == 9) {
+        gameObj->obf_94->recordTag("xandra");
+    }
     solidTilesRect = {0, 1, 5, 4};
     GameObject::deactivateObject();
 }

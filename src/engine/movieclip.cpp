@@ -549,7 +549,8 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
 
 MovieClip *MovieClip::hitTest(const Affine &parent, float px, float py)
 {
-    if (!visible_ || !mouseEnabled) {
+    // As Flash: mouseEnabled = false takes the clip itself out, mouseChildren = false its children.
+    if (!visible_) {
         return nullptr;
     }
     auto inside = [&](float minX, float minY, float maxX, float maxY) {
@@ -557,6 +558,9 @@ MovieClip *MovieClip::hitTest(const Affine &parent, float px, float py)
     };
     constexpr float kBig = std::numeric_limits<float>::max();
     if (isButton_) {
+        if (!mouseEnabled) {
+            return nullptr;
+        }
         float minX = kBig, minY = kBig, maxX = -kBig, maxY = -kBig;
         timelineBounds(*symbols_, *timeline_, 3, parent, minX, minY, maxX, maxY);
         return inside(minX, minY, maxX, maxY) ? this : nullptr;
@@ -574,7 +578,7 @@ MovieClip *MovieClip::hitTest(const Affine &parent, float px, float py)
             }
         }
     }
-    if (hasHandler()) {
+    if (mouseEnabled && hasHandler()) {
         float minX = kBig, minY = kBig, maxX = -kBig, maxY = -kBig;
         accumulateBounds(parent, minX, minY, maxX, maxY);
         if (inside(minX, minY, maxX, maxY)) {

@@ -60,6 +60,7 @@ std::unique_ptr<MovieClip> makeApiButton(const SymbolLibrary &symbols, TextLibra
         if (auto p = instance(symbols, set + part)) {
             p->setPosition(static_cast<float>(i) * piece, 0);
             p->mouseEnabled = false;
+            p->mouseChildren = false;
             button->addChild(std::move(p), "");
         }
     }
@@ -170,7 +171,7 @@ bool MenuBar::update(const PointerState &pointer, const std::function<void(const
     int hit = -1;
     for (size_t i = 0; i < buttons_.size(); ++i) {
         Button &b = buttons_[i];
-        b.over = pointer.x >= b.x && pointer.x < b.x + b.w && pointer.y >= b.y && pointer.y < b.y + b.h;
+        b.over = enabled_ && pointer.x >= b.x && pointer.x < b.x + b.w && pointer.y >= b.y && pointer.y < b.y + b.h;
         b.down = b.over && pointer.down;
         if (b.over) {
             hit = static_cast<int>(i);

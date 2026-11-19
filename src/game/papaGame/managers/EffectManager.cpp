@@ -7,20 +7,34 @@
 #include "game/papaGame/models/effects/CageBackBarsEffect.h"
 #include "game/papaGame/models/effects/CageFrontBarsEffect.h"
 #include "game/papaGame/models/effects/CageSpinnerEffect.h"
+#include "game/papaGame/models/effects/CookieBitEffect.h"
 #include "game/papaGame/models/effects/CrackerBreakEffect.h"
 #include "game/papaGame/models/effects/DizzyEffect.h"
 #include "game/papaGame/models/effects/DustEffect.h"
 #include "game/papaGame/models/effects/EndPortalEffect.h"
+#include "game/papaGame/models/effects/ExplosionEffect.h"
 #include "game/papaGame/models/effects/ItemBalloonEffect.h"
 #include "game/papaGame/models/effects/ItemCoinEffect.h"
 #include "game/papaGame/models/effects/ItemDaisyEffect.h"
 #include "game/papaGame/models/effects/ItemFizzoCanEffect.h"
+#include "game/papaGame/models/effects/ItemGoldHelmetEffect.h"
 #include "game/papaGame/models/effects/ItemGummyWormEffect.h"
 #include "game/papaGame/models/effects/ItemHeartEffect.h"
 #include "game/papaGame/models/effects/ItemPapaCoinEffect.h"
 #include "game/papaGame/models/effects/ItemRadishCoinEffect.h"
 #include "game/papaGame/models/effects/ItemSargeCoinEffect.h"
 #include "game/papaGame/models/effects/PlayerCheckpointEffect.h"
+#include "game/papaGame/models/effects/RomanSparkEffect.h"
+#include "game/papaGame/models/effects/RomanTrailEffect.h"
+#include "game/papaGame/models/effects/BBQBitEffect.h"
+#include "game/papaGame/models/effects/BlueberryBitEffect.h"
+#include "game/papaGame/models/effects/BlueberrySplatEffect.h"
+#include "game/papaGame/models/effects/CheeseBitEffect.h"
+#include "game/papaGame/models/effects/FeatherEffect.h"
+#include "game/papaGame/models/effects/ChiliBitEffect.h"
+#include "game/papaGame/models/effects/ChiliSplatEffect.h"
+#include "game/papaGame/models/effects/SmokeRingEffect.h"
+#include "game/papaGame/models/effects/StarEffect.h"
 #include "game/papaGame/models/effects/StarburstEffect.h"
 #include "game/papaGame/models/effects/ZillaPartsEffect.h"
 
@@ -77,6 +91,9 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     if (type == "ItemFizzoCanEffect") {
         return std::make_unique<ItemFizzoCanEffect>(gameObj);
     }
+    if (type == "ItemGoldHelmetEffect") {
+        return std::make_unique<ItemGoldHelmetEffect>(gameObj);
+    }
     if (type == "ItemGummyWormEffect") {
         return std::make_unique<ItemGummyWormEffect>(gameObj);
     }
@@ -88,6 +105,45 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "CageSpinnerEffect") {
         return std::make_unique<CageSpinnerEffect>(gameObj);
+    }
+    if (type == "CookieBitEffect") {
+        return std::make_unique<CookieBitEffect>(gameObj);
+    }
+    if (type == "ExplosionEffect") {
+        return std::make_unique<ExplosionEffect>(gameObj);
+    }
+    if (type == "RomanSparkEffect") {
+        return std::make_unique<RomanSparkEffect>(gameObj);
+    }
+    if (type == "RomanTrailEffect") {
+        return std::make_unique<RomanTrailEffect>(gameObj);
+    }
+    if (type == "StarEffect") {
+        return std::make_unique<StarEffect>(gameObj);
+    }
+    if (type == "SmokeRingEffect") {
+        return std::make_unique<SmokeRingEffect>(gameObj);
+    }
+    if (type == "CheeseBitEffect") {
+        return std::make_unique<CheeseBitEffect>(gameObj);
+    }
+    if (type == "ChiliBitEffect") {
+        return std::make_unique<ChiliBitEffect>(gameObj);
+    }
+    if (type == "BBQBitEffect") {
+        return std::make_unique<BBQBitEffect>(gameObj);
+    }
+    if (type == "ChiliSplatEffect") {
+        return std::make_unique<ChiliSplatEffect>(gameObj);
+    }
+    if (type == "BlueberryBitEffect") {
+        return std::make_unique<BlueberryBitEffect>(gameObj);
+    }
+    if (type == "BlueberrySplatEffect") {
+        return std::make_unique<BlueberrySplatEffect>(gameObj);
+    }
+    if (type == "FeatherEffect") {
+        return std::make_unique<FeatherEffect>(gameObj);
     }
     return nullptr; // SKELETON: the other effect classes (CageCustomerEffect among them) are not ported yet
 }

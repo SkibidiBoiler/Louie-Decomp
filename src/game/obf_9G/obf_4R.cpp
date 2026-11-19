@@ -21,6 +21,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_7u = std::make_unique<papaGame::managers::ObjectManager>(this);
     obf_3Z = std::make_unique<papaGame::managers::ItemManager>(this);
     obf_V = std::make_unique<papaGame::managers::EffectManager>(this);
+    obf_4l = std::make_unique<papaGame::managers::BulletManager>(this);
     obf_94 = std::make_unique<papaGame::managers::ChallengeManager>(this);
     obf_7t = std::make_unique<papaGame::events::EventManager>(this);
     obf_5h = engine::MovieClip::createEmpty(*symbols);
@@ -35,6 +36,7 @@ bool obf_4R::loadLevelData(const std::string &gameDir_)
     obf_7u->loadTables(gameDir + "/objects.json");
     obf_3Z->loadTables(gameDir + "/items.json");
     obf_V->loadTables(gameDir + "/effects.json");
+    obf_4l->loadTables(gameDir + "/bullets.json");
     obf_94->loadTables(gameDir + "/challenges.json");
     obf_51->loadTables(gameDir + "/userdata.json");
     obf_6Z = std::make_unique<papaGame::models::GameHUD>(this);
@@ -46,7 +48,9 @@ void obf_4R::obf_6V(double whichLevel)
 {
     obf_AQ->currentLevel = whichLevel;
     obf_8W = whichLevel;
-    // SKELETON: lives, tallies and challenges (§_-51§, §_-94§) are not ported yet.
+    obf_51->resetLives();
+    obf_51->clearTallies();
+    // SKELETON: BitmapManager.clearExtraSprites.
     bitmapManager->whichTileset = -1;
     obf_AQ->setupLevelScreens(whichLevel);
     if (obf_AQ->currentScreenData == nullptr) {
@@ -56,6 +60,9 @@ void obf_4R::obf_6V(double whichLevel)
     obf_71->currentXcoord = 0;
     obf_71->currentYcoord = 0;
     obf_3Y->setCameraBounds();
+    obf_6Z->updateDisplay();
+    obf_6Z->updateTimer();
+    obf_94->resetCurrentChallenges();
     if (!playerObj->blitter) {
         // SKELETON: the original blits the player sprite on the screens before the level starts.
         playerObj->blitter = std::make_unique<papaGame::managers::CharacterBlitter>(this);
@@ -93,7 +100,7 @@ void obf_4R::obf_4X(double roomID, double doorID, double /*xOffset*/, double /*y
     obf_E->saveEnemies();
     obf_7u->saveObjects();
     obf_3Z->saveItems();
-    // SKELETON: BulletManager.clearBullets.
+    obf_4l->clearBullets();
     obf_V->clearEffects();
     // SKELETON: BitmapManager.clearExtraSprites.
     obf_AQ->setActiveRoom(roomID);
@@ -130,23 +137,88 @@ void obf_4R::finishLevel()
     SDL_Log("BEAT LEVEL");
     obf_8o->stopCycle = true;
     obf_8o->stopControls = true;
+    // SKELETON: playerObj.stopTrainSound (the train and river loops are not played yet).
     obf_AQ->clearCheckpoint();
-    // SKELETON: the analytics call, saving, the level-complete screen with the tallies and challenges.
-    pendingLevel = obf_AQ->currentLevel + 1;
+    // (api.§_-6i§, an analytics call, is left out.)
+    if (obf_8o) {
+        obf_51->totalTimePlayed += obf_8o->currentLevelTimer;
+        SDL_Log("(Updated Time Played)");
+    }
+    obf_4G();
 }
 
-// AS: §_-4R§.§_-2K§
+// AS: §_-4R§.§_-4G§
+void obf_4R::obf_4G()
+{
+    obf_6j = std::make_unique<papaGame::screens::StageOutroScreen>(this);
+}
+
+// AS: §_-4R§.§_-58§
+void obf_4R::obf_58()
+{
+    if (obf_6j) {
+        obf_6j->destroy();
+        pendingDestroyOutro_ = std::move(obf_6j); // port: it may be running; freed on the next frame
+    }
+}
+
+// AS: §_-4R§.§_-4Z§
+void obf_4R::obf_4Z(double whichCustomer)
+{
+    obf_6p = std::make_unique<papaGame::screens::NewCustomerScreen>(this, whichCustomer);
+}
+
+// AS: §_-4R§.§_-6s§
+void obf_4R::obf_6s()
+{
+    if (obf_6p) {
+        obf_6p->destroy();
+        pendingDestroyNewCustomer_ = std::move(obf_6p); // port: it may be running; freed on the next frame
+    }
+}
+
+// AS: §_-4R§.§_-14§ — SKELETON: ParadeScreen is not ported; the level-complete tally shows instead.
+void obf_4R::obf_14(bool /*fromLevel*/)
+{
+    showApiScreen("EndOfDay");
+}
+
+// AS: §_-4R§.§_-Ap§ — the port keeps bitmapManager: it holds the textures of the imported sheets, which the
+// next level uses again (the original makes a new one in §_-9k§).
+void obf_4R::obf_Ap()
+{
+    obf_AQ->clearLevelScreens();
+    obf_6Z.reset();
+    playerObj.reset();
+    obf_4i.reset();
+    obf_7u.reset();
+    obf_E.reset();
+    obf_3Z.reset();
+    obf_V.reset();
+    obf_4l.reset();
+    obf_7t.reset();
+    obf_71.reset();
+    obf_3Y.reset();
+    obf_8o.reset();
+}
+
+// AS: §_-4R§.§_-2K§ — out of lives: the time is kept, the slot saved, and the map opens. (Deferred: runPending.)
 void obf_4R::obf_2K()
 {
-    // SKELETON: the game over screen (continue from the checkpoint or quit).
-    obf_51->resetLives();
-    pendingLevel = obf_AQ->currentLevel;
+    pending = Pending::GameOver;
+}
+
+// AS: §_-4R§.§_-99§ — (Deferred: runPending.)
+void obf_4R::obf_99()
+{
+    pending = Pending::ResetLevel;
 }
 
 // AS: §_-4R§.§_-9k§ (the managers' tables are read again: in the original they are class constants)
 void obf_4R::obf_9k()
 {
     obf_V = std::make_unique<papaGame::managers::EffectManager>(this);
+    obf_4l = std::make_unique<papaGame::managers::BulletManager>(this);
     playerObj = std::make_unique<papaGame::models::characters::CustomerChar>(this);
     obf_4i = std::make_unique<papaGame::managers::MapManager>(this);
     obf_7u = std::make_unique<papaGame::managers::ObjectManager>(this);
@@ -161,16 +233,30 @@ void obf_4R::obf_9k()
     obf_7u->loadTables(gameDir + "/objects.json");
     obf_3Z->loadTables(gameDir + "/items.json");
     obf_V->loadTables(gameDir + "/effects.json");
+    obf_4l->loadTables(gameDir + "/bullets.json");
     obf_6Z = std::make_unique<papaGame::models::GameHUD>(this);
     obf_8O();
 }
 
-// Port: the next level after finishLevel / §_-2K§ (SKELETON: their screens), through §_-9k§ and the stage intro.
+// Port: the bodies of §_-2K§ and §_-99§, at the start of the frame after the display asked for them.
 void obf_4R::runPending()
 {
-    if (pendingLevel >= 0) {
-        obf_8W = pendingLevel;
-        pendingLevel = -1;
+    const Pending what = pending;
+    pending = Pending::None;
+    if (what == Pending::GameOver) {
+        SDL_Log("DEAD");
+        if (obf_8o) {
+            obf_51->totalTimePlayed += obf_8o->currentLevelTimer;
+            SDL_Log("(Updated Time Played)");
+        }
+        obf_51->saveProgress("quitlevel");
+        // (api.§_-6i§, an analytics call, is left out.)
+        obf_Ap();
+        papaGame::screens::MainMenuParams params;
+        params.section = "map";
+        showApiScreen("MainMenu", params);
+    } else if (what == Pending::ResetLevel) {
+        obf_Ap();
         obf_9k();
     }
 }
@@ -245,6 +331,10 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
         mainMenuScreen->destroy();
         pendingDestroyMenu_ = std::move(mainMenuScreen);
     }
+    if (scoreTallyScreen) {
+        scoreTallyScreen->destroy();
+        pendingDestroyTally_ = std::move(scoreTallyScreen);
+    }
     menuBar.clear();
     SDL_Log("API screen: %s", name.c_str());
     apiScreen = name;
@@ -273,6 +363,22 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
                       {{Kind::Action, "menu.start_level", "clickStartLevel"},
                        {Kind::Tab, "menu.back_to_map", "clickBackToMap"}},
                       layout);
+    } else if (name == "PauseMenu") {
+        // SKELETON: the BADDIES, BADGES, CONTROLS and HELP tabs (their sections are not ported yet).
+        mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
+        engine::MenuBar::Layout layout;
+        menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
+                      {{Kind::Action, "menu.back_to_game", "clickBackToGame"},
+                       {Kind::Tab, "menu.info", "clickInfo"},
+                       {Kind::Tab, "menu.credits", "clickCredits"},
+                       {Kind::Back, "menu.quit_level", "clickQuit"}},
+                      layout);
+    } else if (name == "EndOfDay") {
+        scoreTallyScreen = std::make_unique<papaGame::screens::ScoreTallyScreen>(this, obf_5h.get());
+        engine::MenuBar::Layout layout;
+        menuBar.setup(*symbols, text, lang, "title.level_complete",
+                      {{Kind::Back, "menu.quit", "clickQuit"}, {Kind::Action, "menu.continue", "clickContinue"}},
+                      layout);
     } else {
         apiScreen.clear();
     }
@@ -280,7 +386,7 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
 
 bool obf_4R::screensActive() const
 {
-    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr;
+    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr;
 }
 
 bool obf_4R::updateScreens(const engine::PointerState &pointer)
@@ -290,9 +396,19 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     pendingDestroySlots_.reset();
     pendingDestroyStory_.reset();
     pendingDestroyMenu_.reset();
+    pendingDestroyOutro_.reset();
+    pendingDestroyTally_.reset();
+    pendingDestroyNewCustomer_.reset();
     engine::MovieClip::collectGarbage();
     const bool onBar = menuBar.update(pointer, [this](const std::string &event) { dispatchContainerEvent(event); });
-    if (!onBar) {
+    // Port: the HUD sits in the original's display list above the game; here it is drawn by the display, so it
+    // takes the pointer while a level is played without a screen over it (one root per frame: the pointer's
+    // press and roll-over targets are shared).
+    const bool hudTakesPointer = apiScreen.empty() && !screensActive() && obf_AQ->currentScreenData && obf_6Z &&
+                                 obf_6Z->interfaceClip && obf_6Z->interfaceClip->visible();
+    if (hudTakesPointer) {
+        engine::MovieClip::dispatchPointer(*obf_6Z->interfaceClip, engine::Affine{}, pointer);
+    } else if (!onBar) {
         engine::MovieClip::dispatchPointer(*obf_5h, engine::Affine{}, pointer);
     }
     obf_5h->advance();
@@ -310,6 +426,15 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     }
     if (obf_7L) {
         obf_7L->updateScreen();
+    }
+    if (obf_6j) {
+        obf_6j->updateScreen();
+    }
+    if (scoreTallyScreen) {
+        scoreTallyScreen->updateScreen();
+    }
+    if (obf_6p) {
+        obf_6p->updateScreen();
     }
     return screensActive();
 }

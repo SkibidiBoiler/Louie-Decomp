@@ -45,6 +45,7 @@ void GameDisplay::setupPreBlit()
     levelPxHeight = static_cast<double>(tiles.size()) * tileWidth;
     levelTileWidth = static_cast<double>(tiles[0].size());
     levelTileHeight = static_cast<double>(tiles.size());
+    tileStamps_.clear(); // port: tileBMP is made anew (createBitmap)
     createBackground(whichTileset);
     currentXcoord = 0;
     currentYcoord = 0;
@@ -102,8 +103,11 @@ void GameDisplay::advanceFrame()
             } else if (p.isFinishingLevel) {
                 SDL_Log("Should Beat Level:");
                 gameObj->finishLevel();
+            } else if (p.isDead && p.isRidingElevator) {
+                SDL_Log("Should Reset Level (Died in Elevator)");
+                gameObj->obf_99();
             } else {
-                SDL_Log("Should Die"); // SKELETON: §_-99§ when the player died in an elevator
+                SDL_Log("Should Die");
                 gameObj->obf_2K();
             }
         }
@@ -161,15 +165,22 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitObjects(false);
     reblitItems(false, false);
     reblitEnemies(false);
-    if (gameObj->playerObj && gameObj->playerObj->blitter) {
+    reblitBullets(false);
+    const models::characters::CustomerChar *player = gameObj->playerObj.get();
+    if (player && player->blitter &&
+        (!player->onMovingTile || player->isRidingElevator ||
+         (player->whichMovingTile != nullptr && player->whichMovingTile->foreground == false))) {
         reblitMultispritePlayer();
     }
     reblitObjects(true);
-    // SKELETON: the player on a foreground moving tile is drawn here.
+    if (player && player->blitter && player->onMovingTile && player->whichMovingTile != nullptr &&
+        player->whichMovingTile->foreground == true && !player->isRidingElevator) {
+        reblitMultispritePlayer();
+    }
     reblitEnemies(true);
     reblitEffects(true);
     reblitItems(false, true);
-    // SKELETON: bullets and overlays.
+    reblitBullets(true);
     drawTransition();
     // AS: blitEffectsOverlay — the white flash when the player enters the end portal.
     // SKELETON: the rain and lightning of level 11.
@@ -278,6 +289,12 @@ void GameDisplay::blit(const engine::Sheet &sheet, double sx, double sy, double 
     gameObj->bitmapManager->sheets->blit(sheet, static_cast<float>(sx), static_cast<float>(sy),
                                          static_cast<float>(sw), static_cast<float>(sh), static_cast<float>(dx),
                                          static_cast<float>(dy));
+}
+
+void GameDisplay::stampOnTiles(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx,
+                               double dy)
+{
+    tileStamps_.push_back(TileStamp{&sheet, sx, sy, sw, sh, dx, dy});
 }
 
 // AS: GameDisplay.reblitSky
@@ -443,6 +460,9 @@ void GameDisplay::reblitTiles()
         }
     }
     SDL_SetTextureScaleMode(tileSheet->texture, SDL_SCALEMODE_LINEAR);
+    for (const TileStamp &st : tileStamps_) {
+        blit(*st.sheet, st.sx, st.sy, st.sw, st.sh, st.dx - x0, st.dy - y0);
+    }
     SDL_SetRenderTarget(renderer, screen);
     const SDL_FRect src{0, 0, static_cast<float>(screenPxWidth + 1) * s, static_cast<float>(screenPxHeight + 1) * s};
     const SDL_FRect dst{static_cast<float>(x0 - currentXcoord), static_cast<float>(y0 - currentYcoord),
@@ -507,6 +527,32 @@ void GameDisplay::reblitMultispritePlayer()
     // SKELETON: blitCollisionArea (debug bounds) is not drawn.
 }
 
+// AS: GameDisplay.reblitBullets — each bullet's frame, in the row block for its direction (grabFlipOffset).
+void GameDisplay::reblitBullets(bool foreground)
+{
+    managers::BulletManager &manager = *gameObj->obf_4l;
+    for (models::Bullet *b : manager.bullets) {
+        if (!b || !checkOnScreen(*b) || b->foreground != foreground) {
+            continue;
+        }
+        const double frame = b->animationFrame;
+        const double w = b->spritewidth, h = b->spriteheight;
+        const double sx = (frame - std::floor(frame / b->sheetWidth) * b->sheetWidth) * w;
+        const double sy = std::floor(frame / b->sheetWidth) * h + b->grabFlipOffset();
+        const double bx = b->prevX + (b->x - b->prevX) * drawAlpha_;
+        const double by = b->prevY + (b->y - b->prevY) * drawAlpha_;
+        double dx = bx - (b->spriteTargetX - b->spriteCenterX) - currentXcoord - w / 2;
+        double dy = by - (b->spriteTargetY - b->spriteCenterY) - currentYcoord - h / 2;
+        if (!smooth_) {
+            dx = std::floor(dx);
+            dy = std::floor(dy);
+        }
+        if (const engine::Sheet *sheet = b->getSheet()) {
+            blit(*sheet, sx, sy, w, h, dx, dy);
+        }
+    }
+}
+
 } // namespace papaGame::display
 
 namespace papaGame::display {
@@ -563,12 +609,23 @@ void GameDisplay::reblitEnemies(bool foreground)
     }
 }
 
-// AS: GameDisplay.reblitObjects (SKELETON: blitTilingObject, moving tiles the player rides, blitCollisionArea)
+// AS: GameDisplay.reblitObjects (SKELETON: blitTilingObject, blitCollisionArea)
 void GameDisplay::reblitObjects(bool foreground)
 {
     managers::ObjectManager &manager = *gameObj->obf_7u;
-    for (models::GameObject *o : manager.objects) {
+    // The object the player stands on is drawn last, over the others.
+    const size_t count = manager.objects.size();
+    for (size_t i = 0; i <= count; ++i) {
+        models::GameObject *o = nullptr;
+        if (i < count) {
+            o = manager.objects[i];
+        } else if (gameObj->playerObj->onMovingTile) {
+            o = gameObj->playerObj->whichMovingTile;
+        }
         if (!o || o->foreground != foreground || !o->checkOnScreen()) {
+            continue;
+        }
+        if (gameObj->playerObj->whichMovingTile == o && i != count) {
             continue;
         }
         if (o->isLadder) {

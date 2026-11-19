@@ -2,7 +2,7 @@
 // AS: papaGame.models.Character — position, tile collision and movement shared by the player and enemies.
 // Ported so far: getMyCorners, cloud/ladder/edge checks, fallChar, jumpChar, moveChar.
 // Also checkForSlopes / checkForCeilingSlopes, the sprite animation (updateSprite, spriteChangeFrame), health
-// and sprite collisions. SKELETON: moving tiles, crawl gaps and doors.
+// and sprite collisions. SKELETON: crawl gaps and doors.
 #include <climits>
 #include <map>
 #include <string>
@@ -12,6 +12,8 @@ namespace engine { struct JsonValue; }
 namespace obf_9G { class obf_4R; }
 
 namespace papaGame::models {
+
+class GameObject;
 
 // One `...CycleFrames` array: [name, type, blitStyle, randomize, loopFrame, frames] (type 2), or
 // [name, type, blitStyle, randomize, loopFrame, firstFrame, lastFrame] (type 1).
@@ -84,13 +86,14 @@ public:
     double getProximityVolume() const;
     double getProximityPan() const;
     bool isReallyOnScreen() const;
-    bool checkIfOnCloud();
+    virtual bool checkIfOnCloud(); // overridden by Basketball
+    double checkIfOnSlope(double px, double py, bool ignoreJump = false) const;
     bool checkIfLadderBelow();
     bool checkIfHalfOnCloud(double dir);
     bool checkMovingTiles(double y);
     void checkIfAtEdge(double speed, double dir);
-    bool moveChar(double dirx, double diry, double jumpDir, bool bounceAtWalls = false, bool checkEdges = false,
-                  bool collide = true, double fixedSpeed = INT_MAX);
+    virtual bool moveChar(double dirx, double diry, double jumpDir, bool bounceAtWalls = false, bool checkEdges = false,
+                          bool collide = true, double fixedSpeed = INT_MAX); // overridden by Enemy16
     virtual void fallChar();
     virtual void jumpChar(bool collide = true);
     void getMyCorners(double px, double py);
@@ -144,9 +147,10 @@ public:
     bool isFlying = false, isGliding = false, isWallSliding = false, isInQuicksand = false;
     bool isCarryingObject = false, isDead = false, duck = false, canCrawl = false;
     bool onMovingTile = false, onSlopeWallLeft = false, onSlopeWallRight = false;
+    GameObject *whichMovingTile = nullptr; // the object it stands on
     double onSlope = 0;  // slope type under the character (1-10), 0 = none
     double slopeDir = 0;
-    bool onCeiling = false, onlyCheckSolidSlopes = false;
+    bool onCeiling = false, onlyCheckSolidSlopes = false, onGround = false;
     bool onWall = false, canClimbUp = false, bounceX = false, bounceY = false;
     bool shouldCheckCeilingSlopes = false;
     double bounceDecayX = 1, bounceDecayY = 1, numBounces = 0;

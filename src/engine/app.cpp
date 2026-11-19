@@ -302,7 +302,6 @@ void App::tickLevel()
 {
     papaGame::display::GameCam &cam = *game_->obf_3Y;
     cam.savePrevious();
-    game_->runPending();
     game_->obf_71->advanceFrame();
     // Actions -> GameControls.keyPressed* (the original sets them from key events).
     auto &player = *game_->playerObj;
@@ -340,6 +339,7 @@ void App::tickLevel()
     savePrevious(game_->obf_7u->objects);
     savePrevious(game_->obf_3Z->items);
     savePrevious(game_->obf_V->effects);
+    savePrevious(game_->obf_4l->bullets);
     const double heldX = cam.x, heldY = cam.y;
     controls.detectKeys(); // moves the camera (GameCam.adjustCamera)
     if (trace_ && scriptFrame_ == 1) {
@@ -388,6 +388,32 @@ void App::tickLevel()
         }
         if (!enemies.empty()) {
             SDL_Log("E%s", enemies.c_str());
+        }
+        // DEV: the bullets: id:type x,y frame.
+        std::string bullets;
+        for (const papaGame::models::Bullet *b : game_->obf_4l->bullets) {
+            if (b) {
+                char buf[96];
+                SDL_snprintf(buf, sizeof(buf), " %.0f:%s %.0f,%.0f f%.0f", b->id, b->bulletType.c_str(), b->x, b->y,
+                             b->animationFrame);
+                bullets += buf;
+            }
+        }
+        if (!bullets.empty()) {
+            SDL_Log("B%s", bullets.c_str());
+        }
+        // DEV: the steppable objects: id:type x,y frame (r: the player stands on it).
+        std::string steppable;
+        for (const papaGame::models::GameObject *o : game_->obf_7u->objects) {
+            if (o && o->isSteppable) {
+                char buf[96];
+                SDL_snprintf(buf, sizeof(buf), " %.0f:%.0f %.0f,%.0f f%.0f%s", o->id, o->type, o->x, o->y,
+                             o->animationFrame, player.whichMovingTile == o ? " r" : "");
+                steppable += buf;
+            }
+        }
+        if (!steppable.empty()) {
+            SDL_Log("O%s", steppable.c_str());
         }
         // DEV: the effects: id:type x,y.
         std::string effects;
@@ -506,6 +532,12 @@ SDL_AppResult App::event(const SDL_Event &ev)
             return SDL_APP_SUCCESS;
         case SDLK_TAB:
             nextMode();
+            break;
+        case SDLK_P: // port: P opens the pause menu, as the HUD's MENU button does
+            if (mode_ == Mode::Level && game_ && !game_->screensActive() && game_->obf_6Z &&
+                game_->obf_AQ->currentScreenData) {
+                game_->obf_6Z->clickMenu();
+            }
             break;
         case SDLK_LEFTBRACKET:
             switchRoom(-1);
@@ -650,6 +682,9 @@ SDL_AppResult App::iterate()
 void App::tick()
 {
     ++frame_;
+    if (game_) {
+        game_->runPending(); // may end the level
+    }
     if (game_ && game_->obf_AQ->currentScreenData) {
         tickLevel();
     }

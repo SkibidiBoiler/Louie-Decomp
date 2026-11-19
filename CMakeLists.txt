@@ -88,6 +88,7 @@ set(PL_SOURCES
     src/import/symbols_export.cpp
     src/import/sound_export.cpp
     src/game/obf_9G/obf_4R.cpp
+    src/game/papaGame/data/Challenge.cpp
     src/game/papaGame/data/CustomerData.cpp
     src/game/papaGame/data/DataManager.cpp
     src/game/papaGame/data/LevelData.cpp
@@ -99,6 +100,7 @@ set(PL_SOURCES
     src/game/papaGame/events/GameControls.cpp
     src/game/papaGame/display/GameDisplay.cpp
     src/game/papaGame/managers/BitmapManager.cpp
+    src/game/papaGame/managers/BulletManager.cpp
     src/game/papaGame/managers/CharacterBlitter.cpp
     src/game/papaGame/managers/ChallengeManager.cpp
     src/game/papaGame/managers/EffectManager.cpp
@@ -108,24 +110,49 @@ set(PL_SOURCES
     src/game/papaGame/managers/ObjectManager.cpp
     src/game/papaGame/managers/SoundManager.cpp
     src/game/papaGame/models/Character.cpp
+    src/game/papaGame/models/Bullet.cpp
     src/game/papaGame/models/Effect.cpp
+    src/game/papaGame/models/bullets/Banana.cpp
+    src/game/papaGame/models/bullets/Basketball.cpp
+    src/game/papaGame/models/bullets/BlueberryShot.cpp
+    src/game/papaGame/models/bullets/ChiliCan.cpp
+    src/game/papaGame/models/bullets/DogToy.cpp
+    src/game/papaGame/models/bullets/PepperBomb.cpp
+    src/game/papaGame/models/bullets/RomanCandle.cpp
+    src/game/papaGame/models/bullets/XandraStar.cpp
+    src/game/papaGame/models/bullets/GummyOnion.cpp
+    src/game/papaGame/models/bullets/Cookie.cpp
     src/game/papaGame/models/effects/CageBackBarsEffect.cpp
     src/game/papaGame/models/effects/CageFrontBarsEffect.cpp
     src/game/papaGame/models/effects/CageSpinnerEffect.cpp
+    src/game/papaGame/models/effects/BBQBitEffect.cpp
+    src/game/papaGame/models/effects/BlueberryBitEffect.cpp
+    src/game/papaGame/models/effects/BlueberrySplatEffect.cpp
+    src/game/papaGame/models/effects/CheeseBitEffect.cpp
+    src/game/papaGame/models/effects/ChiliBitEffect.cpp
+    src/game/papaGame/models/effects/ChiliSplatEffect.cpp
+    src/game/papaGame/models/effects/CookieBitEffect.cpp
+    src/game/papaGame/models/effects/FeatherEffect.cpp
+    src/game/papaGame/models/effects/SmokeRingEffect.cpp
     src/game/papaGame/models/effects/CrackerBreakEffect.cpp
     src/game/papaGame/models/effects/DizzyEffect.cpp
     src/game/papaGame/models/effects/DustEffect.cpp
     src/game/papaGame/models/effects/EndPortalEffect.cpp
+    src/game/papaGame/models/effects/ExplosionEffect.cpp
     src/game/papaGame/models/effects/ItemBalloonEffect.cpp
     src/game/papaGame/models/effects/ItemCoinEffect.cpp
     src/game/papaGame/models/effects/ItemDaisyEffect.cpp
     src/game/papaGame/models/effects/ItemFizzoCanEffect.cpp
+    src/game/papaGame/models/effects/ItemGoldHelmetEffect.cpp
     src/game/papaGame/models/effects/ItemGummyWormEffect.cpp
     src/game/papaGame/models/effects/ItemHeartEffect.cpp
     src/game/papaGame/models/effects/ItemPapaCoinEffect.cpp
     src/game/papaGame/models/effects/ItemRadishCoinEffect.cpp
     src/game/papaGame/models/effects/ItemSargeCoinEffect.cpp
     src/game/papaGame/models/effects/PlayerCheckpointEffect.cpp
+    src/game/papaGame/models/effects/RomanSparkEffect.cpp
+    src/game/papaGame/models/effects/RomanTrailEffect.cpp
+    src/game/papaGame/models/effects/StarEffect.cpp
     src/game/papaGame/models/effects/StarburstEffect.cpp
     src/game/papaGame/models/effects/ZillaPartsEffect.cpp
     src/game/papaGame/models/Enemy.cpp
@@ -136,12 +163,15 @@ set(PL_SOURCES
     src/game/papaGame/models/items/GameItem_Coin.cpp
     src/game/papaGame/models/items/GameItem_Daisy.cpp
     src/game/papaGame/models/items/GameItem_FizzoCan.cpp
+    src/game/papaGame/models/items/GameItem_GoldHelmet.cpp
     src/game/papaGame/models/items/GameItem_GummyWorm.cpp
     src/game/papaGame/models/items/GameItem_Heart.cpp
     src/game/papaGame/models/items/GameItem_PapaCoin.cpp
     src/game/papaGame/models/items/GameItem_RadishCoin.cpp
     src/game/papaGame/models/items/GameItem_SargeCoin.cpp
     src/game/papaGame/models/objects/GameObject3.cpp
+    src/game/papaGame/models/objects/GameObject4.cpp
+    src/game/papaGame/models/objects/GameObject5.cpp
     src/game/papaGame/models/objects/GameObject1.cpp
     src/game/papaGame/models/objects/GameObject19.cpp
     src/game/papaGame/models/objects/GameObject20.cpp
@@ -154,10 +184,21 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy1.cpp
     src/game/papaGame/models/enemies/Enemy2.cpp
     src/game/papaGame/models/enemies/Enemy6.cpp
+    src/game/papaGame/models/enemies/Enemy3.cpp
+    src/game/papaGame/models/enemies/Enemy4.cpp
+    src/game/papaGame/models/enemies/Enemy7.cpp
+    src/game/papaGame/models/enemies/Enemy8.cpp
+    src/game/papaGame/models/enemies/Enemy12.cpp
+    src/game/papaGame/models/enemies/Enemy14.cpp
+    src/game/papaGame/models/enemies/Enemy15.cpp
+    src/game/papaGame/models/enemies/Enemy16.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
     src/game/papaGame/screens/GameIntroScreen.cpp
     src/game/papaGame/screens/MainMenuScreen.cpp
+    src/game/papaGame/screens/NewCustomerScreen.cpp
+    src/game/papaGame/screens/ScoreTallyScreen.cpp
+    src/game/papaGame/screens/StageOutroScreen.cpp
     src/game/papaGame/screens/SlotSelectScreen.cpp
     src/game/papaGame/screens/SplashScreen.cpp
     src/game/papaGame/screens/StageIntroScreen.cpp

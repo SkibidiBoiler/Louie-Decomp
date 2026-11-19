@@ -36,6 +36,8 @@ public:
                const std::vector<Item> &items, const Layout &layout);
     void clear();
     bool active() const { return active_; }
+    // api.disableButtons / enableButtons: the buttons stop taking the pointer (the bars still cover it).
+    void setEnabled(bool enabled) { enabled_ = enabled; }
     // api.§_-AG§(title): a new title for the current screen.
     void setTitle(const Lang *lang, const std::string &titleKey);
     // The pointer for one logic frame: calls `onEvent(event)` when a button is clicked. True when the pointer
@@ -56,6 +58,7 @@ private:
     const SymbolLibrary *symbols_ = nullptr;
     TextLibrary *text_ = nullptr;
     bool active_ = false;
+    bool enabled_ = true;
     std::string title_;
     Layout layout_;
     std::unique_ptr<MovieClip> top_, bottom_;

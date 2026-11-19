@@ -1,6 +1,8 @@
 # Progress and next steps
 
 Read this first when resuming. Rules and commands: [AGENTS.md](../AGENTS.md).
+Map of the original code (systems, enemies and objects per world, order for what is left):
+[architecture.md](architecture.md).
 
 Translation progress, counted locally: `python -I tools/progress.py` (functions and lines of the game's AS
 whose `// AS:` tag exists in `src/game`; SKELETON code counts, so it is an upper bound). On 2026-11-16, PL2:
@@ -254,7 +256,82 @@ clips with a stop() on frame 1 were playing too). The HUD now shows its MENU and
 Checked (captures and taps): saved slot -> map -> area 1 -> customer choice (Marty, then Rita runs in) -> Start
 Level -> stage intro -> level 0 as Rita; level end regression.
 SKELETON: the baddies, badges, controls, help, info (pause menu) and confirm-quit sections and their tabs, the
-checkpoint ribbon, the tutorial pop-ups, the level-complete screen (ScoreTallyScreen), the pause menu.
+checkpoint ribbon, the tutorial pop-ups, the pause menu.
+(26) Level complete (menus, part 4). `§_-4R§.finishLevel` translated whole (time played; the train loop is
+SKELETON) -> `§_-4G§` `StageOutroScreen` (the customer and the rescued one fall through the warp with the coins
+and warp coins earned) -> the API's EndOfDay, `ScoreTallyScreen`: the values are counted up one after another
+(points, time bonus, challenge bonus, level score; high score and total only when it is a new high score; coins),
+the level's challenges with the rescued faces, the player and the rescued customer jump in among three unlocked
+customers who cheer. Getting the values records the level in the slot (unlockNextLevel, setLevelTime,
+updateAndGetLevelScore, which saves). Bar: LEVEL COMPLETE, QUIT and Continue; the iris closes, then `§_-Ap§` tears
+the level down (the port keeps BitmapManager: it holds the sheet textures) and the map opens (Quit: the title).
+`§_-6V§` now resets lives and tallies and updates the HUD. Engine: code-set rotation (`MovieClip::setRotation`),
+`Lang::get(key, value)` for "{0}" texts.
+Checked: `--level 0 --room 2 --at 12,33` -> cage -> outro -> tally (capture) -> tap Continue -> map; the slot
+saved the high score and time.
+SKELETON: the parade at level 8 (§_-14§ shows the tally), BossIntroScreen,
+ChallengeManager.resetCurrentChallenges, the glow outline of the puppets.
+(27) New customer and pause (menus, part 5). `NewCustomerScreen` (§_-4Z§ / §_-6s§): a customer rescued for the
+first time runs in with their name and skill, then the map. Pause: the HUD's MENU and sound buttons
+(`GameHUD.clickMenu` / `clickMute` / `clickUnmute` / `updateMuteButton`; the HUD takes the pointer during a level),
+`GameControls.pauseGame` / `resumeGame`, the API's PauseMenu (Back to Game, INFO, CREDITS, QUIT LEVEL) on
+`MainMenuScreen`: `setupInfo` (the area, the customer being played, the challenges with their tallies,
+`ChallengeManager.getChallengeTallyString`, this level's and the game's totals, `buildInfoModel`),
+`setupConfirmQuit` (YES / NO; the bars stop taking clicks meanwhile, `MenuBar::setEnabled`), `clickBackToGame`,
+`clickQuit` / `clickConfirmQuit` / `clickCancelQuit`, and `closeMainMenuScreen` quitting the level (time played,
+save, §_-Ap§, the map) or resuming. Port: P opens the pause menu too. Engine fix: `mouseEnabled = false` no longer
+hides a clip's children from the pointer (Flash: that is `mouseChildren`).
+Checked by taps: MENU -> pause (capture) -> Back to Game -> MENU again; QUIT LEVEL -> confirm (capture) -> YES ->
+map. Level 0 cage -> tally -> Continue -> "Customer unlocked!" Taylor (capture) -> map.
+SKELETON: the BADDIES, BADGES, CONTROLS and HELP tabs.
+(28) Challenges (task 15, part 1). `ChallengeManager`: recordTag / unrecordTag, recordCustomerCage,
+recordBurgerzilla, recordCoin, recordSpecialItem (QUIRK: these three add one whatever the amount),
+recordMultiExplosion / Rocket / Juggle, recordCombo, recordCompletionTime, recordEnemyKill, recordMastery,
+checkCustomChallenges, the checkpoint tallies, resetCurrentChallenges (each level starts from 0), the completion
+and badge queues; badges are earned with their reward. `Challenge`: every type's fields (read from the importer's
+params), the tally methods, meetsEnemyRequirements, meetsMasteryRequirements. Hooked: coins (and Georgito's tag),
+cages (and Xandra's in level 9), stuns, cracker blocks, Marty's and Greg's tags, combos, the finish time and the
+custom challenges at the end of a level.
+Checked: level 0 cage -> "COMPLETE CHALLENGE #2", the tally shows it gold with its 500 bonus and one warp key.
+SKELETON: the drop-down that announces challenges and badges (checkForDisplayingDropdown), juggles
+(meetsJuggleRequirements), ObjectManager.getWeaponType for mastery.
+(29) Game over. `§_-4R§.§_-2K§` (out of lives: time played, save, §_-Ap§, the map; PL2 has no game over screen)
+and `§_-99§` (died riding an elevator: the level again), chosen by `GameDisplay` when its death iris ends. The
+display calls them from its own update, so their bodies run at the start of the next frame (`runPending`, now
+before the level's tick). Checked with a forced death (temporary DEV code, removed): DEAD -> saved -> map.
+(30) Bullets, part 1 (task 6). Importer: `bullets.json` (the field constants of Bullet and the 19 bullet
+classes). `Bullet` (extends Character): hitting enemies, the player and objects, bouncing, the direction's row
+block, dead zones. `BulletManager` (§_-4l§): add / process / clear / remove, one sheet per type, addToPreblit and
+preblitSheets (from DataManager.initializeScreenObjects). `CustomerChar.hasProjectile` / `shootWeapon` (the muzzle
+offsets from customerchar.json; Xandra's three stars), fired from checkIfAttacking. `GameDisplay.reblitBullets`
+(behind and in front). `Basketball` (Connor): the arc, two bounces, the burst that hits around it.
+`Character.checkIfOnSlope`; `checkIfOnCloud` is virtual (Basketball overrides it). DEV: `--trace` prints a B line
+with each bullet's id, type, position and frame.
+Checked: `--customer 16 --input A100-104` -> the ball arcs right and bounces (trace and capture).
+SKELETON: the bazooka's camera jiggle.
+(31) Bullets, part 2: `DogToy` (Prudence: squeaks, three bounces), `PepperBomb` (Big Pauly: explodes where it
+lands; `ExplosionEffect`), `GummyOnion` (Sarge Fan: four bounces, higher then lower), `Cookie` (Yippy: crumbles
+where it lands; `CookieBitEffect`). Checked by trace with `--customer 2 / 8 / 13 / 19`.
+`RomanCandle` (Boomer: a curving rocket with a smoke trail that stuns; `RomanSparkEffect`, `RomanTrailEffect`).
+`XandraStar` (three stars in a fan, twinkling; `StarEffect`).
+(32) Bullets, part 3: `Banana` (Akari: curves until it hits a wall or the floor, then bounces and bursts on the
+second bounce; `SmokeRingEffect` following the player, `CheeseBitEffect`), `ChiliCan` (Rico: lobbed, bursts
+with `ChiliBitEffect`, `BBQBitEffect`, `ChiliSplatEffect`), `BlueberryShot` (Penny: straight, then curves down;
+`BlueberryBitEffect`, `BlueberrySplatEffect`). Their `addSplatter` stains are `GameDisplay::stampOnTiles` (the
+port has no pre-rendered tileBMP: stamps in level coordinates, drawn after the tiles, cleared by setupPreBlit).
+Checked by trace with `--customer 6 / 22 / 12` and a capture of the chili stain.
+Note: `--trace` must not be the last argument (the option loop reads pairs).
+SKELETON: the enemies' and the cheese cannon's bullets.
+(33) Lettuce Lane: `Enemy7` (Roma tomato: hops forward non-stop, turning at walls), `Enemy12` (slider: winds up,
+slides and slows, turns; a stomp hurts it), `Enemy14` (lark: flies between two rows; a hit knocks it down in
+`FeatherEffect`s, then it hops). Standing on objects: `GameObject.checkStartStepping / stepOnObject /
+stopStandingOnObject / checkStandingOnObject`, `ObjectManager.checkSteppingOnObjects` (called by the player),
+`Character.checkMovingTiles` and `whichMovingTile`, the tile's `standingWalkSpeed`, and the draw order (the
+ridden object last; the player over a foreground one). Port: `ObjectManager::releaseStandingChars` clears
+`whichMovingTile` when its object is freed. Blimps `GameObject4` / `GameObject5` (bob, sag under the rider,
+tween in for bosses). The spawner enemies' `removeEnemy` now calls `unregisterSpawn` (Enemy1, 2, 6).
+DEV: the trace's `O` line lists the steppable objects (`r`: ridden). Checked by trace (level 2 room 2-3,
+level 3 room 2) and a capture of the player on a blimp.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects
@@ -279,3 +356,9 @@ player at the room's `startPoint`; then `Character`/`PlayerChar`/`CustomerChar` 
 
 Enemies, objects, items, HUD/menus (needs masks/filters/text → SDL_GPU renderer), widescreen, options
 menu, translations, touch-control editor, PL3 (shares the engine), PL1 (AS2, separate).
+(34) Fort Onion, part 1 (work in progress): `Enemy3` army onion (collapses into its helmet when stomped), `Enemy4`
+gold army onion (drops `GameItem_GoldHelmet`, `ItemGoldHelmetEffect`), `Enemy8` runt tomato, `Enemy15` leafy lark,
+`Enemy16` dill wheel (its own `moveChar` round floors, walls and ceilings; `obf_8J` linear easing). `moveChar` and
+`adjustSpeedForSlopes` are virtual; EnemyManager gives subclasses their parent's cycle arrays. Fort Onion is
+`--level 2`. Checked by trace: only the army onions of room 1. Next: test 8/15/16 and the helmet, then GameObject6,
+7, 17, 18.

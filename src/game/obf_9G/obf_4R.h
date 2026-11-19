@@ -23,6 +23,7 @@
 #include "game/papaGame/events/GameControls.h"
 #include "game/papaGame/display/GameDisplay.h"
 #include "game/papaGame/managers/BitmapManager.h"
+#include "game/papaGame/managers/BulletManager.h"
 #include "game/papaGame/managers/ChallengeManager.h"
 #include "game/papaGame/managers/EffectManager.h"
 #include "game/papaGame/managers/EnemyManager.h"
@@ -34,6 +35,9 @@
 #include "game/papaGame/models/characters/CustomerChar.h"
 #include "game/papaGame/screens/GameIntroScreen.h"
 #include "game/papaGame/screens/MainMenuScreen.h"
+#include "game/papaGame/screens/NewCustomerScreen.h"
+#include "game/papaGame/screens/ScoreTallyScreen.h"
+#include "game/papaGame/screens/StageOutroScreen.h"
 #include "game/papaGame/screens/SlotSelectScreen.h"
 #include "game/papaGame/screens/SplashScreen.h"
 #include "game/papaGame/screens/StageIntroScreen.h"
@@ -58,6 +62,7 @@ public:
     void finishLevel();
     // AS: §_-4R§.§_-2K§ — out of lives. SKELETON: the game over screen; the level starts again instead.
     void obf_2K();
+    void obf_99(); // AS: §_-99§, the level again (died in an elevator)
     // AS: §_-4R§.§_-9k§ — a fresh player, HUD and managers for a level (the original builds them per level).
     void obf_9k();
     // Port: a level change asked for from inside the game loop (finishLevel / §_-2K§ run from GameDisplay) happens
@@ -70,6 +75,12 @@ public:
     void obf_Q();
     void obf_q();
     // AS: §_-4R§.§_-19§ / §_-5a§ — create / destroy the GameIntroScreen (the story).
+    void obf_4G(); // AS: §_-4G§, the stage outro
+    void obf_58(); // AS: §_-58§
+    void obf_4Z(double whichCustomer); // AS: §_-4Z§, the new customer screen
+    void obf_6s(); // AS: §_-6s§
+    void obf_14(bool fromLevel = true); // AS: §_-14§, the parade
+    void obf_Ap(); // AS: §_-Ap§, the level is torn down
     void obf_19();
     void obf_5a();
 
@@ -107,12 +118,16 @@ public:
     std::unique_ptr<papaGame::managers::ObjectManager> obf_7u;
     std::unique_ptr<papaGame::managers::ItemManager> obf_3Z;
     std::unique_ptr<papaGame::managers::EffectManager> obf_V;
+    std::unique_ptr<papaGame::managers::BulletManager> obf_4l;
     std::unique_ptr<papaGame::managers::ChallengeManager> obf_94;
     std::unique_ptr<papaGame::events::EventManager> obf_7t;
     std::unique_ptr<papaGame::managers::SoundManager> obf_7C;
     double obf_8W = 0; // AS: §_-8W§, the world (level) being played
     std::string gameDir;      // port: where loadLevelData read the tables
-    double pendingLevel = -1; // port: see runPending
+    // Port: §_-2K§ / §_-99§ tear the level down; the display calls them from its own update, so they run at the
+    // start of the next frame (runPending).
+    enum class Pending { None, GameOver, ResetLevel };
+    Pending pending = Pending::None;
     std::unique_ptr<papaGame::models::GameHUD> obf_6Z; // created by loadLevelData, once the tables exist
     std::unique_ptr<engine::MovieClip> obf_5h; // AS: §_-5h§, the container the screens add their clips to
     std::unique_ptr<papaGame::screens::StageIntroScreen> obf_7L;
@@ -120,6 +135,9 @@ public:
     std::unique_ptr<papaGame::screens::SlotSelectScreen> slotSelectScreen; // port: the API's SlotSelect
     std::unique_ptr<papaGame::screens::GameIntroScreen> obf_3U;
     std::unique_ptr<papaGame::screens::MainMenuScreen> mainMenuScreen; // port: the API's MainMenu / MapSelectMenu
+    std::unique_ptr<papaGame::screens::StageOutroScreen> obf_6j;
+    std::unique_ptr<papaGame::screens::NewCustomerScreen> obf_6p;
+    std::unique_ptr<papaGame::screens::ScoreTallyScreen> scoreTallyScreen; // port: the API's EndOfDay
     const engine::Lang *lang = nullptr;      // port: the menu bars' texts
     engine::MaskLayers *masks = nullptr;     // port: offscreen layers for masks
     engine::MenuBar menuBar;                 // port: see showApiScreen
@@ -133,6 +151,9 @@ private:
     std::unique_ptr<papaGame::screens::SlotSelectScreen> pendingDestroySlots_;
     std::unique_ptr<papaGame::screens::GameIntroScreen> pendingDestroyStory_;
     std::unique_ptr<papaGame::screens::MainMenuScreen> pendingDestroyMenu_;
+    std::unique_ptr<papaGame::screens::StageOutroScreen> pendingDestroyOutro_;
+    std::unique_ptr<papaGame::screens::ScoreTallyScreen> pendingDestroyTally_;
+    std::unique_ptr<papaGame::screens::NewCustomerScreen> pendingDestroyNewCustomer_;
 };
 
 } // namespace obf_9G

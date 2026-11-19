@@ -25,6 +25,9 @@ public:
     bool loadTables(const std::string &path);
     // AS: PlayerChar.startupPlayer (position part) / CustomerChar.startupPlayer
     void startupPlayer(double tileX, double tileY, bool newLevel = false, bool keepFacing = false);
+    bool hasProjectile() const;
+    void shootWeapon(const std::string &bulletName, bool unused1 = false, const char *unused2 = nullptr,
+                     double unused3 = 2, double unused4 = 0.5);
     double getTorsoOffsetX() const;
     double getTorsoOffsetY() const;
 
@@ -116,6 +119,7 @@ public:
     double attackVariation = 1, postAttackDelayTimer = 0, postAttackDelayMax = 1;
     double startAttackFrame = 0, endAttackFrame = 4, repeatAttackFrame = 6;
     double reloadTimer = 0, reloadTimerMax = 1, bulletTimer = 0, bulletsFired = 0, bulletsPerRound = 1;
+    double lastShotTime = 0;
     double comboTally = 0, comboTimer = 0, comboTimerMax = 90;
     bool wasPushing = false;
     bool isFinalBlow = false, isInvincible = false, isStartingGrabbing = false, canAutoWallJump = false;
@@ -139,12 +143,16 @@ public:
     std::string footCycleName = "none";
     double footAnimationFrame = 0, footCycleFrame = 0;
 
-private:
+    // AS: PlayerChar.playerData (the selected customer's CustomerDataFile)
     const data::CustomerDataFile *playerData() const;
+
+private:
     std::string slideCycleName(const std::string &customerName) const;
 
     CycleTable cycles_; // by field name, e.g. "runCycleFrames"
     std::vector<double> torsoOffsetsX_, torsoOffsetsY_;
+    std::vector<double> shootTossX_, shootTossY_, shootBazookaX_, shootBazookaY_, shootLonggunX_, shootLonggunY_;
+    std::vector<double> shootPistolX_, shootPistolY_; // AS: shoot_<weapon>_offsetsX / Y
     Rect melee_attackRect, swing_attackRect, whip_attackRect, other_attackRect;
     std::vector<double> melee_frameRange, swing_frameRange, whip_frameRange, other_frameRange;
 };

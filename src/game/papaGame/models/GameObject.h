@@ -51,6 +51,10 @@ public:
     virtual void getHit(double /*damage*/ = 1) {}
     bool acceptsDamage(const std::string &kind, const std::string &weapon) const;
     virtual bool checkPushingObject() { return false; } // SKELETON: pushable objects
+    void checkStartStepping(Character &c, bool alreadyOnObject = false);
+    void stepOnObject(Character &c);
+    virtual void stopStandingOnObject(Character &c);
+    virtual bool checkStandingOnObject(Character &c);
 
     std::string objectname;
     double whichScreen = -1;
@@ -120,6 +124,12 @@ public:
     double initialY = 0;
     bool isSteppable = false;
     bool isSteppableByObjects = false;
+    std::vector<Character *> standingChars;
+    std::vector<double> standingCharsLastX;
+    double standOffset = 0;
+    double standingWalkSpeed = 7;
+    bool isThrowing = false;
+    bool hasLandedAfterThrown = false;
 
 private:
     static CycleTable base_;

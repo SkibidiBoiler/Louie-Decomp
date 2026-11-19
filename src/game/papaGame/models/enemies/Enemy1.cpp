@@ -75,7 +75,7 @@ void Enemy1::stunEnemy()
     isJumpUnstunning = false;
     stunStartTime = 0;
     if (!didTagStun) {
-        // SKELETON: ChallengeManager.recordTag("enemyStun").
+        gameObj->obf_94->recordTag("enemyStun");
         didTagStun = true;
     }
 }
@@ -131,7 +131,9 @@ void Enemy1::endAnimationCycle()
 void Enemy1::removeEnemy()
 {
     if (spawnerObjectID != -1) {
-        // SKELETON: ObjectManager.getObject(spawnerObjectID, whichScreen).unregisterSpawn() (objects).
+        if (GameObject *spawner = gameObj->obf_7u->getObject(spawnerObjectID, whichScreen)) {
+            spawner->unregisterSpawn();
+        }
     }
     Enemy::removeEnemy();
 }

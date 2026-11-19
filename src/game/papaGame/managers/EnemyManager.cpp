@@ -6,8 +6,16 @@
 #include "game/obf_9G/obf_4R.h"
 #include "game/papaGame/models/enemies/Enemy1.h"
 #include "game/papaGame/models/enemies/Enemy2.h"
+#include "game/papaGame/models/enemies/Enemy3.h"
 #include "game/papaGame/models/enemies/Enemy34.h"
+#include "game/papaGame/models/enemies/Enemy4.h"
 #include "game/papaGame/models/enemies/Enemy6.h"
+#include "game/papaGame/models/enemies/Enemy7.h"
+#include "game/papaGame/models/enemies/Enemy12.h"
+#include "game/papaGame/models/enemies/Enemy14.h"
+#include "game/papaGame/models/enemies/Enemy15.h"
+#include "game/papaGame/models/enemies/Enemy16.h"
+#include "game/papaGame/models/enemies/Enemy8.h"
 
 namespace papaGame::managers {
 
@@ -20,7 +28,15 @@ std::unique_ptr<models::Enemy> createEnemy(obf_9G::obf_4R *gameObj, double type)
     switch (static_cast<int>(type)) {
     case 1: return std::make_unique<Enemy1>(gameObj);
     case 2: return std::make_unique<Enemy2>(gameObj);
+    case 3: return std::make_unique<Enemy3>(gameObj);
+    case 4: return std::make_unique<Enemy4>(gameObj);
     case 6: return std::make_unique<Enemy6>(gameObj);
+    case 7: return std::make_unique<Enemy7>(gameObj);
+    case 8: return std::make_unique<Enemy8>(gameObj);
+    case 12: return std::make_unique<Enemy12>(gameObj);
+    case 14: return std::make_unique<Enemy14>(gameObj);
+    case 15: return std::make_unique<Enemy15>(gameObj);
+    case 16: return std::make_unique<Enemy16>(gameObj);
     case 34: return std::make_unique<Enemy34>(gameObj);
     default: return nullptr; // SKELETON: the other enemy types are not ported yet
     }
@@ -52,6 +68,14 @@ bool EnemyManager::loadTables(const std::string &path)
             models::Enemy::loadTables(fields);
         } else {
             models::parseCycleTable(fields, tables_[name]);
+        }
+    }
+    // Port: the importer keeps each class's own arrays; a subclass also gets its parent's.
+    static const std::pair<const char *, const char *> parents[] = {
+        {"Enemy4", "Enemy3"}, {"Enemy10", "Enemy9"}, {"Enemy11", "Enemy9"}, {"Enemy39", "Enemy38"}};
+    for (const auto &[child, parent] : parents) {
+        for (const auto &[field, cycle] : tables_[parent]) {
+            tables_[child].emplace(field, cycle);
         }
     }
     return true;
@@ -190,6 +214,18 @@ models::Enemy *EnemyManager::getEnemy(double screenObjID, double whichScreen) co
         }
     }
     return nullptr;
+}
+
+// AS: EnemyManager.checkEnemyTypeOnScreen — is any enemy of this type on screen?
+bool EnemyManager::checkEnemyTypeOnScreen(double type) const
+{
+    const display::GameDisplay &d = *gameObj->obf_71;
+    for (models::Enemy *e : enemies) {
+        if (e && e->type == type && d.checkOnScreen(*e)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // AS: EnemyManager.addToPreblit

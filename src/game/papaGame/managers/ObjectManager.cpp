@@ -14,6 +14,8 @@
 #include "game/papaGame/models/objects/GameObject25.h"
 #include "game/papaGame/models/objects/GameObject28.h"
 #include "game/papaGame/models/objects/GameObject3.h"
+#include "game/papaGame/models/objects/GameObject4.h"
+#include "game/papaGame/models/objects/GameObject5.h"
 
 namespace papaGame::managers {
 
@@ -26,6 +28,8 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     switch (static_cast<int>(type)) {
     case 1: return std::make_unique<GameObject1>(gameObj);
     case 3: return std::make_unique<GameObject3>(gameObj);
+    case 4: return std::make_unique<GameObject4>(gameObj);
+    case 5: return std::make_unique<GameObject5>(gameObj);
     case 19: return std::make_unique<GameObject19>(gameObj);
     case 20: return std::make_unique<GameObject20>(gameObj);
     case 21: return std::make_unique<GameObject21>(gameObj);
@@ -73,13 +77,43 @@ models::GameObject *ObjectManager::getObject(double screenObjID, double whichScr
     return nullptr;
 }
 
-// AS: ObjectManager.checkSteppingOnObjects
-void ObjectManager::checkSteppingOnObjects(models::Character &c, bool /*byObject*/)
+// AS: ObjectManager.checkSteppingOnObjects — byObject: an object looking for objects that carry objects.
+void ObjectManager::checkSteppingOnObjects(models::Character &c, bool byObject)
 {
+    bool alreadyOnObject = false;
     if (c.onMovingTile) {
+        alreadyOnObject = true;
         c.checkMovingTiles(1);
     }
-    // SKELETON: steppable objects (blimps, berries) call checkStartStepping here.
+    for (size_t i = 0; i < objects.size(); ++i) {
+        if (models::GameObject *o = objects[i]) {
+            if (o->isSteppable && (!byObject || o->isSteppableByObjects)) {
+                o->checkStartStepping(c, alreadyOnObject);
+            }
+        }
+    }
+}
+
+// Port: a character still standing on a freed object lets go of it (the original keeps the stale reference, and
+// its next checkMovingTiles finds it is no longer standing there).
+void ObjectManager::releaseStandingChars(models::GameObject &o)
+{
+    if (gameObj->playerObj && gameObj->playerObj->whichMovingTile == &o) {
+        gameObj->playerObj->whichMovingTile = nullptr;
+        gameObj->playerObj->onMovingTile = false;
+    }
+    for (models::Enemy *e : gameObj->obf_E->enemies) {
+        if (e && e->whichMovingTile == &o) {
+            e->whichMovingTile = nullptr;
+            e->onMovingTile = false;
+        }
+    }
+    for (models::GameObject *other : objects) {
+        if (other && other->whichMovingTile == &o) {
+            other->whichMovingTile = nullptr;
+            other->onMovingTile = false;
+        }
+    }
 }
 
 // AS: ObjectManager.addObject — returns the new object's id.
@@ -134,6 +168,7 @@ void ObjectManager::clearObjects(double whichScreen, bool all, bool /*resetCount
         models::GameObject *o = objects[static_cast<size_t>(i)];
         if (o && (o->whichScreen == whichScreen || all)) {
             o->destroy();
+            releaseStandingChars(*o);
             auto it = byID_.find(o->id);
             if (it != byID_.end()) {
                 graveyard_.push_back(std::move(it->second));
@@ -201,6 +236,7 @@ void ObjectManager::removeObject(double objectID, bool nosplice)
                 objects.erase(objects.begin() + static_cast<std::ptrdiff_t>(i));
             }
             o->destroy();
+            releaseStandingChars(*o);
             graveyard_.push_back(std::move(it->second));
             byID_.erase(it);
             return;

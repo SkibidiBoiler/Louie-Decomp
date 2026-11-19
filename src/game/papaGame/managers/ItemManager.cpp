@@ -8,6 +8,7 @@
 #include "game/papaGame/models/items/GameItem_Coin.h"
 #include "game/papaGame/models/items/GameItem_Daisy.h"
 #include "game/papaGame/models/items/GameItem_FizzoCan.h"
+#include "game/papaGame/models/items/GameItem_GoldHelmet.h"
 #include "game/papaGame/models/items/GameItem_GummyWorm.h"
 #include "game/papaGame/models/items/GameItem_Heart.h"
 #include "game/papaGame/models/items/GameItem_PapaCoin.h"
@@ -49,7 +50,10 @@ std::unique_ptr<models::GameItem> createItem(obf_9G::obf_4R *gameObj, const std:
     if (type == "GummyWorm") {
         return std::make_unique<GameItem_GummyWorm>(gameObj);
     }
-    return nullptr; // SKELETON: GameItem_GoldHelmet and the dropped weapons
+    if (type == "GoldHelmet") {
+        return std::make_unique<GameItem_GoldHelmet>(gameObj);
+    }
+    return nullptr; // SKELETON: the dropped weapons
 }
 
 } // namespace

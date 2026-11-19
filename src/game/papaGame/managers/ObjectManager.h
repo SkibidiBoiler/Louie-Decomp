@@ -24,6 +24,7 @@ public:
 
     models::GameObject *getObject(double screenObjID, double whichScreen) const;
     void checkSteppingOnObjects(models::Character &c, bool byObject = false);
+    void releaseStandingChars(models::GameObject &o); // port: no dangling whichMovingTile
     double addObject(double xtile, double ytile, double type, double whichScreen, double screenObjID,
                      const std::vector<as3::Value> &extraParams = {});
     void processObjects();
