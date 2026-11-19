@@ -6,6 +6,7 @@
 #include "engine/json.h"
 #include "game/as3.h"
 #include "game/obf_9G/obf_4R.h"
+#include "game/papaGame/models/GameObject.h"
 
 namespace papaGame::models {
 
@@ -52,11 +53,22 @@ bool Character::checkIfHalfOnCloud(double dir)
     return dir == 1 && right == 1 && ytile != downY;
 }
 
-// AS: Character.checkMovingTiles
+// AS: Character.checkMovingTiles — still standing on its object? (A jump queued meanwhile is dropped.)
 bool Character::checkMovingTiles(double)
 {
-    // SKELETON: moving tiles (whichMovingTile.checkStandingOnObject) come with the objects.
-    return false;
+    bool standing = false;
+    if (onMovingTile) {
+        if (whichMovingTile) {
+            standing = whichMovingTile->checkStandingOnObject(*this);
+        }
+    }
+    if (standing) {
+        if (triggerjump || triggerjumpx) {
+            triggerjump = false;
+            triggerjumpx = false;
+        }
+    }
+    return standing;
 }
 
 // AS: Character.checkIfAtEdge

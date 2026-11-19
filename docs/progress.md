@@ -322,6 +322,16 @@ port has no pre-rendered tileBMP: stamps in level coordinates, drawn after the t
 Checked by trace with `--customer 6 / 22 / 12` and a capture of the chili stain.
 Note: `--trace` must not be the last argument (the option loop reads pairs).
 SKELETON: the enemies' and the cheese cannon's bullets.
+(33) Lettuce Lane: `Enemy7` (Roma tomato: hops forward non-stop, turning at walls), `Enemy12` (slider: winds up,
+slides and slows, turns; a stomp hurts it), `Enemy14` (lark: flies between two rows; a hit knocks it down in
+`FeatherEffect`s, then it hops). Standing on objects: `GameObject.checkStartStepping / stepOnObject /
+stopStandingOnObject / checkStandingOnObject`, `ObjectManager.checkSteppingOnObjects` (called by the player),
+`Character.checkMovingTiles` and `whichMovingTile`, the tile's `standingWalkSpeed`, and the draw order (the
+ridden object last; the player over a foreground one). Port: `ObjectManager::releaseStandingChars` clears
+`whichMovingTile` when its object is freed. Blimps `GameObject4` / `GameObject5` (bob, sag under the rider,
+tween in for bosses). The spawner enemies' `removeEnemy` now calls `unregisterSpawn` (Enemy1, 2, 6).
+DEV: the trace's `O` line lists the steppable objects (`r`: ridden). Checked by trace (level 2 room 2-3,
+level 3 room 2) and a capture of the player on a blimp.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

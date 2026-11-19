@@ -287,6 +287,76 @@ void GameObject::setEventTriggers(double necessary, const std::vector<std::vecto
     fromTriggerArray = from;
 }
 
+// AS: GameObject.checkStartStepping — a character over the top of the object, falling (or walking on from another
+// object), steps on it.
+void GameObject::checkStartStepping(Character &c, bool alreadyOnObject)
+{
+    const double charRight = c.x + c.width;
+    const double charLeft = c.x - c.width;
+    const double right = x + collRect.x + collRect.width;
+    const double left = x + collRect.x;
+    if ((!isThrowing || hasLandedAfterThrown) && !isGrabbed) {
+        if (charRight > left && charLeft < right) {
+            const double above = y - c.y;
+            const double reach = spriteTargetY + c.height - standOffset + 3;
+            if (above <= reach && c.y < y - spriteTargetY + standOffset + 10) {
+                if ((c.jump && c.jumpspeed >= 0) || (!c.jump && c.onMovingTile == false && alreadyOnObject)) {
+                    stepOnObject(c);
+                }
+            }
+        }
+    }
+}
+
+// AS: GameObject.stepOnObject
+void GameObject::stepOnObject(Character &c)
+{
+    if (!isDeactivated) {
+        if (std::find(standingChars.begin(), standingChars.end(), &c) == standingChars.end()) {
+            standingChars.push_back(&c);
+            standingCharsLastX.push_back(c.x);
+        }
+        c.jump = false;
+        c.onMovingTile = true;
+        c.whichMovingTile = this;
+    }
+}
+
+// AS: GameObject.stopStandingOnObject
+void GameObject::stopStandingOnObject(Character &c)
+{
+    c.onMovingTile = false;
+    c.whichMovingTile = nullptr;
+    auto it = std::find(standingChars.begin(), standingChars.end(), &c);
+    if (it != standingChars.end()) {
+        standingCharsLastX.erase(standingCharsLastX.begin() + (it - standingChars.begin()));
+        standingChars.erase(it);
+    }
+}
+
+// AS: GameObject.checkStandingOnObject — off the sides, jumping up, grabbed or on a slope ends it.
+bool GameObject::checkStandingOnObject(Character &c)
+{
+    bool standing = true;
+    const double charRight = c.x + c.width;
+    const double charLeft = c.x - c.width;
+    const double right = x + collRect.x + collRect.width;
+    const double left = x + collRect.x;
+    if (charRight < left || charLeft > right) {
+        standing = false;
+    } else if (c.jump && c.jumpspeed < 0) {
+        standing = false;
+    } else if (isGrabbed) {
+        standing = false;
+    } else if (c.onSlope) {
+        standing = false;
+    }
+    if (!standing) {
+        stopStandingOnObject(c);
+    }
+    return standing;
+}
+
 // AS: GameObject.checkOnScreen
 bool GameObject::checkOnScreen()
 {

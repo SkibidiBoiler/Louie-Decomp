@@ -402,6 +402,19 @@ void App::tickLevel()
         if (!bullets.empty()) {
             SDL_Log("B%s", bullets.c_str());
         }
+        // DEV: the steppable objects: id:type x,y frame (r: the player stands on it).
+        std::string steppable;
+        for (const papaGame::models::GameObject *o : game_->obf_7u->objects) {
+            if (o && o->isSteppable) {
+                char buf[96];
+                SDL_snprintf(buf, sizeof(buf), " %.0f:%.0f %.0f,%.0f f%.0f%s", o->id, o->type, o->x, o->y,
+                             o->animationFrame, player.whichMovingTile == o ? " r" : "");
+                steppable += buf;
+            }
+        }
+        if (!steppable.empty()) {
+            SDL_Log("O%s", steppable.c_str());
+        }
         // DEV: the effects: id:type x,y.
         std::string effects;
         for (const papaGame::models::Effect *fx : game_->obf_V->effects) {

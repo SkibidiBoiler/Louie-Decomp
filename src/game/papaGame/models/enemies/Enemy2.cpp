@@ -158,7 +158,9 @@ void Enemy2::endAnimationCycle()
 void Enemy2::removeEnemy()
 {
     if (spawnerObjectID != -1) {
-        // SKELETON: ObjectManager.getObject(spawnerObjectID, whichScreen).unregisterSpawn() (objects).
+        if (GameObject *spawner = gameObj->obf_7u->getObject(spawnerObjectID, whichScreen)) {
+            spawner->unregisterSpawn();
+        }
     }
     Enemy::removeEnemy();
 }

@@ -1427,8 +1427,9 @@ void CustomerChar::updateObject()
             baseSpeed = 5;
         } else if (isInQuicksand) {
             baseSpeed = 5;
+        } else if (onMovingTile && whichMovingTile != nullptr) {
+            baseSpeed = whichMovingTile->standingWalkSpeed;
         }
-        // SKELETON: on a moving tile the base speed is the tile's standingWalkSpeed.
         // Uphill on the steep slopes is slower (67 degrees) than downhill (55).
         double steepAngle = 55;
         if ((onSlope == 7 || onSlope == 8) && walkingDir == 1) {
@@ -1613,8 +1614,8 @@ void CustomerChar::updateObject()
         checkForHittingObjects();
         checkForCollectingItems();
         checkForGrabbingTile();
-        // SKELETON: checkSteppingOnObjects,
-        // adjustCarriedObject.
+        gameObj->obf_7u->checkSteppingOnObjects(*this);
+        // SKELETON: adjustCarriedObject.
         checkIfOnDoor();
         updateStunTime();
         updateComboTimer();

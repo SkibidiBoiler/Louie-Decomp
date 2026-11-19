@@ -8,6 +8,9 @@
 #include "game/papaGame/models/enemies/Enemy2.h"
 #include "game/papaGame/models/enemies/Enemy34.h"
 #include "game/papaGame/models/enemies/Enemy6.h"
+#include "game/papaGame/models/enemies/Enemy7.h"
+#include "game/papaGame/models/enemies/Enemy12.h"
+#include "game/papaGame/models/enemies/Enemy14.h"
 
 namespace papaGame::managers {
 
@@ -21,6 +24,9 @@ std::unique_ptr<models::Enemy> createEnemy(obf_9G::obf_4R *gameObj, double type)
     case 1: return std::make_unique<Enemy1>(gameObj);
     case 2: return std::make_unique<Enemy2>(gameObj);
     case 6: return std::make_unique<Enemy6>(gameObj);
+    case 7: return std::make_unique<Enemy7>(gameObj);
+    case 12: return std::make_unique<Enemy12>(gameObj);
+    case 14: return std::make_unique<Enemy14>(gameObj);
     case 34: return std::make_unique<Enemy34>(gameObj);
     default: return nullptr; // SKELETON: the other enemy types are not ported yet
     }

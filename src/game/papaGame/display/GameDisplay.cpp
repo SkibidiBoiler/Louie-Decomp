@@ -166,11 +166,17 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     reblitItems(false, false);
     reblitEnemies(false);
     reblitBullets(false);
-    if (gameObj->playerObj && gameObj->playerObj->blitter) {
+    const models::characters::CustomerChar *player = gameObj->playerObj.get();
+    if (player && player->blitter &&
+        (!player->onMovingTile || player->isRidingElevator ||
+         (player->whichMovingTile != nullptr && player->whichMovingTile->foreground == false))) {
         reblitMultispritePlayer();
     }
     reblitObjects(true);
-    // SKELETON: the player on a foreground moving tile is drawn here.
+    if (player && player->blitter && player->onMovingTile && player->whichMovingTile != nullptr &&
+        player->whichMovingTile->foreground == true && !player->isRidingElevator) {
+        reblitMultispritePlayer();
+    }
     reblitEnemies(true);
     reblitEffects(true);
     reblitItems(false, true);
@@ -607,8 +613,19 @@ void GameDisplay::reblitEnemies(bool foreground)
 void GameDisplay::reblitObjects(bool foreground)
 {
     managers::ObjectManager &manager = *gameObj->obf_7u;
-    for (models::GameObject *o : manager.objects) {
+    // The object the player stands on is drawn last, over the others.
+    const size_t count = manager.objects.size();
+    for (size_t i = 0; i <= count; ++i) {
+        models::GameObject *o = nullptr;
+        if (i < count) {
+            o = manager.objects[i];
+        } else if (gameObj->playerObj->onMovingTile) {
+            o = gameObj->playerObj->whichMovingTile;
+        }
         if (!o || o->foreground != foreground || !o->checkOnScreen()) {
+            continue;
+        }
+        if (gameObj->playerObj->whichMovingTile == o && i != count) {
             continue;
         }
         if (o->isLadder) {

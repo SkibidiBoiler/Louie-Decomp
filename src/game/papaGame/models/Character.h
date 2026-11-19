@@ -13,6 +13,8 @@ namespace obf_9G { class obf_4R; }
 
 namespace papaGame::models {
 
+class GameObject;
+
 // One `...CycleFrames` array: [name, type, blitStyle, randomize, loopFrame, frames] (type 2), or
 // [name, type, blitStyle, randomize, loopFrame, firstFrame, lastFrame] (type 1).
 struct AnimationCycle {
@@ -145,6 +147,7 @@ public:
     bool isFlying = false, isGliding = false, isWallSliding = false, isInQuicksand = false;
     bool isCarryingObject = false, isDead = false, duck = false, canCrawl = false;
     bool onMovingTile = false, onSlopeWallLeft = false, onSlopeWallRight = false;
+    GameObject *whichMovingTile = nullptr; // the object it stands on
     double onSlope = 0;  // slope type under the character (1-10), 0 = none
     double slopeDir = 0;
     bool onCeiling = false, onlyCheckSolidSlopes = false;
