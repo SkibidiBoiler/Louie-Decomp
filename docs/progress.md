@@ -256,7 +256,21 @@ clips with a stop() on frame 1 were playing too). The HUD now shows its MENU and
 Checked (captures and taps): saved slot -> map -> area 1 -> customer choice (Marty, then Rita runs in) -> Start
 Level -> stage intro -> level 0 as Rita; level end regression.
 SKELETON: the baddies, badges, controls, help, info (pause menu) and confirm-quit sections and their tabs, the
-checkpoint ribbon, the tutorial pop-ups, the level-complete screen (ScoreTallyScreen), the pause menu.
+checkpoint ribbon, the tutorial pop-ups, the pause menu.
+(26) Level complete (menus, part 4). `§_-4R§.finishLevel` translated whole (time played; the train loop is
+SKELETON) -> `§_-4G§` `StageOutroScreen` (the customer and the rescued one fall through the warp with the coins
+and warp coins earned) -> the API's EndOfDay, `ScoreTallyScreen`: the values are counted up one after another
+(points, time bonus, challenge bonus, level score; high score and total only when it is a new high score; coins),
+the level's challenges with the rescued faces, the player and the rescued customer jump in among three unlocked
+customers who cheer. Getting the values records the level in the slot (unlockNextLevel, setLevelTime,
+updateAndGetLevelScore, which saves). Bar: LEVEL COMPLETE, QUIT and Continue; the iris closes, then `§_-Ap§` tears
+the level down (the port keeps BitmapManager: it holds the sheet textures) and the map opens (Quit: the title).
+`§_-6V§` now resets lives and tallies and updates the HUD. Engine: code-set rotation (`MovieClip::setRotation`),
+`Lang::get(key, value)` for "{0}" texts.
+Checked: `--level 0 --room 2 --at 12,33` -> cage -> outro -> tally (capture) -> tap Continue -> map; the slot
+saved the high score and time.
+SKELETON: NewCustomerScreen (§_-4Z§ opens the map), the parade at level 8 (§_-14§ shows the tally),
+BossIntroScreen, ChallengeManager.resetCurrentChallenges, the glow outline of the puppets.
 (20) End of a level: `EventManager` (§_-7t§: loadEvents / addEvent wire each room's eventArray), triggers between
 objects and enemies (`GameObject.sendTriggered` / `broadcastTriggered`, `ObjectManager` / `EnemyManager`
 activateObject, setEvent, setEventTriggers; the camera pan is SKELETON: objects react at once), riding objects

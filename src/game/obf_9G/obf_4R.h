@@ -34,6 +34,8 @@
 #include "game/papaGame/models/characters/CustomerChar.h"
 #include "game/papaGame/screens/GameIntroScreen.h"
 #include "game/papaGame/screens/MainMenuScreen.h"
+#include "game/papaGame/screens/ScoreTallyScreen.h"
+#include "game/papaGame/screens/StageOutroScreen.h"
 #include "game/papaGame/screens/SlotSelectScreen.h"
 #include "game/papaGame/screens/SplashScreen.h"
 #include "game/papaGame/screens/StageIntroScreen.h"
@@ -70,6 +72,11 @@ public:
     void obf_Q();
     void obf_q();
     // AS: §_-4R§.§_-19§ / §_-5a§ — create / destroy the GameIntroScreen (the story).
+    void obf_4G(); // AS: §_-4G§, the stage outro
+    void obf_58(); // AS: §_-58§
+    void obf_4Z(double whichCustomer); // AS: §_-4Z§, the new customer screen
+    void obf_14(bool fromLevel = true); // AS: §_-14§, the parade
+    void obf_Ap(); // AS: §_-Ap§, the level is torn down
     void obf_19();
     void obf_5a();
 
@@ -120,6 +127,8 @@ public:
     std::unique_ptr<papaGame::screens::SlotSelectScreen> slotSelectScreen; // port: the API's SlotSelect
     std::unique_ptr<papaGame::screens::GameIntroScreen> obf_3U;
     std::unique_ptr<papaGame::screens::MainMenuScreen> mainMenuScreen; // port: the API's MainMenu / MapSelectMenu
+    std::unique_ptr<papaGame::screens::StageOutroScreen> obf_6j;
+    std::unique_ptr<papaGame::screens::ScoreTallyScreen> scoreTallyScreen; // port: the API's EndOfDay
     const engine::Lang *lang = nullptr;      // port: the menu bars' texts
     engine::MaskLayers *masks = nullptr;     // port: offscreen layers for masks
     engine::MenuBar menuBar;                 // port: see showApiScreen
@@ -133,6 +142,8 @@ private:
     std::unique_ptr<papaGame::screens::SlotSelectScreen> pendingDestroySlots_;
     std::unique_ptr<papaGame::screens::GameIntroScreen> pendingDestroyStory_;
     std::unique_ptr<papaGame::screens::MainMenuScreen> pendingDestroyMenu_;
+    std::unique_ptr<papaGame::screens::StageOutroScreen> pendingDestroyOutro_;
+    std::unique_ptr<papaGame::screens::ScoreTallyScreen> pendingDestroyTally_;
 };
 
 } // namespace obf_9G

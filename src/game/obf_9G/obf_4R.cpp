@@ -46,7 +46,9 @@ void obf_4R::obf_6V(double whichLevel)
 {
     obf_AQ->currentLevel = whichLevel;
     obf_8W = whichLevel;
-    // SKELETON: lives, tallies and challenges (§_-51§, §_-94§) are not ported yet.
+    obf_51->resetLives();
+    obf_51->clearTallies();
+    // SKELETON: BitmapManager.clearExtraSprites.
     bitmapManager->whichTileset = -1;
     obf_AQ->setupLevelScreens(whichLevel);
     if (obf_AQ->currentScreenData == nullptr) {
@@ -56,6 +58,9 @@ void obf_4R::obf_6V(double whichLevel)
     obf_71->currentXcoord = 0;
     obf_71->currentYcoord = 0;
     obf_3Y->setCameraBounds();
+    obf_6Z->updateDisplay();
+    obf_6Z->updateTimer();
+    // SKELETON: ChallengeManager.resetCurrentChallenges.
     if (!playerObj->blitter) {
         // SKELETON: the original blits the player sprite on the screens before the level starts.
         playerObj->blitter = std::make_unique<papaGame::managers::CharacterBlitter>(this);
@@ -130,9 +135,61 @@ void obf_4R::finishLevel()
     SDL_Log("BEAT LEVEL");
     obf_8o->stopCycle = true;
     obf_8o->stopControls = true;
+    // SKELETON: playerObj.stopTrainSound (the train and river loops are not played yet).
     obf_AQ->clearCheckpoint();
-    // SKELETON: the analytics call, saving, the level-complete screen with the tallies and challenges.
-    pendingLevel = obf_AQ->currentLevel + 1;
+    // (api.§_-6i§, an analytics call, is left out.)
+    if (obf_8o) {
+        obf_51->totalTimePlayed += obf_8o->currentLevelTimer;
+        SDL_Log("(Updated Time Played)");
+    }
+    obf_4G();
+}
+
+// AS: §_-4R§.§_-4G§
+void obf_4R::obf_4G()
+{
+    obf_6j = std::make_unique<papaGame::screens::StageOutroScreen>(this);
+}
+
+// AS: §_-4R§.§_-58§
+void obf_4R::obf_58()
+{
+    if (obf_6j) {
+        obf_6j->destroy();
+        pendingDestroyOutro_ = std::move(obf_6j); // port: it may be running; freed on the next frame
+    }
+}
+
+// AS: §_-4R§.§_-4Z§ — SKELETON: NewCustomerScreen is not ported; the map opens as when no customer joins.
+void obf_4R::obf_4Z(double /*whichCustomer*/)
+{
+    papaGame::screens::MainMenuParams params;
+    params.section = "map";
+    showApiScreen("MainMenu", params);
+}
+
+// AS: §_-4R§.§_-14§ — SKELETON: ParadeScreen is not ported; the level-complete tally shows instead.
+void obf_4R::obf_14(bool /*fromLevel*/)
+{
+    showApiScreen("EndOfDay");
+}
+
+// AS: §_-4R§.§_-Ap§ — the port keeps bitmapManager: it holds the textures of the imported sheets, which the
+// next level uses again (the original makes a new one in §_-9k§).
+void obf_4R::obf_Ap()
+{
+    obf_AQ->clearLevelScreens();
+    obf_6Z.reset();
+    playerObj.reset();
+    obf_4i.reset();
+    obf_7u.reset();
+    obf_E.reset();
+    obf_3Z.reset();
+    obf_V.reset();
+    obf_7t.reset();
+    obf_71.reset();
+    obf_3Y.reset();
+    obf_8o.reset();
 }
 
 // AS: §_-4R§.§_-2K§
@@ -165,7 +222,7 @@ void obf_4R::obf_9k()
     obf_8O();
 }
 
-// Port: the next level after finishLevel / §_-2K§ (SKELETON: their screens), through §_-9k§ and the stage intro.
+// Port: the level again after §_-2K§ (SKELETON: the game over screen), through §_-9k§ and the stage intro.
 void obf_4R::runPending()
 {
     if (pendingLevel >= 0) {
@@ -245,6 +302,10 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
         mainMenuScreen->destroy();
         pendingDestroyMenu_ = std::move(mainMenuScreen);
     }
+    if (scoreTallyScreen) {
+        scoreTallyScreen->destroy();
+        pendingDestroyTally_ = std::move(scoreTallyScreen);
+    }
     menuBar.clear();
     SDL_Log("API screen: %s", name.c_str());
     apiScreen = name;
@@ -273,6 +334,12 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
                       {{Kind::Action, "menu.start_level", "clickStartLevel"},
                        {Kind::Tab, "menu.back_to_map", "clickBackToMap"}},
                       layout);
+    } else if (name == "EndOfDay") {
+        scoreTallyScreen = std::make_unique<papaGame::screens::ScoreTallyScreen>(this, obf_5h.get());
+        engine::MenuBar::Layout layout;
+        menuBar.setup(*symbols, text, lang, "title.level_complete",
+                      {{Kind::Back, "menu.quit", "clickQuit"}, {Kind::Action, "menu.continue", "clickContinue"}},
+                      layout);
     } else {
         apiScreen.clear();
     }
@@ -280,7 +347,7 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
 
 bool obf_4R::screensActive() const
 {
-    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr;
+    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr;
 }
 
 bool obf_4R::updateScreens(const engine::PointerState &pointer)
@@ -290,6 +357,8 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     pendingDestroySlots_.reset();
     pendingDestroyStory_.reset();
     pendingDestroyMenu_.reset();
+    pendingDestroyOutro_.reset();
+    pendingDestroyTally_.reset();
     engine::MovieClip::collectGarbage();
     const bool onBar = menuBar.update(pointer, [this](const std::string &event) { dispatchContainerEvent(event); });
     if (!onBar) {
@@ -310,6 +379,12 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     }
     if (obf_7L) {
         obf_7L->updateScreen();
+    }
+    if (obf_6j) {
+        obf_6j->updateScreen();
+    }
+    if (scoreTallyScreen) {
+        scoreTallyScreen->updateScreen();
     }
     return screensActive();
 }

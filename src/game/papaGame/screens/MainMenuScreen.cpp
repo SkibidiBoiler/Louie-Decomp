@@ -14,17 +14,6 @@ namespace {
 
 using data::CustomerData;
 
-// "Defeat {0}:" with the number in place.
-std::string format(const std::string &pattern, const std::string &value)
-{
-    std::string out = pattern;
-    const size_t at = out.find("{0}");
-    if (at != std::string::npos) {
-        out.replace(at, 3, value);
-    }
-    return out;
-}
-
 } // namespace
 
 // AS: MainMenuScreen.MainMenuScreen
@@ -165,17 +154,17 @@ void MainMenuScreen::setupCharacter(bool setup)
                 }
             }
         } else if (type == data::Challenge::BURGERZILLAS) {
-            panel->setText("description_txt", format(gameObj->lang->get("challenge.defeat"), target));
+            panel->setText("description_txt", gameObj->lang->get("challenge.defeat", target));
             if (panelIcon) {
                 panelIcon->gotoAndStop(2);
             }
         } else if (type == data::Challenge::COINS) {
-            panel->setText("description_txt", format(gameObj->lang->get("challenge.find"), target));
+            panel->setText("description_txt", gameObj->lang->get("challenge.find", target));
             if (panelIcon) {
                 panelIcon->gotoAndStop(3);
             }
         } else {
-            panel->setText("description_txt", format(gameObj->lang->get("challenge.find"), target));
+            panel->setText("description_txt", gameObj->lang->get("challenge.find", target));
             if (panelIcon) {
                 panelIcon->gotoAndStop(4 + static_cast<int>(whichLevel));
             }

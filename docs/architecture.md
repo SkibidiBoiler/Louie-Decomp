@@ -109,8 +109,8 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | GameIntroScreen | the story at the start of a new game | ✅ |
 | StageIntroScreen | before each level | ✅ |
 | MainMenuScreen | the map, the customer choice; also credits, baddies, badges, controls, help, pause and quit | map, customers, credits |
-| ScoreTallyScreen | level complete: score, coins, challenges, saving the result | |
-| StageOutroScreen | after the tally, the rescued customer runs off | |
+| ScoreTallyScreen | level complete: score, coins, challenges, saving the result | ✅ |
+| StageOutroScreen | before the tally: the customer and the rescued one fall through the warp | ✅ |
 | NewCustomerScreen | a customer joins the team | |
 | BossIntroScreen | before a boss fight | |
 | TrainingPopup | the tutorial pop-ups | |
@@ -122,8 +122,8 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 Each step leaves the game playable further than before. The levels of a world need only the enemies and objects
 of that world and the ones before it (tables above).
 
-1. **Finish a level's loop:** `ScoreTallyScreen` (saves the result), `StageOutroScreen`, `NewCustomerScreen`, the
-   pause section of `MainMenuScreen`, and the rest of `ChallengeManager` (the tallies the tally screen reads).
+1. **Finish a level's loop:** `NewCustomerScreen`, the pause section of `MainMenuScreen`, and the rest of
+   `ChallengeManager` (the tallies the tally screen reads). `ScoreTallyScreen` and `StageOutroScreen` are done.
 2. **Bullets:** `Bullet` and `BulletManager`, then the customers' weapons. Several enemies and objects need them.
 3. **World by world**, in map order: Lettuce Lane → Fort Onion → Sarge's Lair (first boss: `BossIntroScreen`,
    `GameObject29/30`) → Mount Monterey → Cheddar Hills → The Saucelands → Radley's Hideout → BBQ Bog → X Zone.
