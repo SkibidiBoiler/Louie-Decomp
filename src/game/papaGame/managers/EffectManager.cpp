@@ -31,6 +31,7 @@
 #include "game/papaGame/models/effects/BlueberrySplatEffect.h"
 #include "game/papaGame/models/effects/CheeseBitEffect.h"
 #include "game/papaGame/models/effects/FeatherEffect.h"
+#include "game/papaGame/models/effects/DoorFrontEffect.h"
 #include "game/papaGame/models/effects/ChiliBitEffect.h"
 #include "game/papaGame/models/effects/ChiliSplatEffect.h"
 #include "game/papaGame/models/effects/SmokeRingEffect.h"
@@ -141,6 +142,9 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "BlueberrySplatEffect") {
         return std::make_unique<BlueberrySplatEffect>(gameObj);
+    }
+    if (type == "DoorFrontEffect") {
+        return std::make_unique<DoorFrontEffect>(gameObj);
     }
     if (type == "FeatherEffect") {
         return std::make_unique<FeatherEffect>(gameObj);

@@ -18,6 +18,8 @@
 #include "game/papaGame/models/objects/GameObject5.h"
 #include "game/papaGame/models/objects/GameObject6.h"
 #include "game/papaGame/models/objects/GameObject7.h"
+#include "game/papaGame/models/objects/GameObject17.h"
+#include "game/papaGame/models/objects/GameObject18.h"
 
 namespace papaGame::managers {
 
@@ -34,6 +36,8 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 5: return std::make_unique<GameObject5>(gameObj);
     case 6: return std::make_unique<GameObject6>(gameObj);
     case 7: return std::make_unique<GameObject7>(gameObj);
+    case 17: return std::make_unique<GameObject17>(gameObj);
+    case 18: return std::make_unique<GameObject18>(gameObj);
     case 19: return std::make_unique<GameObject19>(gameObj);
     case 20: return std::make_unique<GameObject20>(gameObj);
     case 21: return std::make_unique<GameObject21>(gameObj);

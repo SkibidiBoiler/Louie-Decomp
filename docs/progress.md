@@ -366,3 +366,7 @@ gold army onion (drops `GameItem_GoldHelmet`, `ItemGoldHelmetEffect`), `Enemy8` 
 tomato hops back and forth, the leafy lark flies between its columns. `GameObject6` / `GameObject7` horizontal
 blimps (small one too): the waiting ones start when the player boards and carry the player (`--room 3 --at 32,9`);
 the others shuttle. `stepOnObject` is virtual. Next: GameObject17 (switch), GameObject18 (door).
+(36) Fort Onion, part 3: `GameObject17` floor switch (stepping on it presses it: step_switch.wav) and `GameObject18`
+door (solid while shut, opens with papow.wav; `DoorFrontEffect` is drawn over the player). Checked in
+`--level 2 --room 0 --at 21,23 --input "R100-300,J115-118"`: the switch sinks, the three doors open, the player runs
+through (trace and a capture). Not checked: the gold helmet drop. Next world: Sarge's Lair.

@@ -133,6 +133,7 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/ChiliSplatEffect.cpp
     src/game/papaGame/models/effects/CookieBitEffect.cpp
     src/game/papaGame/models/effects/FeatherEffect.cpp
+    src/game/papaGame/models/effects/DoorFrontEffect.cpp
     src/game/papaGame/models/effects/SmokeRingEffect.cpp
     src/game/papaGame/models/effects/CrackerBreakEffect.cpp
     src/game/papaGame/models/effects/DizzyEffect.cpp
@@ -174,6 +175,8 @@ set(PL_SOURCES
     src/game/papaGame/models/objects/GameObject5.cpp
     src/game/papaGame/models/objects/GameObject6.cpp
     src/game/papaGame/models/objects/GameObject7.cpp
+    src/game/papaGame/models/objects/GameObject17.cpp
+    src/game/papaGame/models/objects/GameObject18.cpp
     src/game/papaGame/models/objects/GameObject1.cpp
     src/game/papaGame/models/objects/GameObject19.cpp
     src/game/papaGame/models/objects/GameObject20.cpp

@@ -63,8 +63,8 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | Enemy1, 2 | Onion, Brown Onion | Leaf Landing | ✅ |
 | Enemy6 | Red Tomato | Leaf Landing | ✅ |
 | Enemy34 | Burgerzilla | Leaf Landing | ✅ |
-| Enemy7, 12, 14 | Roma Tomato, Burger Slider, Lettuce Lark | Lettuce Lane | |
-| Enemy3, 4, 8, 15, 16 | Army Onion (+4), Runt Tomato, Leafy Lark, Dill Wheel | Fort Onion | |
+| Enemy7, 12, 14 | Roma Tomato, Burger Slider, Lettuce Lark | Lettuce Lane | ✅ |
+| Enemy3, 4, 8, 15, 16 | Army Onion (+4), Runt Tomato, Leafy Lark, Dill Wheel | Fort Onion | ✅ |
 | Enemy5, 9, 10, 11, 17, 35 | Kaiser Onion, Party Sub (9–11), Dill Worm, Sarge (boss; fires `SargePepper`, `GiantPepper`) | Sarge's Lair | |
 | Enemy13, 19, 25, 26, 32 | Brussel Lark, Blue Shroom, Swiss Zack, Cheddar Mack, Jellyback | Mount Monterey | |
 | Enemy18, 21, 27, 31 | Dill Weed, Bow Shroom (fires `ShroomArrow`), Pepper Jack, Cheese Wheel | Cheddar Hills | |
@@ -80,10 +80,10 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | GameObject1 | Cage Pulley | ✅ |
 | GameObject2 | Pushable Boulder | |
 | GameObject3 | Ladder | ✅ |
-| GameObject4–13 | Blimps: static, horizontal, vertical, circular, dropping (each with a small one) | |
+| GameObject4–13 | Blimps: static, horizontal, vertical, circular, dropping (each with a small one) | 4–7 ✅ |
 | GameObject14, 15, 16 | Drop Berry, On Berry, Off Berry | |
-| GameObject17 | Switch | |
-| GameObject18 | Door | |
+| GameObject17 | Switch | ✅ |
+| GameObject18 | Door | ✅ |
 | GameObject19, 20 | Cage, Cage Flipped | ✅ |
 | GameObject21–25 | Cracker Blocks 1–5 | ✅ |
 | GameObject26 | Cheese Cannon (fires `CheeseBullet`) | |
