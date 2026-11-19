@@ -362,3 +362,7 @@ gold army onion (drops `GameItem_GoldHelmet`, `ItemGoldHelmetEffect`), `Enemy8` 
 `adjustSpeedForSlopes` are virtual; EnemyManager gives subclasses their parent's cycle arrays. Fort Onion is
 `--level 2`. Checked by trace: only the army onions of room 1. Next: test 8/15/16 and the helmet, then GameObject6,
 7, 17, 18.
+(35) Fort Onion, part 2: checked by trace in `--level 2 --room 4`: the dill wheels roll round their blocks, the runt
+tomato hops back and forth, the leafy lark flies between its columns. `GameObject6` / `GameObject7` horizontal
+blimps (small one too): the waiting ones start when the player boards and carry the player (`--room 3 --at 32,9`);
+the others shuttle. `stepOnObject` is virtual. Next: GameObject17 (switch), GameObject18 (door).

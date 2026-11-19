@@ -172,6 +172,8 @@ set(PL_SOURCES
     src/game/papaGame/models/objects/GameObject3.cpp
     src/game/papaGame/models/objects/GameObject4.cpp
     src/game/papaGame/models/objects/GameObject5.cpp
+    src/game/papaGame/models/objects/GameObject6.cpp
+    src/game/papaGame/models/objects/GameObject7.cpp
     src/game/papaGame/models/objects/GameObject1.cpp
     src/game/papaGame/models/objects/GameObject19.cpp
     src/game/papaGame/models/objects/GameObject20.cpp
