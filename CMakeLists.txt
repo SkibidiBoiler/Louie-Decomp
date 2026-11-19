@@ -172,6 +172,7 @@ set(PL_SOURCES
     src/game/papaGame/models/items/GameItem_SargeCoin.cpp
     src/game/papaGame/models/objects/GameObject3.cpp
     src/game/papaGame/models/objects/GameObject4.cpp
+    src/game/papaGame/models/objects/GameObject2.cpp
     src/game/papaGame/models/objects/GameObject5.cpp
     src/game/papaGame/models/objects/GameObject6.cpp
     src/game/papaGame/models/objects/GameObject7.cpp

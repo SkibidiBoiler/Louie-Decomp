@@ -386,3 +386,8 @@ see-through lines. `SheetLibrary::repairCellEdges` runs once on the composed til
 that is more transparent than the one just inside takes that pixel (two pixels deep thickened art crossing an edge,
 so only one). Checked by captures of `--level 2 --room 4` and `--level 0 --room 2`. A proper fix would bake the
 parts at a whole-pixel origin in the importer (FFDec has no option for it).
+(40) `GameObject2` pushable boulder: a pushing customer (James, `--customer 14`) rolls it, it speeds up to 6,
+turns as it rolls, rumbles (boulder.wav looped, volume by speed) and stops at walls; riders are carried.
+`GameObject.checkPushingObject` is real now (isBeingPushed). `obf_4R.obf_c` (finish a training pop-up) returns false
+until TrainingPopup is ported. Checked: `--level 3 --room 0 --customer 14 --at 98,18 --input R20-150` (trace and a
+capture). QUIRK kept: the riding deceleration tests `speed` (always 0) instead of rollingSpeed.

@@ -1,7 +1,7 @@
 #pragma once
 // AS: papaGame.models.GameObject (extends Character) — the base of GameObject1..GameObject33: ladders, blocks,
 // checkpoints, cages, blimps, switches...
-// SKELETON: grabbing / throwing / riding, pushing, stepping on objects, triggers between objects and camera pans.
+// SKELETON: grabbing / throwing / riding, triggers between objects and camera pans.
 #include <string>
 #include <vector>
 
@@ -50,7 +50,7 @@ public:
     void updateObject() override;
     virtual void getHit(double /*damage*/ = 1) {}
     bool acceptsDamage(const std::string &kind, const std::string &weapon) const;
-    virtual bool checkPushingObject() { return false; } // SKELETON: pushable objects
+    bool checkPushingObject() const { return isPushable && isBeingPushed; } // AS: GameObject.checkPushingObject
     void checkStartStepping(Character &c, bool alreadyOnObject = false);
     virtual void stepOnObject(Character &c);
     virtual void stopStandingOnObject(Character &c);
@@ -74,6 +74,8 @@ public:
     bool isGrabbable = false;
     bool isGrabbed = false;
     bool isPushable = false;
+    bool isBeingPushed = false;
+    bool saveDataAtCheckpoint = false;
     AnimationCycle activeCycleFrames, inactiveCycleFrames, activatingCycleFrames, deactivatingCycleFrames;
     bool jigglecam = false;
     double jiggleamount = 10;

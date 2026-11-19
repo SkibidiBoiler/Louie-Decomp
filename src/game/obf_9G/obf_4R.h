@@ -52,6 +52,9 @@ public:
 
     // Port: replaces the level-data loading screen; reads <gameDir>/levels.xml.
     bool loadLevelData(const std::string &gameDir);
+    // AS: §_-c§ — finishes the training pop-up waiting for this flag. SKELETON: the pop-up (§_-a§, TrainingPopup)
+    // is not ported, so no flag is ever waited for.
+    bool obf_c(const std::string & /*flag*/, bool /*close*/ = true) { return false; }
 
     // AS: §_-4R§.§_-6V§ — start level `whichLevel` (so far: rooms, pre-blit and camera bounds).
     void obf_6V(double whichLevel);
