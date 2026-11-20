@@ -1,4 +1,4 @@
-# Papas Louie Attack Decomp
+# Louie Attack Decomp
 
 Decompilation of every Papa's Louie Attack for Windows and Android: a native C++20 port (SDL3) of
 *Papa Louie: When Pizzas Attack!*, *Papa Louie 2: When Burgers Attack!* and *Papa Louie 3: When Sundaes Attack!*.
