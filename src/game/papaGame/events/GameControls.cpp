@@ -158,7 +158,7 @@ void GameControls::jumpPlayer(CustomerChar &p)
             p.jumpedFromY = p.y;
             if (p.isCheesed) {
                 p.jumpspeed = -10;
-                // SKELETON: PlayerChar.jumpCheesed (the cheese is not ported).
+                p.jumpCheesed();
             } else if (p.isInQuicksand) {
                 p.jumpspeed = -16;
             } else if (p.isInRiver) {
@@ -240,7 +240,7 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
     if (p.slopedIntoCeiling == 0) {
         jumpPlayer(p);
     }
-    if (down && !p.isClimbingLadder && !p.jump && !p.isCrawling && !left && !right && p.canPressDown) {
+    if (down && !p.isClimbingLadder && !p.isCheesed && !p.jump && !p.isCrawling && !left && !right && p.canPressDown) {
         p.startDucking(); // SKELETON: throwing / grabbing objects come first in the original
         p.canPressDown = false;
     } else if (down && p.jump && !p.isClimbingLadder && !p.isCheesed && !p.isGroundPounding && !p.isRidingObject &&
@@ -257,7 +257,7 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
     }
     const bool up = keyPressedUp;
     if (!p.isAttacking && !p.isWallSliding && !p.isPushingObject && !p.isSliding && !p.isGliding && !p.isGroundPounding &&
-        (!p.jump || p.jumpspeed >= 0)) { // SKELETON: && !isCheesed
+        !p.isCheesed && (!p.jump || p.jumpspeed >= 0)) {
         const double tileWidth = gameObj->obf_71->tileWidth;
         // Grabbing a ladder snaps the player to its side, facing the way they were.
         auto grabLadder = [&](double dir) {
@@ -299,8 +299,9 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
     }
     // The left and right branches of the original are the same code mirrored.
     auto walk = [&](double dir) {
-        if (p.isRidingObject || p.isSliding || p.isGroundPounding || p.isClimbingLadder || p.isAttackLunging) {
-            p.isWalking = false; // SKELETON: also in a river or cheesed
+        if (p.isInRiver || p.isRidingObject || p.isSliding || p.isCheesed || p.isGroundPounding || p.isClimbingLadder ||
+            p.isAttackLunging) {
+            p.isWalking = false;
         } else if (p.facingDir == -dir && p.isWallSliding) {
             // Pressing away from the wall jumps off it.
             if (p.checkIfAgainstWall(-dir) && p.canArrowWallJump) {
@@ -396,7 +397,7 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
             p.walkingDir *= -1;
         }
         if (p.jump && p.isWalking && !p.isGrabbing && !p.isClimbingLadder && !p.isRidingObject && !p.isWallJumping &&
-            !p.isSliding && !p.isAttackLunging && p.slopedIntoCeiling == 0) { // SKELETON: && !isCheesed
+            !p.isSliding && !p.isAttackLunging && p.slopedIntoCeiling == 0 && !p.isCheesed) {
             // Keys released mid-air: keep drifting, slowing down every other frame.
             if (p.speed >= 2) {
                 if (p.speed > 2 && std::fmod(gameplayTimer, 2) == 0) {
@@ -425,7 +426,7 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
             }
         }
         if (p.isSkidding && !p.isGrabbing && !p.isRidingObject && !p.isClimbingLadder && !p.isShoved && !p.isSliding &&
-            p.slopedIntoCeiling == 0 && !p.onMovingTile) { // SKELETON: && !isCheesed
+            p.slopedIntoCeiling == 0 && !p.onMovingTile && !p.isCheesed) {
             // Keys released after a run: slide on with the decaying skid speed.
             p.setSpeed(p.useSkidSpeed);
             p.moveChar(p.walkingDir, 0, 0);
@@ -435,15 +436,15 @@ void GameControls::keyCheckPlayer(CustomerChar &p)
         p.setSpeed(p.slideSpeed);
         p.moveChar(p.walkingDir, 0, 0);
     }
-    if (p.isAttackLunging && !p.isClimbingLadder && !p.isRidingObject && !p.isShoved) { // SKELETON: && !isCheesed
+    if (p.isAttackLunging && !p.isClimbingLadder && !p.isCheesed && !p.isRidingObject && !p.isShoved) {
         p.setSpeed(p.useLungeSpeed);
         p.moveChar(p.lungeDirection, 0, 0);
     }
     if (action) {
         if (p.isCarryingObject) {
             // SKELETON: throwing the carried object (startThrowingObject).
-        } else if (p.canAttack && !p.duck && !p.isDucking && !p.isClimbingLadder && !p.isSliding && !p.isGroundPounding &&
-                   !p.isWallSliding && p.canPressAction) { // SKELETON: also not cheesed / grabbing / throwing
+        } else if (p.canAttack && !p.duck && !p.isDucking && !p.isCheesed && !p.isClimbingLadder && !p.isSliding && !p.isGroundPounding &&
+                   !p.isWallSliding && p.canPressAction) { // SKELETON: also not grabbing / throwing an object
             p.startAttacking();
             p.canPressAction = false;
         }

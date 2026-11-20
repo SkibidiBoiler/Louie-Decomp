@@ -119,6 +119,8 @@ set(PL_SOURCES
     src/game/papaGame/models/bullets/DogToy.cpp
     src/game/papaGame/models/bullets/PepperBomb.cpp
     src/game/papaGame/models/bullets/SargePepper.cpp
+    src/game/papaGame/models/bullets/ShroomArrow.cpp
+    src/game/papaGame/models/bullets/CheeseBullet.cpp
     src/game/papaGame/models/bullets/GiantPepper.cpp
     src/game/papaGame/models/bullets/RomanCandle.cpp
     src/game/papaGame/models/bullets/XandraStar.cpp
@@ -132,6 +134,8 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/BlueberryBitEffect.cpp
     src/game/papaGame/models/effects/BlueberrySplatEffect.cpp
     src/game/papaGame/models/effects/CheeseBitEffect.cpp
+    src/game/papaGame/models/effects/CheeseSplatEffect.cpp
+    src/game/papaGame/models/effects/StuckCheeseEffect.cpp
     src/game/papaGame/models/effects/ChiliBitEffect.cpp
     src/game/papaGame/models/effects/ChiliSplatEffect.cpp
     src/game/papaGame/models/effects/CookieBitEffect.cpp
@@ -185,6 +189,8 @@ set(PL_SOURCES
     src/game/papaGame/models/objects/GameObject7.cpp
     src/game/papaGame/models/objects/GameObject8.cpp
     src/game/papaGame/models/objects/GameObject9.cpp
+    src/game/papaGame/models/objects/GameObject10.cpp
+    src/game/papaGame/models/objects/GameObject11.cpp
     src/game/papaGame/models/objects/GameObject12.cpp
     src/game/papaGame/models/objects/GameObject13.cpp
     src/game/papaGame/models/objects/GameObject1.cpp
@@ -198,6 +204,7 @@ set(PL_SOURCES
     src/game/papaGame/models/objects/GameObject23.cpp
     src/game/papaGame/models/objects/GameObject24.cpp
     src/game/papaGame/models/objects/GameObject25.cpp
+    src/game/papaGame/models/objects/GameObject26.cpp
     src/game/papaGame/models/objects/GameObject28.cpp
     src/game/papaGame/models/objects/GameObject2.cpp
     src/game/papaGame/models/enemies/Enemy1.cpp
@@ -217,9 +224,13 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy16.cpp
     src/game/papaGame/models/enemies/Enemy17.cpp
     src/game/papaGame/models/enemies/Enemy13.cpp
+    src/game/papaGame/models/enemies/Enemy18.cpp
     src/game/papaGame/models/enemies/Enemy19.cpp
+    src/game/papaGame/models/enemies/Enemy21.cpp
     src/game/papaGame/models/enemies/Enemy25.cpp
     src/game/papaGame/models/enemies/Enemy26.cpp
+    src/game/papaGame/models/enemies/Enemy27.cpp
+    src/game/papaGame/models/enemies/Enemy31.cpp
     src/game/papaGame/models/enemies/Enemy32.cpp
     src/game/papaGame/models/enemies/Enemy35.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp

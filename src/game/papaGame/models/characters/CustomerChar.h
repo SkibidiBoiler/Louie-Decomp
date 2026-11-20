@@ -58,6 +58,9 @@ public:
     bool canGetHit() const;
     void hurtPlayer(double dir, double damage, bool forced = false);
     void shovePlayer(double dir, double amount = 4);
+    void getCheesed();   // AS: PlayerChar.getCheesed
+    void removeCheese(); // AS: PlayerChar.removeCheese
+    void jumpCheesed();  // AS: PlayerChar.jumpCheesed
     void restartPlayer(double lives = -1);
     void updateStunTime();
     void getHeart();                // AS: PlayerChar.getHeart
@@ -125,6 +128,7 @@ public:
     bool isFinalBlow = false, isInvincible = false, isStartingGrabbing = false, canAutoWallJump = false;
     bool isCheesed = false, isPausingAfterMiniboss = false, isHiding = false, fellOffTrain = false;
     bool hitByBlast = false, hasPowerup = false;
+    double cheesedFXID = -1;
     double statAttack = 1, invincibleTimer = 0, invincibleFXID = -1, shoveTimer = 0, shoveTimerMax = 6;
     double defaultHealth = 3;
     std::vector<double> stunStarIDs;

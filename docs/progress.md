@@ -426,3 +426,20 @@ and back (`--at 54,22`), the small dropping blimp sinks to row 19 and rises afte
 cycles down 20 / up 45 frames (`--at 24,10`), a Jellyback bounces the player about 260 px (`--at 24,46 --input
 "R30-40,J30-40"`); room 3 the Swiss Zack cycles, thumps and hurts the player (`--at 20,40`, capture). Not checked:
 killing a lark or a Cheddar Mack, hitting a Blue Shroom.
+
+(40) Cheddar Hills (`--level 5`): `Enemy18` Dill Weed (rooted; chomps forward, left and right in turn with a hit box
+that grows with the chomp), `Enemy21` Bow Shroom (the Blue Shroom's duck cycle plus `ShroomArrow` shots, optionally
+only when the player is in sight), `Enemy27` Pepper Jack (notices the player within 160 x 96 px, charges faster and
+faster, skids 64 px past and turns; at a ledge it jumps towards the player instead of turning, so
+`Character.checkIfAtEdge` is now virtual), `Enemy31` Cheese Wheel (rolls one way, a stomp beats it);
+`GameObject10` / `GameObject11` circular blimps (fly round a circle, optional rope to the centre drawn with
+`drawScreenLine`), `GameObject26` Cheese Cannon (fires `CheeseBullet` at the player every shootDelay frames). The
+cheese: `PlayerChar.getCheesed` / `removeCheese` / `jumpCheesed` and `StuckCheeseEffect` (three jumps shake it
+off), plus `CheeseSplatEffect`; the `isCheesed` SKELETON gaps in `GameControls` and `CustomerChar` are filled.
+Checked by trace: room 0 a cannon shot cheeses the player (`--at 11,17`), walking does nothing and the third jump
+frees them; Dill Weeds cycle their chomps with sounds (`--at 22,33`); room 1 a Pepper Jack charges, hits, skids and
+turns (`--at 61,40`); room 2 four circular blimps circle and carry the player; room 3 a Bow Shroom's arrow hurts the
+player (`--at 29,87`). Not checked: the Cheese Wheel (spawned by objects off screen), a tethered blimp's rope (no
+tethered one in Cheddar Hills). Found: the importer draws the balloon body of every blimp sheet
+(`object_blimp_*`) only on frames 3, 10 and 13; the other frames show just the knot, so blimps look invisible in
+game. A `tools/swf2assets.py` bug, still open.

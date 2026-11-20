@@ -91,7 +91,7 @@ public:
     bool checkIfLadderBelow();
     bool checkIfHalfOnCloud(double dir);
     bool checkMovingTiles(double y);
-    void checkIfAtEdge(double speed, double dir);
+    virtual void checkIfAtEdge(double speed, double dir);
     virtual bool moveChar(double dirx, double diry, double jumpDir, bool bounceAtWalls = false, bool checkEdges = false,
                           bool collide = true, double fixedSpeed = INT_MAX); // overridden by Enemy16
     virtual void fallChar();

@@ -67,7 +67,7 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | Enemy3, 4, 8, 15, 16 | Army Onion (+4), Runt Tomato, Leafy Lark, Dill Wheel | Fort Onion | ✅ |
 | Enemy5, 9, 10, 11, 17, 35 | Kaiser Onion, Party Sub (9–11), Dill Worm, Sarge (boss; fires `SargePepper`, `GiantPepper`) | Sarge's Lair | ✅ |
 | Enemy13, 19, 25, 26, 32 | Brussel Lark, Blue Shroom, Swiss Zack, Cheddar Mack, Jellyback | Mount Monterey | ✅ |
-| Enemy18, 21, 27, 31 | Dill Weed, Bow Shroom (fires `ShroomArrow`), Pepper Jack, Cheese Wheel | Cheddar Hills | |
+| Enemy18, 21, 27, 31 | Dill Weed, Bow Shroom (fires `ShroomArrow`), Pepper Jack, Cheese Wheel | Cheddar Hills | ✅ |
 | Enemy20, 22, 28, 29 | Thorn Shroom, Bacobar, Radish, Laddish | The Saucelands | |
 | Enemy36, 37 | Radley's Hideout bosses: 36 (not in `enemyKey`; fires `Beaker`, boss music) and Radley Madish (rockets) | Radley's Hideout | |
 | Enemy23, 30, 33 | Bacoburn, Pararadish, Awesome Saucer (fires `SauceBullet`) | BBQ Bog | |
@@ -80,13 +80,13 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | GameObject1 | Cage Pulley | ✅ |
 | GameObject2 | Pushable Boulder | ✅ |
 | GameObject3 | Ladder | ✅ |
-| GameObject4–13 | Blimps: static, horizontal, vertical, circular, dropping (each with a small one) | all but 10, 11 |
+| GameObject4–13 | Blimps: static, horizontal, vertical, circular, dropping (each with a small one) | ✅ |
 | GameObject14, 15, 16 | Drop Berry, On Berry, Off Berry | 14 |
 | GameObject17 | Switch | ✅ |
 | GameObject18 | Door | ✅ |
 | GameObject19, 20 | Cage, Cage Flipped | ✅ |
 | GameObject21–25 | Cracker Blocks 1–5 | ✅ |
-| GameObject26 | Cheese Cannon (fires `CheeseBullet`) | |
+| GameObject26 | Cheese Cannon (fires `CheeseBullet`) | ✅ |
 | GameObject27, 32 | BBQ Quicksauce, Rainbow Sauce | |
 | GameObject28 | Checkpoint | ✅ |
 | GameObject29, 30 | Start Fight, End Fight (boss arenas, boss music, the escape) | ✅ |

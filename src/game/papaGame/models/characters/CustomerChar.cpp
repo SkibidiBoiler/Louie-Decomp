@@ -11,6 +11,7 @@
 #include "game/papaGame/models/effects/DizzyEffect.h"
 #include "game/papaGame/models/effects/CageCustomerEffect.h"
 #include "game/papaGame/models/effects/EndPortalEffect.h"
+#include "game/papaGame/models/effects/StuckCheeseEffect.h"
 
 using obf_AF::obf_1n;
 using papaGame::data::CustomerData;
@@ -435,7 +436,9 @@ bool CustomerChar::checkIfOnLadder(double dir)
              map.getTileProperty(xtile, ytile + 1, "thrublock") > 0)) {
             return false;
         }
-        // SKELETON: false while cheesed.
+        if (isCheesed) {
+            return false;
+        }
         return true;
     }
     return false;
@@ -1736,7 +1739,9 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
         isDucking = false;
         duck = false;
     }
-    // SKELETON: removeCheese when isCheesed.
+    if (isCheesed) {
+        removeCheese();
+    }
     if (currentHealth <= 0) {
         currentHealth = 0;
         gameObj->obf_3Y->setCameraJiggle(12, 10);
@@ -1784,6 +1789,63 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
     }
     gameObj->obf_6Z->updatePlayerHealth(currentHealth);
     // SKELETON: throwCarriedObject(0).
+}
+
+// AS: PlayerChar.getCheesed — stuck in cheese (not while crawling): every move stops and a cheese lump sticks to the
+// player; a second hit fills the lump up again.
+void CustomerChar::getCheesed()
+{
+    managers::EffectManager &fx = *gameObj->obf_V;
+    if (isCrawling) {
+        return;
+    }
+    cancelAttack();
+    if (isClimbingLadder) {
+        jump = true;
+    } else if (isSliding) {
+        jump = true;
+        jumpspeed = -6;
+    }
+    jumpspeed = 0;
+    isGliding = false;
+    isGroundPounding = false;
+    isWallJumping = false;
+    canAutoWallJump = false;
+    isWallSliding = false;
+    isDoubleJumping = false;
+    isClimbingLadder = false;
+    isSliding = false;
+    isCheesed = true;
+    if (cheesedFXID == -1) {
+        cheesedFXID = fx.addEffect(x, y, "StuckCheeseEffect", "", true);
+    } else if (auto *cheese = static_cast<effects::StuckCheeseEffect *>(fx.getEffect(cheesedFXID))) {
+        cheese->refillCheese();
+    }
+    gameObj->obf_7C->playSound("getcheesed.mp3");
+}
+
+// AS: PlayerChar.removeCheese — in the air, the player gets a small hop on the way out.
+void CustomerChar::removeCheese()
+{
+    if (!isCheesed) {
+        return;
+    }
+    if (jump) {
+        jumpspeed = jumpstart + 2;
+    }
+    isCheesed = false;
+    if (cheesedFXID != -1) {
+        gameObj->obf_V->removeEffect(cheesedFXID);
+    }
+    cheesedFXID = -1;
+}
+
+// AS: PlayerChar.jumpCheesed — each jump shakes a piece of the lump off.
+void CustomerChar::jumpCheesed()
+{
+    if (auto *cheese = static_cast<effects::StuckCheeseEffect *>(gameObj->obf_V->getEffect(cheesedFXID))) {
+        cheese->playerJumped();
+    }
 }
 
 // AS: PlayerChar.shovePlayer — pushed back without damage.
