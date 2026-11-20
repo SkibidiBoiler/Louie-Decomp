@@ -35,7 +35,7 @@ App::~App()
 
 SDL_AppResult App::init(int argc, char *argv[])
 {
-    SDL_SetAppMetadata("Papa's Louie Recomp", "0.1.0", "io.github.skibidiboiler.papalouie");
+    SDL_SetAppMetadata("Louie Attack Recomp", "0.1.0", "io.github.skibidiboiler.louieattack");
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 
     // Touches are handled as fingers (on-screen buttons, taps); no synthetic mouse events from them.
@@ -82,7 +82,7 @@ SDL_AppResult App::init(int argc, char *argv[])
 #if defined(SDL_PLATFORM_ANDROID)
     flags |= SDL_WINDOW_FULLSCREEN;
 #endif
-    if (!SDL_CreateWindowAndRenderer("Papa's Louie Recomp", stage_.width * 2, stage_.height * 2, flags,
+    if (!SDL_CreateWindowAndRenderer("Louie Attack Recomp", stage_.width * 2, stage_.height * 2, flags,
                                      &window_, &renderer_)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window/renderer creation failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;

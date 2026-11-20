@@ -19,4 +19,4 @@ where cmake >nul 2>nul || set "PATH=%LOCALAPPDATA%\Android\Sdk\cmake\3.30.4\bin;
 cd /d "%~dp0.."
 cmake -S . -B build\windows -G Ninja -DCMAKE_BUILD_TYPE=%CONFIG% || exit /b 1
 cmake --build build\windows || exit /b 1
-echo Built build\windows\papalouie.exe
+echo Built build\windows\louieattack.exe

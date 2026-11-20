@@ -1,4 +1,4 @@
-# AGENTS.md — Papa's Louie Recomp
+# AGENTS.md — Louie Attack Recomp
 
 Guía del proyecto para personas y agentes. **Este archivo tiene prioridad sobre los valores por defecto de
 cualquier skill** (`orchestrator`, `matcher`, `decomp-code-rules`, `native-platform-porting`, …).
@@ -113,7 +113,7 @@ python -I tools/swf2assets.py --swf "C:/Users/alfre/Proyectos/datos-papas/PapaLo
 
 # Windows (VS Build Tools 2026 + Ninja/CMake del Android SDK)
 tools\build_windows.bat Debug
-build\windows\papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
+build\windows\louieattack.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
 #   --capture <png>: guarda el fotograma a los 3 s y sale (comprobaciones automáticas)
 #   --input "R1-60,U61-90" (teclas LRUDJA por fotograma lógico), --trace (estado por fotograma), --frames N,
 #   --level N, --room N, --at x,y (jugador en esa casilla): pruebas por texto, más baratas que las capturas
@@ -122,7 +122,7 @@ build\windows\papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
 #   Sin esas opciones de nivel el juego empieza en la pantalla de título. --lang es: idioma de la interfaz;
 #   --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por texto;
 #   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. Partidas guardadas de Windows:
-#   %APPDATA%\SkibidiBoiler\PapaLouieRecomp\saves\PapaLouie2_<ranura>.json
+#   %APPDATA%\SkibidiBoiler\LouieAttackRecomp\saves\PapaLouie2_<ranura>.json
 # Progreso de la traducción (funciones y líneas del AS con su `// AS:` en src/game; solo local, sin tokens):
 python -I tools/progress.py                 # --by-class: por clase; --missing <Clase>: funciones que faltan
 # Leer una función del código original deofuscado (solo local):
@@ -133,7 +133,7 @@ python -I tools/as_func.py "C:/Users/alfre/Proyectos/datos-papas/extracted/pl2-d
 adb -s a7e4babe install -r app/build/outputs/apk/debug/app-debug.apk
 # En Git Bash: MSYS_NO_PATHCONV=1, o convierte /sdcard en una ruta de Windows.
 export MSYS_NO_PATHCONV=1
-R=/sdcard/Android/data/io.github.skibidiboiler.papalouie/files/data/pl2
+R=/sdcard/Android/data/io.github.skibidiboiler.louieattack/files/data/pl2
 adb -s a7e4babe shell mkdir -p $R/shapes
 adb -s a7e4babe push .../build/pl2/symbols.bin .../build/pl2/manifest.json $R/
 adb -s a7e4babe push .../build/pl2/shapes/2x $R/shapes/

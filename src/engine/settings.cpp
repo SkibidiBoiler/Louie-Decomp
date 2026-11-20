@@ -1,5 +1,7 @@
 #include "engine/settings.h"
 
+#include "engine/paths.h"
+
 #include <SDL3/SDL.h>
 #include <cstdio>
 #include <cstring>
@@ -11,13 +13,8 @@ namespace {
 
 std::string settingsPath()
 {
-    char *pref = SDL_GetPrefPath("SkibidiBoiler", "PapaLouieRecomp");
-    if (!pref) {
-        return {};
-    }
-    std::string path = std::string(pref) + "settings.ini";
-    SDL_free(pref);
-    return path;
+    const std::string pref = prefDir();
+    return pref.empty() ? std::string() : pref + "settings.ini";
 }
 
 } // namespace

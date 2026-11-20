@@ -1,6 +1,6 @@
-# Papas Louie Attack Decomp
+# Louie Attack Recomp
 
-Decompilation of every Papa's Louie Attack for Windows and Android: a native C++20 port (SDL3) of
+An unofficial native port (C++20, SDL3) for Windows and Android of the Papa Louie Attack trilogy:
 *Papa Louie: When Pizzas Attack!*, *Papa Louie 2: When Burgers Attack!* and *Papa Louie 3: When Sundaes Attack!*.
 
 > **Unofficial fan project.** Not affiliated with, endorsed by or sponsored by Flipline Studios. *Papa Louie* and
@@ -67,7 +67,7 @@ with no Flash emulator and no browser.
 ## Getting the source
 
 ```bash
-git clone --recursive https://github.com/SkibidiBoiler/Papas-Louie-Decomp.git
+git clone --recursive https://github.com/SkibidiBoiler/Louie-Attack-Recomp.git
 ```
 
 If you cloned without `--recursive`, run `git submodule update --init --recursive` to fetch SDL3 and minimp3.
@@ -102,10 +102,10 @@ From a normal command prompt (the script loads the Visual Studio environment its
 
 ```bat
 tools\build_windows.bat Debug
-build\windows\papalouie.exe --data "path\to\data"
+build\windows\louieattack.exe --data "path\to\data"
 ```
 
-Use `Release` instead of `Debug` for an optimised build. Instead of `--data`, you can set the `PAPALOUIE_DATA`
+Use `Release` instead of `Debug` for an optimised build. Instead of `--data`, you can set the `LOUIEATTACK_DATA`
 environment variable or put a `data` folder next to the `.exe`.
 
 Any other CMake setup also works:
@@ -127,7 +127,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 The APK holds no game data: copy your `.swf` to the phone (for example to *Download*) and import it from the
 app. A data folder converted on a PC can also be copied to
-`/sdcard/Android/data/io.github.skibidiboiler.papalouie/files/data/` with `adb push`.
+`/sdcard/Android/data/io.github.skibidiboiler.louieattack/files/data/` with `adb push`.
 
 ## License
 
