@@ -386,4 +386,15 @@ The other training calls: `PlayerChar.startupPlayer` (the skill bubble: groundpo
 bubbles (character, challenges, styles, nowarpkeys; `showSectionTraining` is the part of tweenSections that opens
 them) and `ObjectManager.updateTrainingSigns` (`GameObject.updateTrainingSign` is empty). Checked by captures
 (`--level 2 --customer 8 / 23 / 15`: the pound, glide and double jump bubbles; the double jump closes its bubble).
-Not checked: the menu bubbles. Still missing: GameObject2's "push" (GameObject2 is not ported).
+Not checked: the menu bubbles.
+(37) Sarge's Lair (`--level 3`), part 1: `GameObject14` drop berry (stood on, it drops after 20 frames with its
+riders, splats and grows back), `GameObject2` pushable boulder (pushed by the push skill, rolls, slows, rolls down
+slopes, carries riders, squashes enemies; its "push" training), `GameObject.checkPushingObject` / `isBeingPushed` /
+`saveDataAtCheckpoint`; `Enemy5` Kaiser onion, `Enemy9` / `Enemy10` / `Enemy11` Party Sub (a group walks together
+and waits while one car is stunned: `EnemyManager.sendMessageToEnemyGroup / getEnemyIDsFromGroup /
+checkGroupOnScreen`), `Enemy17` Dill Worm (hangs, notices the player below, drops, crawls after the player).
+Checked by trace: room 0 berries (`--at 5,21`) and boulder (`--at 96,17 --customer 14 --input "R20-120"`; Marty
+cannot push it), the Kaiser onion (`--at 52,13`), room 1 Party Subs (stomping one car of the group at
+`--at 29,24 --input "L60-75,J66-74"` stops the others until it recovers) and room 2's Dill Worm
+(`--at 78,56 --input "L20-45"`). Still missing in Sarge's Lair: the boss `Enemy35` (Sarge; `SargePepper`,
+`GiantPepper`), `GameObject29` / `GameObject30` and `BossIntroScreen`.

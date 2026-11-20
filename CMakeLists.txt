@@ -191,6 +191,10 @@ set(PL_SOURCES
     src/game/papaGame/models/objects/GameObject28.cpp
     src/game/papaGame/models/objects/GameObject2.cpp
     src/game/papaGame/models/enemies/Enemy1.cpp
+    src/game/papaGame/models/enemies/Enemy10.cpp
+    src/game/papaGame/models/enemies/Enemy11.cpp
+    src/game/papaGame/models/enemies/Enemy5.cpp
+    src/game/papaGame/models/enemies/Enemy9.cpp
     src/game/papaGame/models/enemies/Enemy2.cpp
     src/game/papaGame/models/enemies/Enemy6.cpp
     src/game/papaGame/models/enemies/Enemy3.cpp
@@ -201,6 +205,7 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy14.cpp
     src/game/papaGame/models/enemies/Enemy15.cpp
     src/game/papaGame/models/enemies/Enemy16.cpp
+    src/game/papaGame/models/enemies/Enemy17.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
     src/game/papaGame/screens/GameIntroScreen.cpp

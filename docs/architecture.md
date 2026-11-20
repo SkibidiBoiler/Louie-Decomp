@@ -63,9 +63,9 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | Enemy1, 2 | Onion, Brown Onion | Leaf Landing | ✅ |
 | Enemy6 | Red Tomato | Leaf Landing | ✅ |
 | Enemy34 | Burgerzilla | Leaf Landing | ✅ |
-| Enemy7, 12, 14 | Roma Tomato, Burger Slider, Lettuce Lark | Lettuce Lane | |
-| Enemy3, 4, 8, 15, 16 | Army Onion (+4), Runt Tomato, Leafy Lark, Dill Wheel | Fort Onion | |
-| Enemy5, 9, 10, 11, 17, 35 | Kaiser Onion, Party Sub (9–11), Dill Worm, Sarge (boss; fires `SargePepper`, `GiantPepper`) | Sarge's Lair | |
+| Enemy7, 12, 14 | Roma Tomato, Burger Slider, Lettuce Lark | Lettuce Lane | ✅ |
+| Enemy3, 4, 8, 15, 16 | Army Onion (+4), Runt Tomato, Leafy Lark, Dill Wheel | Fort Onion | ✅ |
+| Enemy5, 9, 10, 11, 17, 35 | Kaiser Onion, Party Sub (9–11), Dill Worm, Sarge (boss; fires `SargePepper`, `GiantPepper`) | Sarge's Lair | all but 35 |
 | Enemy13, 19, 25, 26, 32 | Brussel Lark, Blue Shroom, Swiss Zack, Cheddar Mack, Jellyback | Mount Monterey | |
 | Enemy18, 21, 27, 31 | Dill Weed, Bow Shroom (fires `ShroomArrow`), Pepper Jack, Cheese Wheel | Cheddar Hills | |
 | Enemy20, 22, 28, 29 | Thorn Shroom, Bacobar, Radish, Laddish | The Saucelands | |
@@ -78,12 +78,12 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | class | object | done |
 |---|---|---|
 | GameObject1 | Cage Pulley | ✅ |
-| GameObject2 | Pushable Boulder | |
+| GameObject2 | Pushable Boulder | ✅ |
 | GameObject3 | Ladder | ✅ |
-| GameObject4–13 | Blimps: static, horizontal, vertical, circular, dropping (each with a small one) | |
-| GameObject14, 15, 16 | Drop Berry, On Berry, Off Berry | |
-| GameObject17 | Switch | |
-| GameObject18 | Door | |
+| GameObject4–13 | Blimps: static, horizontal, vertical, circular, dropping (each with a small one) | 4–7 |
+| GameObject14, 15, 16 | Drop Berry, On Berry, Off Berry | 14 |
+| GameObject17 | Switch | ✅ |
+| GameObject18 | Door | ✅ |
 | GameObject19, 20 | Cage, Cage Flipped | ✅ |
 | GameObject21–25 | Cracker Blocks 1–5 | ✅ |
 | GameObject26 | Cheese Cannon (fires `CheeseBullet`) | |
@@ -91,7 +91,7 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | GameObject28 | Checkpoint | ✅ |
 | GameObject29, 30 | Start Fight, End Fight (boss arenas, boss music, the escape) | |
 | GameObject31 | Spike Bed | |
-| GameObject33 | Training Sensor | |
+| GameObject33 | Training Sensor | ✅ |
 
 ## Bullets
 
@@ -113,7 +113,7 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | StageOutroScreen | before the tally: the customer and the rescued one fall through the warp | ✅ |
 | NewCustomerScreen | a customer joins the team | ✅ |
 | BossIntroScreen | before a boss fight | |
-| TrainingPopup | the tutorial pop-ups | |
+| TrainingPopup | the tutorial pop-ups | ✅ |
 | ParadeScreen, GameOutroScreen | the ending | |
 | LoadingLevelsScreen, FliplineLogoScreen, SponsorLogoScreen, LicenseLogoScreen | loader and logos | not needed |
 
