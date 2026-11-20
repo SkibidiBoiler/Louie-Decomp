@@ -80,6 +80,7 @@ struct Value {
     static Value num(double v) { return {true, v, {}}; }
     static Value str(std::string v) { return {false, 0.0, std::move(v)}; }
     double asNumber() const { return isNumber ? number : Number(string); }
+    std::string asString() const { return isNumber ? String(number) : string; } // String(value)
 };
 
 } // namespace as3

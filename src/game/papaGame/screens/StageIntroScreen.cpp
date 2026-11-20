@@ -46,12 +46,12 @@ void StageIntroScreen::updateScreen()
     }
 }
 
-// AS: StageIntroScreen.spriteReady — SKELETON: BitmapManager.createCagedSprites (the trapped customers' sheets).
+// AS: StageIntroScreen.spriteReady
 void StageIntroScreen::spriteReady()
 {
     SDL_Log("SPRITE READY, load caged sprites:");
     playerReady = true;
-    cagedSpritesReady();
+    gameObj->bitmapManager->createCagedSprites([this] { cagedSpritesReady(); });
 }
 
 // AS: StageIntroScreen.cagedSpritesReady

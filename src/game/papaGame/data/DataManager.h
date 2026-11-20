@@ -38,6 +38,17 @@ public:
     void saveCheckpoint(double tileX = -1, double tileY = -1);
     void clearCheckpoint();
     double getOutfitPrice(double customer, double outfit) const; // AS: DataManager.getOutfitPrice
+    void setupKeyNames();
+    std::string getKeyLabel(const std::string &key) const;
+
+    static constexpr const char *KEY_JUMP = "keyCodeJump";
+    static constexpr const char *KEY_ATTACK = "keyCodeAttack";
+    static constexpr const char *KEY_UP = "keyCodeUp";
+    static constexpr const char *KEY_DOWN = "keyCodeDown";
+    static constexpr const char *KEY_LEFT = "keyCodeLeft";
+    static constexpr const char *KEY_RIGHT = "keyCodeRight";
+    static constexpr const char *KEY_DROP = "keyCodeDrop";
+    static constexpr const char *KEY_PAUSE = "keyCodePause";
     void clearLevelScreens();
     bool isOnTrain() const;
     bool isAnimatedBackground() const;
@@ -67,6 +78,7 @@ public:
     double LADDER_TILE_NUMBER = 0;
 
 private:
+    std::vector<std::string> keyNameMap; // AS: keyNameMap, Flash key code -> the name on the key caps
     const engine::XmlNode *findWorld(double tileset) const;
     bool inList(const char *list, double tile) const;
     engine::JsonValue tables_;

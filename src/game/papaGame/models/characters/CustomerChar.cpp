@@ -9,6 +9,7 @@
 #include "game/obf_9G/obf_4R.h"
 #include "game/obf_AF/obf_1n.h"
 #include "game/papaGame/models/effects/DizzyEffect.h"
+#include "game/papaGame/models/effects/CageCustomerEffect.h"
 #include "game/papaGame/models/effects/EndPortalEffect.h"
 
 using obf_AF::obf_1n;
@@ -1308,7 +1309,13 @@ void CustomerChar::updateObject()
                                 gameObj->obf_71->startMainIrisOut(portal->x, portal->y);
                             }
                         } else if (finishWaitTimer == finishWaitTimerMax) {
-                            // SKELETON: the CageCustomerEffect heads for the portal too (portalX / portalY).
+                            // The freed customer heads for the portal too.
+                            Effect *cust = fx.getEffect(finishCustomerFXIndex);
+                            if (cust && portal && cust->effectType == "CageCustomerEffect") {
+                                auto *caged = static_cast<effects::CageCustomerEffect *>(cust);
+                                caged->portalX = portal->x;
+                                caged->portalY = portal->y;
+                            }
                             gravity = 0;
                             jumpgravity = 0;
                             normalgravity = 0;

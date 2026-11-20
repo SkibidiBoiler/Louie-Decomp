@@ -342,8 +342,8 @@ cage (GameObject20's constructor read from the P-code), `CageFrontBars` / `CageB
 `§_-2K§`), `§_-9k§` (fresh player and managers per level; level changes run at the start of the next logic frame,
 `runPending`), `UserData` customer unlocks (`userdata.json`), `CustomerData.getTrappedCustomerIndex`.
 DEV `--at x,y` puts the player on a tile (`--room 2 --at 12,33` in level 0 drops him on the pulley).
-SKELETON: the level-complete and game-over screens (the next level / the same level starts), CageCustomerEffect
-(the trapped customer's puppet; only Marty and Rita are in the customer list), the boss "fake" finish, grab tiles,
+SKELETON: the level-complete and game-over screens (the next level / the same level starts),
+the boss "fake" finish, grab tiles,
 the camera pan, checkpoints restoring a level (CheckpointData), masks (the iris).
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
@@ -372,4 +372,14 @@ and the constructors' debug trace() calls are left out. Checked by trace: room 0
 (papow ×3) and the player walks through (without it he stops at the first door); room 3's blimps 5 (a waiter) and
 10 (`--at 80,13`, small) carry the player; blimp 8 shuttles on its own. Captures of the open doors and the small
 blimp. Data for tests: `pl_import` output in `datos-papas/build-cur/pl2` (outside the repo).
-Next in Fort Onion: GameObject33, CageCustomerEffect.
+(36) Fort Onion, part 3: `GameObject33` training sensor (on overlap or on screen it opens a bubble; off screen
+again, a basic training counts as done), `TrainingPopup` (trainingMC at the flag's frame, key caps, slides in and
+out, timeout), `§_-4R§.§_-6n§ / §_-c§ / §_-64§` (open / done / close the bubble, `§_-a§`), the `§_-9X§` container,
+`DataManager.setupKeyNames / getKeyLabel`; `CageCustomerEffect` (the trapped customer struggles, stands up when the
+cage opens, jumps with the player, flies into the portal) and `BitmapManager.createCagedSprites / finishedCageBlit`
+(the caged sheets, blitted after the player's in the stage intro, and in the `--level` start). `Effect.getSheet` is
+virtual. Port: a TextField's `visible = false` is an empty text. Checked by captures (level 0: "Use <- -> to Walk",
+then the jump bubble with the Up key; the struggling customer in level 2 room 4 and level 0 room 2) and trace (level
+0 room 2 `--at 12,33`: the customer jumps with the player and is pulled into the portal).
+Not ported yet: the PlayerChar / CustomerChar / GameObject2 / MainMenu training calls (`§_-c§("doublejump")`...)
+and `ObjectManager.updateTrainingSigns`.

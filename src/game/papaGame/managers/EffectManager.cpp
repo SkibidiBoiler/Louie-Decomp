@@ -10,6 +10,7 @@
 #include "game/papaGame/models/effects/CookieBitEffect.h"
 #include "game/papaGame/models/effects/CrackerBreakEffect.h"
 #include "game/papaGame/models/effects/DizzyEffect.h"
+#include "game/papaGame/models/effects/CageCustomerEffect.h"
 #include "game/papaGame/models/effects/DoorFrontEffect.h"
 #include "game/papaGame/models/effects/DustEffect.h"
 #include "game/papaGame/models/effects/EndPortalEffect.h"
@@ -52,6 +53,9 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "StarburstEffect") {
         return std::make_unique<StarburstEffect>(gameObj);
+    }
+    if (type == "CageCustomerEffect") {
+        return std::make_unique<CageCustomerEffect>(gameObj);
     }
     if (type == "DoorFrontEffect") {
         return std::make_unique<DoorFrontEffect>(gameObj);
@@ -149,7 +153,7 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     if (type == "FeatherEffect") {
         return std::make_unique<FeatherEffect>(gameObj);
     }
-    return nullptr; // SKELETON: the other effect classes (CageCustomerEffect among them) are not ported yet
+    return nullptr; // SKELETON: the other effect classes are not ported yet
 }
 
 } // namespace

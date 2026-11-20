@@ -123,6 +123,7 @@ set(PL_SOURCES
     src/game/papaGame/models/bullets/GummyOnion.cpp
     src/game/papaGame/models/bullets/Cookie.cpp
     src/game/papaGame/models/effects/CageBackBarsEffect.cpp
+    src/game/papaGame/models/effects/CageCustomerEffect.cpp
     src/game/papaGame/models/effects/CageFrontBarsEffect.cpp
     src/game/papaGame/models/effects/CageSpinnerEffect.cpp
     src/game/papaGame/models/effects/BBQBitEffect.cpp
@@ -171,6 +172,7 @@ set(PL_SOURCES
     src/game/papaGame/models/items/GameItem_RadishCoin.cpp
     src/game/papaGame/models/items/GameItem_SargeCoin.cpp
     src/game/papaGame/models/objects/GameObject3.cpp
+    src/game/papaGame/models/objects/GameObject33.cpp
     src/game/papaGame/models/objects/GameObject4.cpp
     src/game/papaGame/models/objects/GameObject5.cpp
     src/game/papaGame/models/objects/GameObject6.cpp
@@ -204,6 +206,7 @@ set(PL_SOURCES
     src/game/papaGame/screens/NewCustomerScreen.cpp
     src/game/papaGame/screens/ScoreTallyScreen.cpp
     src/game/papaGame/screens/StageOutroScreen.cpp
+    src/game/papaGame/screens/TrainingPopup.cpp
     src/game/papaGame/screens/SlotSelectScreen.cpp
     src/game/papaGame/screens/SplashScreen.cpp
     src/game/papaGame/screens/StageIntroScreen.cpp

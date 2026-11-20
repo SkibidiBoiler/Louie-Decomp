@@ -16,6 +16,7 @@
 #include "game/papaGame/models/objects/GameObject25.h"
 #include "game/papaGame/models/objects/GameObject28.h"
 #include "game/papaGame/models/objects/GameObject3.h"
+#include "game/papaGame/models/objects/GameObject33.h"
 #include "game/papaGame/models/objects/GameObject4.h"
 #include "game/papaGame/models/objects/GameObject5.h"
 #include "game/papaGame/models/objects/GameObject6.h"
@@ -46,6 +47,7 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 24: return std::make_unique<GameObject24>(gameObj);
     case 25: return std::make_unique<GameObject25>(gameObj);
     case 28: return std::make_unique<GameObject28>(gameObj);
+    case 33: return std::make_unique<GameObject33>(gameObj);
     default: return nullptr; // SKELETON: the other object types are not ported yet
     }
 }
