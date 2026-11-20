@@ -413,3 +413,16 @@ With his health set to 1 for a local test (not committed), a ground pound kills 
 "End Fight" switches off and the doors (closed by "Start Fight") open again.
 `BossIntroScreen` is not Sarge's: it shows `boss_intro_radish` (the radish boss) over tileset 4's backdrop, so it
 goes with that world. Not checked: the camera lock (this arena does not use it) and the escape scene (a later world).
+(39) Mount Monterey (`--level 4`): `GameObject8` / `GameObject9` vertical blimps (shuttle between two rows, or wait
+for the player), `GameObject12` / `GameObject13` dropping blimps (sink to a target row while ridden, rise back when
+left); `Enemy13` Brussel Lark (flies round a circle; a stomp kills it), `Enemy19` Blue Shroom (ducks and rises on a
+timer, faces the player, cannot be hit while down), `Enemy25` Swiss Zack (a crusher that cannot be hurt; its hit box
+follows the crusher), `Enemy26` Cheddar Mack (swings on a rope from the ceiling as a damped pendulum; the rope is
+drawn with the new `GameDisplay.drawScreenLine`, standing in for `screenBMP.draw` of a line; hits push the swing),
+`Enemy32` Jellyback (harmless, cannot be killed; stomping it throws the player high). Checked by trace with
+`PL_SEED=3`: room 0 larks circle at their radius (`--at 80,12`), the vertical blimp carries the player up to row 16
+and back (`--at 54,22`), the small dropping blimp sinks to row 19 and rises after the player steps off (`--at 110,10
+--input "R100-112"`); room 1 the Cheddar Mack swings (`--at 18,34`, capture shows the rope); room 2 the Blue Shroom
+cycles down 20 / up 45 frames (`--at 24,10`), a Jellyback bounces the player about 260 px (`--at 24,46 --input
+"R30-40,J30-40"`); room 3 the Swiss Zack cycles, thumps and hurts the player (`--at 20,40`, capture). Not checked:
+killing a lark or a Cheddar Mack, hitting a Blue Shroom.
