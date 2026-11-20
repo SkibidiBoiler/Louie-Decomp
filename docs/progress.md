@@ -371,7 +371,7 @@ and its front frame against the player) and `DoorFrontEffect`. `GameObject.stepO
 and the constructors' debug trace() calls are left out. Checked by trace: room 0's switch opens its three doors
 (papow ×3) and the player walks through (without it he stops at the first door); room 3's blimps 5 (a waiter) and
 10 (`--at 80,13`, small) carry the player; blimp 8 shuttles on its own. Captures of the open doors and the small
-blimp. Data for tests: `pl_import` output in `datos-papas/build-cur/pl2` (outside the repo).
+blimp. Data for tests: `pl_import` output in `datos-papas/build-cur` (`--data` that folder) (outside the repo).
 (36) Fort Onion, part 3: `GameObject33` training sensor (on overlap or on screen it opens a bubble; off screen
 again, a basic training counts as done), `TrainingPopup` (trainingMC at the flag's frame, key caps, slides in and
 out, timeout), `§_-4R§.§_-6n§ / §_-c§ / §_-64§` (open / done / close the bubble, `§_-a§`), the `§_-9X§` container,
@@ -440,6 +440,15 @@ Checked by trace: room 0 a cannon shot cheeses the player (`--at 11,17`), walkin
 frees them; Dill Weeds cycle their chomps with sounds (`--at 22,33`); room 1 a Pepper Jack charges, hits, skids and
 turns (`--at 61,40`); room 2 four circular blimps circle and carry the player; room 3 a Bow Shroom's arrow hurts the
 player (`--at 29,87`). Not checked: the Cheese Wheel (spawned by objects off screen), a tethered blimp's rope (no
-tethered one in Cheddar Hills). Found: the importer draws the balloon body of every blimp sheet
-(`object_blimp_*`) only on frames 3, 10 and 13; the other frames show just the knot, so blimps look invisible in
-game. A `tools/swf2assets.py` bug, still open.
+tethered one in Cheddar Hills). Found and fixed in the importer (below): the blimp sheets showed the balloon only
+on frames 3, 10 and 13.
+
+(41) Importer (`src/import/raster.cpp`, `pl_import`): morph shapes (`DefineMorphShape` / `DefineMorphShape2`) are
+now drawn, as masks too, interpolated at the placement's ratio; before, they were skipped, so a morph used as a
+mask hid everything under it (the balloon of every `object_blimp_*` sheet is masked by a morph circle). Every
+vector sheet now starts at a whole stage pixel (the index origin is floored): the tilesheet parts had fractional
+origins (e.g. -24.67, -19.03), were pasted into the composite with resampling, and left faint seams at the tile
+edges (level 1's dirt showed a grid). `tools/swf2assets.py` gets the matching morph workaround for FFDec (morphs
+filled only on side 0 are refilled on side 1 in a working copy, since FFDec 26 renders them inverted). Checked by
+capture: level 0 room 1 without seams, level 5 room 2 with the circular blimps drawn. Data regenerated with
+`pl_import` into `datos-papas/build-cur` (the previous data kept in `build-cur-old-20261120`).
