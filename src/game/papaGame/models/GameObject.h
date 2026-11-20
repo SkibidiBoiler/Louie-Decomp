@@ -51,7 +51,7 @@ public:
     void updateObject() override;
     virtual void getHit(double /*damage*/ = 1) {}
     bool acceptsDamage(const std::string &kind, const std::string &weapon) const;
-    virtual bool checkPushingObject() { return false; } // SKELETON: pushable objects
+    bool checkPushingObject() const { return isPushable && isBeingPushed; } // AS: GameObject.checkPushingObject
     void checkStartStepping(Character &c, bool alreadyOnObject = false);
     virtual void stepOnObject(Character &c);
     virtual void stopStandingOnObject(Character &c);
@@ -75,6 +75,8 @@ public:
     bool isGrabbable = false;
     bool isGrabbed = false;
     bool isPushable = false;
+    bool isBeingPushed = false;
+    bool saveDataAtCheckpoint = false; // read by ObjectManager.saveObjectsAtCheckpoint (not ported yet)
     AnimationCycle activeCycleFrames, inactiveCycleFrames, activatingCycleFrames, deactivatingCycleFrames;
     bool jigglecam = false;
     double jiggleamount = 10;
