@@ -17,6 +17,11 @@
 #include "game/papaGame/models/enemies/Enemy15.h"
 #include "game/papaGame/models/enemies/Enemy16.h"
 #include "game/papaGame/models/enemies/Enemy17.h"
+#include "game/papaGame/models/enemies/Enemy13.h"
+#include "game/papaGame/models/enemies/Enemy19.h"
+#include "game/papaGame/models/enemies/Enemy25.h"
+#include "game/papaGame/models/enemies/Enemy26.h"
+#include "game/papaGame/models/enemies/Enemy32.h"
 #include "game/papaGame/models/enemies/Enemy35.h"
 #include "game/papaGame/models/enemies/Enemy8.h"
 #include "game/papaGame/models/enemies/Enemy9.h"
@@ -48,6 +53,11 @@ std::unique_ptr<models::Enemy> createEnemy(obf_9G::obf_4R *gameObj, double type)
     case 15: return std::make_unique<Enemy15>(gameObj);
     case 16: return std::make_unique<Enemy16>(gameObj);
     case 17: return std::make_unique<Enemy17>(gameObj);
+    case 13: return std::make_unique<Enemy13>(gameObj);
+    case 19: return std::make_unique<Enemy19>(gameObj);
+    case 25: return std::make_unique<Enemy25>(gameObj);
+    case 26: return std::make_unique<Enemy26>(gameObj);
+    case 32: return std::make_unique<Enemy32>(gameObj);
     case 35: return std::make_unique<Enemy35>(gameObj);
     case 34: return std::make_unique<Enemy34>(gameObj);
     default: return nullptr; // SKELETON: the other enemy types are not ported yet

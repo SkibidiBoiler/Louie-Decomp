@@ -291,6 +291,35 @@ void GameDisplay::blit(const engine::Sheet &sheet, double sx, double sy, double 
                                          static_cast<float>(dy));
 }
 
+void GameDisplay::drawScreenLine(double x1, double y1, double x2, double y2, double thickness, uint32_t rgb) const
+{
+    const double len = std::hypot(x2 - x1, y2 - y1);
+    if (len <= 0) {
+        return;
+    }
+    const float nx = static_cast<float>(-(y2 - y1) / len * thickness / 2);
+    const float ny = static_cast<float>((x2 - x1) / len * thickness / 2);
+    const SDL_FColor color{((rgb >> 16) & 0xFF) / 255.0f, ((rgb >> 8) & 0xFF) / 255.0f, (rgb & 0xFF) / 255.0f, 1.0f};
+    const float ax = static_cast<float>(x1), ay = static_cast<float>(y1);
+    const float bx = static_cast<float>(x2), by = static_cast<float>(y2);
+    const SDL_Vertex v[4] = {{{ax + nx, ay + ny}, color, {0, 0}},
+                             {{ax - nx, ay - ny}, color, {0, 0}},
+                             {{bx - nx, by - ny}, color, {0, 0}},
+                             {{bx + nx, by + ny}, color, {0, 0}}};
+    const int indices[6] = {0, 1, 2, 0, 2, 3};
+    SDL_RenderGeometry(gameObj->renderer, nullptr, v, 4, indices, 6);
+}
+
+double GameDisplay::drawnX(const models::Character &c) const
+{
+    return c.prevX + (c.x - c.prevX) * drawAlpha_;
+}
+
+double GameDisplay::drawnY(const models::Character &c) const
+{
+    return c.prevY + (c.y - c.prevY) * drawAlpha_;
+}
+
 void GameDisplay::stampOnTiles(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx,
                                double dy)
 {

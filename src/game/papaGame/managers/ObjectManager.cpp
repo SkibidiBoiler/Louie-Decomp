@@ -5,6 +5,10 @@
 #include "engine/json.h"
 #include "game/obf_9G/obf_4R.h"
 #include "game/papaGame/models/objects/GameObject1.h"
+#include "game/papaGame/models/objects/GameObject8.h"
+#include "game/papaGame/models/objects/GameObject9.h"
+#include "game/papaGame/models/objects/GameObject12.h"
+#include "game/papaGame/models/objects/GameObject13.h"
 #include "game/papaGame/models/objects/GameObject14.h"
 #include "game/papaGame/models/objects/GameObject17.h"
 #include "game/papaGame/models/objects/GameObject18.h"
@@ -42,6 +46,10 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 5: return std::make_unique<GameObject5>(gameObj);
     case 6: return std::make_unique<GameObject6>(gameObj);
     case 7: return std::make_unique<GameObject7>(gameObj);
+    case 8: return std::make_unique<GameObject8>(gameObj);
+    case 9: return std::make_unique<GameObject9>(gameObj);
+    case 12: return std::make_unique<GameObject12>(gameObj);
+    case 13: return std::make_unique<GameObject13>(gameObj);
     case 14: return std::make_unique<GameObject14>(gameObj);
     case 17: return std::make_unique<GameObject17>(gameObj);
     case 18: return std::make_unique<GameObject18>(gameObj);
