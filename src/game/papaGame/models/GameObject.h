@@ -52,7 +52,7 @@ public:
     bool acceptsDamage(const std::string &kind, const std::string &weapon) const;
     virtual bool checkPushingObject() { return false; } // SKELETON: pushable objects
     void checkStartStepping(Character &c, bool alreadyOnObject = false);
-    void stepOnObject(Character &c);
+    virtual void stepOnObject(Character &c);
     virtual void stopStandingOnObject(Character &c);
     virtual bool checkStandingOnObject(Character &c);
 

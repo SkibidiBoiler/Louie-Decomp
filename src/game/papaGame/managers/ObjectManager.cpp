@@ -5,6 +5,8 @@
 #include "engine/json.h"
 #include "game/obf_9G/obf_4R.h"
 #include "game/papaGame/models/objects/GameObject1.h"
+#include "game/papaGame/models/objects/GameObject17.h"
+#include "game/papaGame/models/objects/GameObject18.h"
 #include "game/papaGame/models/objects/GameObject19.h"
 #include "game/papaGame/models/objects/GameObject20.h"
 #include "game/papaGame/models/objects/GameObject21.h"
@@ -16,6 +18,8 @@
 #include "game/papaGame/models/objects/GameObject3.h"
 #include "game/papaGame/models/objects/GameObject4.h"
 #include "game/papaGame/models/objects/GameObject5.h"
+#include "game/papaGame/models/objects/GameObject6.h"
+#include "game/papaGame/models/objects/GameObject7.h"
 
 namespace papaGame::managers {
 
@@ -30,6 +34,10 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 3: return std::make_unique<GameObject3>(gameObj);
     case 4: return std::make_unique<GameObject4>(gameObj);
     case 5: return std::make_unique<GameObject5>(gameObj);
+    case 6: return std::make_unique<GameObject6>(gameObj);
+    case 7: return std::make_unique<GameObject7>(gameObj);
+    case 17: return std::make_unique<GameObject17>(gameObj);
+    case 18: return std::make_unique<GameObject18>(gameObj);
     case 19: return std::make_unique<GameObject19>(gameObj);
     case 20: return std::make_unique<GameObject20>(gameObj);
     case 21: return std::make_unique<GameObject21>(gameObj);

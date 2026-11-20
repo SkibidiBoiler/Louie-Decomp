@@ -10,6 +10,7 @@
 #include "game/papaGame/models/effects/CookieBitEffect.h"
 #include "game/papaGame/models/effects/CrackerBreakEffect.h"
 #include "game/papaGame/models/effects/DizzyEffect.h"
+#include "game/papaGame/models/effects/DoorFrontEffect.h"
 #include "game/papaGame/models/effects/DustEffect.h"
 #include "game/papaGame/models/effects/EndPortalEffect.h"
 #include "game/papaGame/models/effects/ExplosionEffect.h"
@@ -51,6 +52,9 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "StarburstEffect") {
         return std::make_unique<StarburstEffect>(gameObj);
+    }
+    if (type == "DoorFrontEffect") {
+        return std::make_unique<DoorFrontEffect>(gameObj);
     }
     if (type == "DustEffect") {
         return std::make_unique<DustEffect>(gameObj);
