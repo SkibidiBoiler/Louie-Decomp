@@ -1093,7 +1093,9 @@ void CustomerChar::shootWeapon(const std::string &bulletName, bool, const char *
         gameObj->obf_7C->playSound("shoot_bazooka.wav");
     }
     ++bulletsFired;
-    // SKELETON: GameCam.setCameraJiggle(5, 5) for the bazooka.
+    if (data->weaponType == CustomerData::WEAPON_BAZOOKA) {
+        gameObj->obf_3Y->setCameraJiggle(5, 5);
+    }
 }
 
 // AS: CustomerChar.checkIfAttacking
@@ -1572,7 +1574,7 @@ void CustomerChar::updateObject()
                 isGroundPounding = false;
                 jumpspeed = jumpstart / 2;
                 jump = true;
-                // SKELETON: GameCam.setCameraJiggle(10, 10).
+                gameObj->obf_3Y->setCameraJiggle(10, 10);
                 gameObj->obf_7C->playSound("papow.wav");
             }
         } else if (poundSound) {
@@ -1737,7 +1739,7 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
     // SKELETON: removeCheese when isCheesed.
     if (currentHealth <= 0) {
         currentHealth = 0;
-        // SKELETON: GameCam.setCameraJiggle(12, 10).
+        gameObj->obf_3Y->setCameraJiggle(12, 10);
         cancelAttack();
         dropWeapon();
         dirx = dir;
@@ -1761,7 +1763,7 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
         gameObj->obf_7C->playSound("player_died.wav");
         controls.stopHurtControls = true;
     } else {
-        // SKELETON: GameCam.setCameraJiggle(6, 8).
+        gameObj->obf_3Y->setCameraJiggle(6, 8);
         dirx = dir;
         if (dir != 0) {
             walkingDir = dir;
@@ -1901,7 +1903,7 @@ bool CustomerChar::checkForHittingEnemies(bool justChecking)
             isDoubleJumping = false;
             isWallJumping = false;
             isGroundPounding = false;
-            // SKELETON: GameCam.setCameraJiggle(10, 10).
+            gameObj->obf_3Y->setCameraJiggle(10, 10);
             gameObj->obf_7C->playSound("papow.wav");
         } else if (canGetHit() && !justChecking) {
             if (e->checkSpriteCollision(body) && !e->isDead) {

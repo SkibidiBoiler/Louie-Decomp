@@ -5,6 +5,7 @@
 #include "engine/json.h"
 #include "game/obf_9G/obf_4R.h"
 #include "game/papaGame/models/objects/GameObject1.h"
+#include "game/papaGame/models/objects/GameObject14.h"
 #include "game/papaGame/models/objects/GameObject17.h"
 #include "game/papaGame/models/objects/GameObject18.h"
 #include "game/papaGame/models/objects/GameObject19.h"
@@ -15,7 +16,10 @@
 #include "game/papaGame/models/objects/GameObject24.h"
 #include "game/papaGame/models/objects/GameObject25.h"
 #include "game/papaGame/models/objects/GameObject28.h"
+#include "game/papaGame/models/objects/GameObject2.h"
 #include "game/papaGame/models/objects/GameObject3.h"
+#include "game/papaGame/models/objects/GameObject29.h"
+#include "game/papaGame/models/objects/GameObject30.h"
 #include "game/papaGame/models/objects/GameObject33.h"
 #include "game/papaGame/models/objects/GameObject4.h"
 #include "game/papaGame/models/objects/GameObject5.h"
@@ -32,11 +36,13 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     using namespace models::objects;
     switch (static_cast<int>(type)) {
     case 1: return std::make_unique<GameObject1>(gameObj);
+    case 2: return std::make_unique<GameObject2>(gameObj);
     case 3: return std::make_unique<GameObject3>(gameObj);
     case 4: return std::make_unique<GameObject4>(gameObj);
     case 5: return std::make_unique<GameObject5>(gameObj);
     case 6: return std::make_unique<GameObject6>(gameObj);
     case 7: return std::make_unique<GameObject7>(gameObj);
+    case 14: return std::make_unique<GameObject14>(gameObj);
     case 17: return std::make_unique<GameObject17>(gameObj);
     case 18: return std::make_unique<GameObject18>(gameObj);
     case 19: return std::make_unique<GameObject19>(gameObj);
@@ -47,6 +53,8 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 24: return std::make_unique<GameObject24>(gameObj);
     case 25: return std::make_unique<GameObject25>(gameObj);
     case 28: return std::make_unique<GameObject28>(gameObj);
+    case 29: return std::make_unique<GameObject29>(gameObj);
+    case 30: return std::make_unique<GameObject30>(gameObj);
     case 33: return std::make_unique<GameObject33>(gameObj);
     default: return nullptr; // SKELETON: the other object types are not ported yet
     }

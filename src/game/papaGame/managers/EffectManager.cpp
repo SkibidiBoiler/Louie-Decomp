@@ -12,7 +12,9 @@
 #include "game/papaGame/models/effects/DizzyEffect.h"
 #include "game/papaGame/models/effects/CageCustomerEffect.h"
 #include "game/papaGame/models/effects/DoorFrontEffect.h"
+#include "game/papaGame/models/effects/BossEscapeEffect.h"
 #include "game/papaGame/models/effects/DustEffect.h"
+#include "game/papaGame/models/effects/LaughEffect.h"
 #include "game/papaGame/models/effects/EndPortalEffect.h"
 #include "game/papaGame/models/effects/ExplosionEffect.h"
 #include "game/papaGame/models/effects/ItemBalloonEffect.h"
@@ -59,6 +61,12 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "DoorFrontEffect") {
         return std::make_unique<DoorFrontEffect>(gameObj);
+    }
+    if (type == "LaughEffect") {
+        return std::make_unique<LaughEffect>(gameObj);
+    }
+    if (type == "BossEscapeEffect") {
+        return std::make_unique<BossEscapeEffect>(gameObj);
     }
     if (type == "DustEffect") {
         return std::make_unique<DustEffect>(gameObj);

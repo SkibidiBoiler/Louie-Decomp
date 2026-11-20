@@ -7,6 +7,8 @@
 #include "engine/json.h"
 #include "game/obf_9G/obf_4R.h"
 #include "game/papaGame/models/bullets/Banana.h"
+#include "game/papaGame/models/bullets/GiantPepper.h"
+#include "game/papaGame/models/bullets/SargePepper.h"
 #include "game/papaGame/models/bullets/Basketball.h"
 #include "game/papaGame/models/bullets/BlueberryShot.h"
 #include "game/papaGame/models/bullets/ChiliCan.h"
@@ -45,6 +47,12 @@ std::unique_ptr<models::Bullet> createBullet(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "XandraStar") {
         return std::make_unique<XandraStar>(gameObj);
+    }
+    if (type == "SargePepper") {
+        return std::make_unique<SargePepper>(gameObj);
+    }
+    if (type == "GiantPepper") {
+        return std::make_unique<GiantPepper>(gameObj);
     }
     if (type == "Banana") {
         return std::make_unique<Banana>(gameObj);
