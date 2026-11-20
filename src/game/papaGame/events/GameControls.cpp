@@ -15,6 +15,18 @@ void GameControls::resetKeys()
     keyPressedAction = keyPressedJump = keyPressedLeft = keyPressedRight = keyPressedUp = keyPressedDown = false;
 }
 
+// AS: GameControls.jumpPlayerOnLadder — keyDownListener calls it for the left and right keys: a small hop off the
+// ladder.
+void GameControls::jumpPlayerOnLadder()
+{
+    CustomerChar &p = *gameObj->playerObj;
+    if (p.isClimbingLadder) {
+        p.isClimbingLadder = false;
+        p.jump = true;
+        p.jumpspeed = -6;
+    }
+}
+
 // AS: GameControls.detectKeys (player part)
 void GameControls::detectKeys()
 {

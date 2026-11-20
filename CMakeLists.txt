@@ -75,6 +75,7 @@ set(PL_SOURCES
     src/engine/movieclip.cpp
     src/engine/sheets.cpp
     src/engine/settings.cpp
+    src/engine/options_menu.cpp
     src/engine/json.cpp
     src/engine/lang.cpp
     src/engine/menu_bar.cpp

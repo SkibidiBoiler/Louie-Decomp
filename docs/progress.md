@@ -452,3 +452,14 @@ edges (level 1's dirt showed a grid). `tools/swf2assets.py` gets the matching mo
 filled only on side 0 are refilled on side 1 in a working copy, since FFDec 26 renders them inverted). Checked by
 capture: level 0 room 1 without seams, level 5 room 2 with the circular blimps drawn. Data regenerated with
 `pl_import` into `datos-papas/build-cur` (the previous data kept in `build-cur-old-20261120`).
+
+(42) Ladders, pick-ups, options. `GameControls.jumpPlayerOnLadder`: pressing left or right on a ladder hops off it
+(the original calls it from keyDownListener; the port on the press of the action), so the player can jump from one
+ladder to the next (level 1, room id 27: up the ladder at column 10, right, up again on the ladder at column 14;
+checked by trace). Item pick-up effects are added at (0, 0) and follow the player from their first update; their
+interpolation now starts on the player, which removes a one-frame flash in the screen's top-left corner. The port's
+options menu (`src/engine/options_menu.*`, not in the original): a translucent gear button in the window's top-right
+corner (or F1) opens a translucent panel, in the touch buttons' style, with the frame rate limit, smooth movement,
+language, button transparency and size, and the FPS line; saved to settings.ini at once; the game pauses while it is
+open (DEV `--options` starts with it open). The shown display rate follows Android's mode switch (the window asks
+for the panel's fastest mode, and the POCO does switch to 120 Hz with the app in front).

@@ -13,6 +13,11 @@ struct Settings {
     int fpsCap = 120;
     // Interface language ("en", "es"); empty = the system's.
     std::string language;
+    // On-screen touch buttons: opacity 0..1 and size multiplier.
+    float touchOpacity = 0.55f;
+    float touchSize = 1.0f;
+    // The DEV line with FPS, room and camera at the top left.
+    bool showOverlay = true;
 
     void load();
     void save() const;

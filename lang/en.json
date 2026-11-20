@@ -36,5 +36,18 @@
   "title.area_info": "AREA INFO",
   "title.choose_your_character": "CHOOSE YOUR CHARACTER",
   "menu.yes": "YES",
-  "menu.no": "NO"
+  "menu.no": "NO",
+  "options.title": "OPTIONS",
+  "options.fps": "Frame rate limit",
+  "options.fps_max": "Unlimited",
+  "options.fps_original": "Original ({0})",
+  "options.interpolation": "Smooth movement",
+  "options.language": "Language",
+  "options.language_system": "System",
+  "options.touch_opacity": "Button transparency",
+  "options.touch_size": "Button size",
+  "options.overlay": "Show FPS info",
+  "options.on": "On",
+  "options.off": "Off",
+  "options.close": "CLOSE"
 }
