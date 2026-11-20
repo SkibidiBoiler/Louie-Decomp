@@ -381,5 +381,9 @@ cage opens, jumps with the player, flies into the portal) and `BitmapManager.cre
 virtual. Port: a TextField's `visible = false` is an empty text. Checked by captures (level 0: "Use <- -> to Walk",
 then the jump bubble with the Up key; the struggling customer in level 2 room 4 and level 0 room 2) and trace (level
 0 room 2 `--at 12,33`: the customer jumps with the player and is pulled into the portal).
-Not ported yet: the PlayerChar / CustomerChar / GameObject2 / MainMenu training calls (`§_-c§("doublejump")`...)
-and `ObjectManager.updateTrainingSigns`.
+The other training calls: `PlayerChar.startupPlayer` (the skill bubble: groundpound / glide / doublejump),
+`startPounding` / `startDoubleJumping` / `startGliding` / `startWallJumping` and crawling (done), the MainMenuScreen
+bubbles (character, challenges, styles, nowarpkeys; `showSectionTraining` is the part of tweenSections that opens
+them) and `ObjectManager.updateTrainingSigns` (`GameObject.updateTrainingSign` is empty). Checked by captures
+(`--level 2 --customer 8 / 23 / 15`: the pound, glide and double jump bubbles; the double jump closes its bubble).
+Not checked: the menu bubbles. Still missing: GameObject2's "push" (GameObject2 is not ported).

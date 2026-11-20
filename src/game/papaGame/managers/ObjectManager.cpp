@@ -76,6 +76,16 @@ bool ObjectManager::loadTables(const std::string &path)
     return false;
 }
 
+// AS: ObjectManager.updateTrainingSigns — after the keys were changed.
+void ObjectManager::updateTrainingSigns()
+{
+    for (models::GameObject *o : objects) {
+        if (o) {
+            o->updateTrainingSign();
+        }
+    }
+}
+
 // AS: ObjectManager.getObject
 models::GameObject *ObjectManager::getObject(double screenObjID, double whichScreen) const
 {

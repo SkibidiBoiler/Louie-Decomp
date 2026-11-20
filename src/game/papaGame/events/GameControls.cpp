@@ -480,12 +480,15 @@ void GameControls::pauseGame()
     }
 }
 
-// AS: GameControls.resumeGame — SKELETON: ObjectManager.updateTrainingSigns after the keys were changed.
-void GameControls::resumeGame(bool /*keysWereChanged*/)
+// AS: GameControls.resumeGame
+void GameControls::resumeGame(bool keysWereChanged)
 {
     isPaused = false;
     if (!gameObj->obf_7C->isMute) {
         gameObj->obf_7C->unmuteSound(false);
+    }
+    if (keysWereChanged) {
+        gameObj->obf_7u->updateTrainingSigns();
     }
     if (gameObj->obf_6Z && gameObj->obf_6Z->interfaceClip) {
         if (engine::MovieClip *paused = gameObj->obf_6Z->interfaceClip->findChild("pausedMC")) {

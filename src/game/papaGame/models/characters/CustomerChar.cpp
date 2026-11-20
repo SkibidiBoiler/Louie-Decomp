@@ -194,7 +194,16 @@ void CustomerChar::startupPlayer(double tileX, double tileY, bool newLevel, bool
     if (newLevel) {
         gameObj->obf_V->addEffect(x, y - 64, "EndPortalEffect", "startup");
     }
-    // SKELETON: the skill tutorials (§_-6n§).
+    // The skill's training bubble, until it has been trained.
+    const data::UserData &user = *gameObj->obf_51;
+    const std::string &skill = playerData()->skillType;
+    if (skill == CustomerData::SKILL_POUND && !user.hasTrained("groundpound")) {
+        gameObj->obf_6n("groundpound", true, gameObj->obf_AQ->getKeyLabel(data::DataManager::KEY_DOWN));
+    } else if (skill == CustomerData::SKILL_GLIDE && !user.hasTrained("glide")) {
+        gameObj->obf_6n("glide", true, gameObj->obf_AQ->getKeyLabel(data::DataManager::KEY_JUMP));
+    } else if (skill == CustomerData::SKILL_DOUBLEJUMP && !user.hasTrained("doublejump")) {
+        gameObj->obf_6n("doublejump", true);
+    }
     fallChar();
     prevX = x;
     prevY = y;
@@ -246,17 +255,19 @@ void CustomerChar::startSliding(double startSpeed, bool useSlope)
     }
 }
 
-// AS: PlayerChar.startPounding — SKELETON: the "groundpound" / "poundcontext" tutorials (§_-c§).
+// AS: PlayerChar.startPounding
 void CustomerChar::startPounding()
 {
     if (skillType == CustomerData::SKILL_POUND && !isGroundPounding) {
         isGroundPounding = true;
         jump = true;
         jumpspeed = 0;
+        gameObj->obf_c("groundpound");
+        gameObj->obf_c("poundcontext");
     }
 }
 
-// AS: PlayerChar.startDoubleJumping — SKELETON: the "doublejump" tutorial (§_-c§).
+// AS: PlayerChar.startDoubleJumping
 void CustomerChar::startDoubleJumping()
 {
     if (skillType == CustomerData::SKILL_DOUBLEJUMP && !isDoubleJumping) {
@@ -264,10 +275,11 @@ void CustomerChar::startDoubleJumping()
         jump = true;
         jumpspeed = jumpstart;
         gravity = jumpgravity;
+        gameObj->obf_c("doublejump");
     }
 }
 
-// AS: PlayerChar.startGliding — SKELETON: the "glide" tutorial (§_-c§).
+// AS: PlayerChar.startGliding
 void CustomerChar::startGliding()
 {
     if (skillType == CustomerData::SKILL_GLIDE && jump && !isGliding) {
@@ -284,10 +296,11 @@ void CustomerChar::startGliding()
         } else if (playerData()->customerName != "Professor Fitz") {
             gameObj->obf_7C->playSound("hatglider.wav", false, 0.3);
         }
+        gameObj->obf_c("glide");
     }
 }
 
-// AS: PlayerChar.startWallJumping — away from the wall. SKELETON: the "walljump" tutorial (§_-c§).
+// AS: PlayerChar.startWallJumping — away from the wall.
 void CustomerChar::startWallJumping(double dir, const std::string &key)
 {
     isWallJumping = true;
@@ -315,6 +328,7 @@ void CustomerChar::startWallJumping(double dir, const std::string &key)
         triggerjumpx = true;
         lastWallJumpKey = "left";
     }
+    gameObj->obf_c("walljump");
 }
 
 // AS: CustomerChar.stopGrabRiding — letting go of a moving rideable launches the player along it.
@@ -1670,7 +1684,10 @@ void CustomerChar::updateObject()
     wasJumping = jump;
     wasTurning = isTurning;
     playerLastX = x;
-    // SKELETON: the crawl hint and Professor Fitz's copter sound.
+    if (isCrawling) {
+        gameObj->obf_c("crawl");
+    }
+    // SKELETON: Professor Fitz's copter sound.
 }
 
 // AS: PlayerChar.clearCombo
