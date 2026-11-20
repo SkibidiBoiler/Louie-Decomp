@@ -3,17 +3,27 @@
 Decompilation of every Papa's Louie Attack for Windows and Android: a native C++20 port (SDL3) of
 *Papa Louie: When Pizzas Attack!*, *Papa Louie 2: When Burgers Attack!* and *Papa Louie 3: When Sundaes Attack!*.
 
-This repository contains **no game code, assets or binaries**. You need your own copy of the original `.swf`
-files. When you choose your copy, the app converts it locally, on your PC or phone: graphics, sounds, levels and
-the game's data tables go to the app's data folder, and nothing is uploaded anywhere. The game logic itself is
-not extracted from your copy: it is translated to C++ by hand and lives in `src/game/`.
+> **Unofficial fan project.** Not affiliated with, endorsed by or sponsored by Flipline Studios. *Papa Louie* and
+> the game titles are trademarks of their owner and are used here only to say which games this port runs.
+> Free and non-commercial: no donations, no paid builds. If you are the rights holder and want something changed
+> or removed, please open an issue.
+
+This repository contains **no game assets, original source files or binaries with game data**. You need your own
+copy of the original `.swf` files. When you choose your copy, the app converts it locally, on your PC or phone:
+graphics, sounds, levels and the game's data tables go to the app's data folder, and nothing is uploaded
+anywhere. The game logic is not extracted from your copy either: it is rewritten in C++ and lives in
+`src/game/`.
+
+Please do not share converted data folders, `.swf` files or builds that bundle them.
 
 - Project rules, code profile and build commands: [AGENTS.md](AGENTS.md)
 - Asset format: [docs/asset-format.md](docs/asset-format.md) · Renderer notes: [docs/renderer.md](docs/renderer.md)
 - Status: Papa Louie 2 is playable from the title screen: slot select and saving, the story, the map and the
-  customer choice, and the levels with their enemies, items, objects, effects, HUD and sound. Still missing: the
-  level-complete score screen, the pause menu, bullets, some menu sections, and checking every level and the boss.
-  `python -I tools/progress.py` shows how much of the original code is translated (about a third of PL2).
+  customer choice, and the levels with their enemies, items, objects, effects, bullets, HUD and sound. Still
+  missing: the later worlds' enemies and objects, the boss, the level-complete score screen, the pause menu and
+  some menu sections. `python -I tools/progress.py` shows how much of the original code is translated (about half
+  of PL2). PL3 and PL1 come after PL2.
+- Publishing checklist and legal notes: [docs/publishing.md](docs/publishing.md)
 
 ## Why a native port
 

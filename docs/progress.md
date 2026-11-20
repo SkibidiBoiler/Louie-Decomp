@@ -342,8 +342,8 @@ cage (GameObject20's constructor read from the P-code), `CageFrontBars` / `CageB
 `§_-2K§`), `§_-9k§` (fresh player and managers per level; level changes run at the start of the next logic frame,
 `runPending`), `UserData` customer unlocks (`userdata.json`), `CustomerData.getTrappedCustomerIndex`.
 DEV `--at x,y` puts the player on a tile (`--room 2 --at 12,33` in level 0 drops him on the pulley).
-SKELETON: the level-complete and game-over screens (the next level / the same level starts), CageCustomerEffect
-(the trapped customer's puppet; only Marty and Rita are in the customer list), the boss "fake" finish, grab tiles,
+SKELETON: the level-complete and game-over screens (the next level / the same level starts),
+the boss "fake" finish, grab tiles,
 the camera pan, checkpoints restoring a level (CheckpointData), masks (the iris).
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
@@ -360,5 +360,30 @@ menu, translations, touch-control editor, PL3 (shares the engine), PL1 (AS2, sep
 gold army onion (drops `GameItem_GoldHelmet`, `ItemGoldHelmetEffect`), `Enemy8` runt tomato, `Enemy15` leafy lark,
 `Enemy16` dill wheel (its own `moveChar` round floors, walls and ceilings; `obf_8J` linear easing). `moveChar` and
 `adjustSpeedForSlopes` are virtual; EnemyManager gives subclasses their parent's cycle arrays. Fort Onion is
-`--level 2`. Checked by trace: only the army onions of room 1. Next: test 8/15/16 and the helmet, then GameObject6,
-7, 17, 18.
+`--level 2`. Checked by trace: the army onions (room 1), the runt tomatoes hopping (room 2, `--at 76,14`), the leafy
+larks flying their rows (room 3, `--at 10,6`), the dill wheels rolling round floors, walls and ceilings and hurting
+the player (room 4, `--at 60,21`); the gold onion of room 1 (`--at 59,41 --input "J38-46,L60-70,R71-72,A73-75,A85-87,
+R100-140"`) drops its helmet (goldhelmet_drop sounds), which is picked up (specialitems 1, ItemGoldHelmetEffect).
+(35) Fort Onion, part 2: `GameObject6` / `GameObject7` horizontal blimps (shuttle between their column and a target
+column, or wait for the player; carry their riders; GameObject6 can be a boss's, tweening in), `GameObject17` floor
+switch (pressed by stepping on it; objects too), `GameObject18` door (solid while shut, four tiles; sorts itself
+and its front frame against the player) and `DoorFrontEffect`. `GameObject.stepOnObject` is virtual. The blimps'
+and the constructors' debug trace() calls are left out. Checked by trace: room 0's switch opens its three doors
+(papow ×3) and the player walks through (without it he stops at the first door); room 3's blimps 5 (a waiter) and
+10 (`--at 80,13`, small) carry the player; blimp 8 shuttles on its own. Captures of the open doors and the small
+blimp. Data for tests: `pl_import` output in `datos-papas/build-cur/pl2` (outside the repo).
+(36) Fort Onion, part 3: `GameObject33` training sensor (on overlap or on screen it opens a bubble; off screen
+again, a basic training counts as done), `TrainingPopup` (trainingMC at the flag's frame, key caps, slides in and
+out, timeout), `§_-4R§.§_-6n§ / §_-c§ / §_-64§` (open / done / close the bubble, `§_-a§`), the `§_-9X§` container,
+`DataManager.setupKeyNames / getKeyLabel`; `CageCustomerEffect` (the trapped customer struggles, stands up when the
+cage opens, jumps with the player, flies into the portal) and `BitmapManager.createCagedSprites / finishedCageBlit`
+(the caged sheets, blitted after the player's in the stage intro, and in the `--level` start). `Effect.getSheet` is
+virtual. Port: a TextField's `visible = false` is an empty text. Checked by captures (level 0: "Use <- -> to Walk",
+then the jump bubble with the Up key; the struggling customer in level 2 room 4 and level 0 room 2) and trace (level
+0 room 2 `--at 12,33`: the customer jumps with the player and is pulled into the portal).
+The other training calls: `PlayerChar.startupPlayer` (the skill bubble: groundpound / glide / doublejump),
+`startPounding` / `startDoubleJumping` / `startGliding` / `startWallJumping` and crawling (done), the MainMenuScreen
+bubbles (character, challenges, styles, nowarpkeys; `showSectionTraining` is the part of tweenSections that opens
+them) and `ObjectManager.updateTrainingSigns` (`GameObject.updateTrainingSign` is empty). Checked by captures
+(`--level 2 --customer 8 / 23 / 15`: the pound, glide and double jump bubbles; the double jump closes its bubble).
+Not checked: the menu bubbles. Still missing: GameObject2's "push" (GameObject2 is not ported).

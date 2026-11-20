@@ -19,7 +19,7 @@ public:
     void endAnimationCycle() override {}
     virtual bool checkOnScreen() const;
     void updateObject() override;
-    const engine::Sheet *getSheet() const;
+    virtual const engine::Sheet *getSheet() const;
 
     // AS: `type`, the class name as a String ("DustEffect"); Character.type is a Number in the port.
     std::string effectType;

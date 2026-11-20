@@ -10,6 +10,62 @@ namespace papaGame::data {
 // AS: DataManager.DataManager
 DataManager::DataManager(obf_9G::obf_4R *gameObj_) : gameObj(gameObj_)
 {
+    setupKeyNames();
+}
+
+// AS: DataManager.setupKeyNames — the names of the Flash key codes (letters and digits are themselves).
+void DataManager::setupKeyNames()
+{
+    keyNameMap.assign(223, "");
+    for (int code = 65; code <= 90; ++code) {
+        keyNameMap[static_cast<size_t>(code)] = std::string(1, static_cast<char>(code)); // A..Z
+    }
+    for (int code = 48; code <= 57; ++code) {
+        keyNameMap[static_cast<size_t>(code)] = std::string(1, static_cast<char>(code)); // 0..9
+    }
+    static const std::pair<int, const char *> names[] = {
+        {96, "Num 0"}, {97, "Num 1"}, {98, "Num 2"},   {99, "Num 3"},  {100, "Num 4"}, {101, "Num 5"},
+        {102, "Num 6"}, {103, "Num 7"}, {104, "Num 8"}, {105, "Num 9"}, {106, "Num *"}, {107, "Num +"},
+        {13, "Enter"},  {109, "Num -"}, {110, "Num ."}, {111, "Num /"}, {9, "Tab"},     {8, "Bksp"},
+        {19, "Pause"},  {16, "Shift"},  {17, "Ctrl"},   {32, "Space"},  {33, "PgUp"},   {34, "PgDn"},
+        {35, "End"},    {36, "Home"},   {37, "Left"},   {38, "Up"},     {39, "Right"},  {40, "Down"},
+        {45, "Ins"},    {46, "Del"},    {186, ";"},     {187, "+="},    {189, "-"},     {191, "/?"},
+        {192, "~"},     {219, "["},     {221, "]"},     {220, "|"},     {222, "'"},     {188, ","},
+        {190, "."},
+    };
+    for (const auto &[code, name] : names) {
+        keyNameMap[static_cast<size_t>(code)] = name;
+    }
+}
+
+// AS: DataManager.getKeyLabel — the name of the key bound to an action ("???" when it has none).
+std::string DataManager::getKeyLabel(const std::string &key) const
+{
+    const UserData &user = *gameObj->obf_51;
+    std::string label = "???";
+    double code = 0;
+    if (key == KEY_ATTACK) {
+        code = user.keyCodeAttack;
+    } else if (key == KEY_JUMP) {
+        code = user.keyCodeJump;
+    } else if (key == KEY_DROP) {
+        code = user.keyCodeDrop;
+    } else if (key == KEY_RIGHT) {
+        code = user.keyCodeRight;
+    } else if (key == KEY_LEFT) {
+        code = user.keyCodeLeft;
+    } else if (key == KEY_UP) {
+        code = user.keyCodeUp;
+    } else if (key == KEY_DOWN) {
+        code = user.keyCodeDown;
+    } else if (key == KEY_PAUSE) {
+        code = user.keyCodePause;
+    }
+    if (code >= 0 && static_cast<double>(keyNameMap.size()) > code &&
+        !keyNameMap[static_cast<size_t>(code)].empty()) {
+        label = keyNameMap[static_cast<size_t>(code)];
+    }
+    return label;
 }
 
 bool DataManager::prepareLevelData(const std::string &levelsXmlPath)

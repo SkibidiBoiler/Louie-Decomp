@@ -46,13 +46,14 @@ public:
     virtual void unregisterSpawn() {}
     virtual bool checkOnScreen();
     virtual void checkAdditionalBlitting(bool /*foreground*/, bool /*before*/ = false) {}
+    virtual void updateTrainingSign() {} // AS: GameObject.updateTrainingSign (empty; no subclass overrides it)
     void allowReactions() { canReact = true; } // AS: GameObject.allowReactions
     void updateObject() override;
     virtual void getHit(double /*damage*/ = 1) {}
     bool acceptsDamage(const std::string &kind, const std::string &weapon) const;
     virtual bool checkPushingObject() { return false; } // SKELETON: pushable objects
     void checkStartStepping(Character &c, bool alreadyOnObject = false);
-    void stepOnObject(Character &c);
+    virtual void stepOnObject(Character &c);
     virtual void stopStandingOnObject(Character &c);
     virtual bool checkStandingOnObject(Character &c);
 

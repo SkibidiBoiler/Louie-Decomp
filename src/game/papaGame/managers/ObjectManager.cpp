@@ -5,6 +5,8 @@
 #include "engine/json.h"
 #include "game/obf_9G/obf_4R.h"
 #include "game/papaGame/models/objects/GameObject1.h"
+#include "game/papaGame/models/objects/GameObject17.h"
+#include "game/papaGame/models/objects/GameObject18.h"
 #include "game/papaGame/models/objects/GameObject19.h"
 #include "game/papaGame/models/objects/GameObject20.h"
 #include "game/papaGame/models/objects/GameObject21.h"
@@ -14,8 +16,11 @@
 #include "game/papaGame/models/objects/GameObject25.h"
 #include "game/papaGame/models/objects/GameObject28.h"
 #include "game/papaGame/models/objects/GameObject3.h"
+#include "game/papaGame/models/objects/GameObject33.h"
 #include "game/papaGame/models/objects/GameObject4.h"
 #include "game/papaGame/models/objects/GameObject5.h"
+#include "game/papaGame/models/objects/GameObject6.h"
+#include "game/papaGame/models/objects/GameObject7.h"
 
 namespace papaGame::managers {
 
@@ -30,6 +35,10 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 3: return std::make_unique<GameObject3>(gameObj);
     case 4: return std::make_unique<GameObject4>(gameObj);
     case 5: return std::make_unique<GameObject5>(gameObj);
+    case 6: return std::make_unique<GameObject6>(gameObj);
+    case 7: return std::make_unique<GameObject7>(gameObj);
+    case 17: return std::make_unique<GameObject17>(gameObj);
+    case 18: return std::make_unique<GameObject18>(gameObj);
     case 19: return std::make_unique<GameObject19>(gameObj);
     case 20: return std::make_unique<GameObject20>(gameObj);
     case 21: return std::make_unique<GameObject21>(gameObj);
@@ -38,6 +47,7 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 24: return std::make_unique<GameObject24>(gameObj);
     case 25: return std::make_unique<GameObject25>(gameObj);
     case 28: return std::make_unique<GameObject28>(gameObj);
+    case 33: return std::make_unique<GameObject33>(gameObj);
     default: return nullptr; // SKELETON: the other object types are not ported yet
     }
 }
@@ -64,6 +74,16 @@ bool ObjectManager::loadTables(const std::string &path)
         return true;
     }
     return false;
+}
+
+// AS: ObjectManager.updateTrainingSigns — after the keys were changed.
+void ObjectManager::updateTrainingSigns()
+{
+    for (models::GameObject *o : objects) {
+        if (o) {
+            o->updateTrainingSign();
+        }
+    }
 }
 
 // AS: ObjectManager.getObject
