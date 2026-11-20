@@ -17,6 +17,7 @@
 #include "game/papaGame/models/enemies/Enemy15.h"
 #include "game/papaGame/models/enemies/Enemy16.h"
 #include "game/papaGame/models/enemies/Enemy17.h"
+#include "game/papaGame/models/enemies/Enemy35.h"
 #include "game/papaGame/models/enemies/Enemy8.h"
 #include "game/papaGame/models/enemies/Enemy9.h"
 #include "game/papaGame/models/enemies/Enemy10.h"
@@ -47,6 +48,7 @@ std::unique_ptr<models::Enemy> createEnemy(obf_9G::obf_4R *gameObj, double type)
     case 15: return std::make_unique<Enemy15>(gameObj);
     case 16: return std::make_unique<Enemy16>(gameObj);
     case 17: return std::make_unique<Enemy17>(gameObj);
+    case 35: return std::make_unique<Enemy35>(gameObj);
     case 34: return std::make_unique<Enemy34>(gameObj);
     default: return nullptr; // SKELETON: the other enemy types are not ported yet
     }

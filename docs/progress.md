@@ -396,5 +396,20 @@ checkGroupOnScreen`), `Enemy17` Dill Worm (hangs, notices the player below, drop
 Checked by trace: room 0 berries (`--at 5,21`) and boulder (`--at 96,17 --customer 14 --input "R20-120"`; Marty
 cannot push it), the Kaiser onion (`--at 52,13`), room 1 Party Subs (stomping one car of the group at
 `--at 29,24 --input "L60-75,J66-74"` stops the others until it recovers) and room 2's Dill Worm
-(`--at 78,56 --input "L20-45"`). Still missing in Sarge's Lair: the boss `Enemy35` (Sarge; `SargePepper`,
-`GiantPepper`), `GameObject29` / `GameObject30` and `BossIntroScreen`.
+(`--at 78,56 --input "L20-45"`).
+(38) Sarge's Lair, part 2: the boss. `Enemy35` Sarge (dropped into the arena by the "Start Fight" trigger; jumps
+about and throws `SargePepper` (style by distance: flat, normal, high) or, once hurt, alternately `GiantPepper`; a
+stomp only stuns him, a ground pound (or a bullet, a quarter point) hurts him; hurt, he rolls for 200 frames, stops
+at x tile 20 and calls static blimps (more at one point left), which he jumps onto; at one point left he calls in
+six Kaiser onions, which die with him), `GameObject29` "Start Fight" (closes the doors and drops the boss; can lock
+the camera), `GameObject30` "End Fight" (unlocks the camera, opens the doors; with "spikes" it first plays the
+escape scene: `LaughEffect`, `BossEscapeEffect`; used in a later world). `GameCam.setCameraJiggle / setCameraLock /
+unlockCamera / jiggleCamera`, now also called by the player's ground pound, hurt, death and bazooka and by objects
+with `jigglecam`. `Enemy.sendTriggered` is virtual. DEV: the environment variable `PL_SEED` fixes `Math.random`'s
+seed so traced runs repeat. Checked by trace (`--level 3 --room 4 --at 2,25`): the drop, landing, throws and jumps;
+with `PL_SEED=3 --customer 8 --input "R20-60,R102-124,J102-112,D124-127,L130-150"` the stomp stuns him, the ground
+pound hurts him, he rolls, stops at tile 20, three blimps appear and he jumps onto them and throws giant peppers.
+With his health set to 1 for a local test (not committed), a ground pound kills him: the six onions die with him,
+"End Fight" switches off and the doors (closed by "Start Fight") open again.
+`BossIntroScreen` is not Sarge's: it shows `boss_intro_radish` (the radish boss) over tileset 4's backdrop, so it
+goes with that world. Not checked: the camera lock (this arena does not use it) and the escape scene (a later world).

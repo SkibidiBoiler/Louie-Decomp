@@ -35,7 +35,7 @@ public:
     virtual double getTorsoOffsetY() const { return 0; }
     void endAnimationCycle() override {}
     void broadcastTriggered(double state, bool fromGlobal = false);
-    void sendTriggered(double state, bool pan, bool fromGlobal = false);
+    virtual void sendTriggered(double state, bool pan, bool fromGlobal = false);
     virtual bool checkOnScreen();
     virtual void checkBeforeBlitting() {}
     void saveEnemyKill();

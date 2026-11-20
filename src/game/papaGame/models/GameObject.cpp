@@ -122,7 +122,7 @@ void GameObject::deactivateObject()
     }
 }
 
-// AS: GameObject.finishActivatingObject (SKELETON: the camera pan back and the camera jiggle)
+// AS: GameObject.finishActivatingObject (SKELETON: the camera pan back)
 void GameObject::finishActivatingObject()
 {
     isActivating = false;
@@ -135,6 +135,9 @@ void GameObject::finishActivatingObject()
         removeCollision();
     }
     waitPanBack = false;
+    if (jigglecam) {
+        gameObj->obf_3Y->setCameraJiggle(jiggleamount, jiggleduration);
+    }
     if (broadcastAmount == 0) {
         broadcastAmount = broadcastAmountOn;
     }
@@ -149,7 +152,7 @@ void GameObject::finishActivatingObject()
     }
 }
 
-// AS: GameObject.finishDeactivatingObject (SKELETON: the camera pan back and the camera jiggle)
+// AS: GameObject.finishDeactivatingObject (SKELETON: the camera pan back)
 void GameObject::finishDeactivatingObject()
 {
     isDeactivating = false;
@@ -162,6 +165,9 @@ void GameObject::finishDeactivatingObject()
         addCollision();
     }
     waitPanBack = false;
+    if (jigglecam) {
+        gameObj->obf_3Y->setCameraJiggle(jiggleamount, jiggleduration);
+    }
     if (broadcastAmount == 0) {
         broadcastAmount = broadcastAmountOff;
     }

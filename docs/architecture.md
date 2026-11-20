@@ -65,7 +65,7 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | Enemy34 | Burgerzilla | Leaf Landing | ✅ |
 | Enemy7, 12, 14 | Roma Tomato, Burger Slider, Lettuce Lark | Lettuce Lane | ✅ |
 | Enemy3, 4, 8, 15, 16 | Army Onion (+4), Runt Tomato, Leafy Lark, Dill Wheel | Fort Onion | ✅ |
-| Enemy5, 9, 10, 11, 17, 35 | Kaiser Onion, Party Sub (9–11), Dill Worm, Sarge (boss; fires `SargePepper`, `GiantPepper`) | Sarge's Lair | all but 35 |
+| Enemy5, 9, 10, 11, 17, 35 | Kaiser Onion, Party Sub (9–11), Dill Worm, Sarge (boss; fires `SargePepper`, `GiantPepper`) | Sarge's Lair | ✅ |
 | Enemy13, 19, 25, 26, 32 | Brussel Lark, Blue Shroom, Swiss Zack, Cheddar Mack, Jellyback | Mount Monterey | |
 | Enemy18, 21, 27, 31 | Dill Weed, Bow Shroom (fires `ShroomArrow`), Pepper Jack, Cheese Wheel | Cheddar Hills | |
 | Enemy20, 22, 28, 29 | Thorn Shroom, Bacobar, Radish, Laddish | The Saucelands | |
@@ -89,7 +89,7 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | GameObject26 | Cheese Cannon (fires `CheeseBullet`) | |
 | GameObject27, 32 | BBQ Quicksauce, Rainbow Sauce | |
 | GameObject28 | Checkpoint | ✅ |
-| GameObject29, 30 | Start Fight, End Fight (boss arenas, boss music, the escape) | |
+| GameObject29, 30 | Start Fight, End Fight (boss arenas, boss music, the escape) | ✅ |
 | GameObject31 | Spike Bed | |
 | GameObject33 | Training Sensor | ✅ |
 
@@ -112,7 +112,7 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | ScoreTallyScreen | level complete: score, coins, challenges, saving the result | ✅ |
 | StageOutroScreen | before the tally: the customer and the rescued one fall through the warp | ✅ |
 | NewCustomerScreen | a customer joins the team | ✅ |
-| BossIntroScreen | before a boss fight | |
+| BossIntroScreen | before the radish boss fight (not Sarge) | |
 | TrainingPopup | the tutorial pop-ups | ✅ |
 | ParadeScreen, GameOutroScreen | the ending | |
 | LoadingLevelsScreen, FliplineLogoScreen, SponsorLogoScreen, LicenseLogoScreen | loader and logos | not needed |
@@ -126,7 +126,7 @@ of that world and the ones before it (tables above).
    that announces challenges and badges.
 2. **Bullets:** `Bullet`, `BulletManager`, shooting and Connor's `Basketball` are done; next the other customers'
    weapons. Several enemies and objects need theirs.
-3. **World by world**, in map order: Lettuce Lane → Fort Onion → Sarge's Lair (first boss: `BossIntroScreen`,
+3. **World by world**, in map order: Lettuce Lane → Fort Onion → Sarge's Lair (first boss: `Enemy35`,
    `GameObject29/30`) → Mount Monterey → Cheddar Hills → The Saucelands → Radley's Hideout → BBQ Bog → X Zone.
    For each, its new enemies, objects and effects, then play every room with `--level`/`--room`.
 4. **The rest of the menus:** baddies, badges, controls, help, the tutorial pop-ups, then the ending

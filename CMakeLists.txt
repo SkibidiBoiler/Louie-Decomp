@@ -118,6 +118,8 @@ set(PL_SOURCES
     src/game/papaGame/models/bullets/ChiliCan.cpp
     src/game/papaGame/models/bullets/DogToy.cpp
     src/game/papaGame/models/bullets/PepperBomb.cpp
+    src/game/papaGame/models/bullets/SargePepper.cpp
+    src/game/papaGame/models/bullets/GiantPepper.cpp
     src/game/papaGame/models/bullets/RomanCandle.cpp
     src/game/papaGame/models/bullets/XandraStar.cpp
     src/game/papaGame/models/bullets/GummyOnion.cpp
@@ -139,6 +141,8 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/DizzyEffect.cpp
     src/game/papaGame/models/effects/DoorFrontEffect.cpp
     src/game/papaGame/models/effects/DustEffect.cpp
+    src/game/papaGame/models/effects/BossEscapeEffect.cpp
+    src/game/papaGame/models/effects/LaughEffect.cpp
     src/game/papaGame/models/effects/EndPortalEffect.cpp
     src/game/papaGame/models/effects/ExplosionEffect.cpp
     src/game/papaGame/models/effects/ItemBalloonEffect.cpp
@@ -173,6 +177,8 @@ set(PL_SOURCES
     src/game/papaGame/models/items/GameItem_SargeCoin.cpp
     src/game/papaGame/models/objects/GameObject3.cpp
     src/game/papaGame/models/objects/GameObject33.cpp
+    src/game/papaGame/models/objects/GameObject29.cpp
+    src/game/papaGame/models/objects/GameObject30.cpp
     src/game/papaGame/models/objects/GameObject4.cpp
     src/game/papaGame/models/objects/GameObject5.cpp
     src/game/papaGame/models/objects/GameObject6.cpp
@@ -206,6 +212,7 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy15.cpp
     src/game/papaGame/models/enemies/Enemy16.cpp
     src/game/papaGame/models/enemies/Enemy17.cpp
+    src/game/papaGame/models/enemies/Enemy35.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
     src/game/papaGame/screens/GameIntroScreen.cpp
