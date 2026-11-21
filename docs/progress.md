@@ -477,7 +477,7 @@ Checked by trace: room 0 the pool (`--at 123,17`, capture), room 2 a Bacobar pus
 ladder's end (`--at 15,15`) and the Thorn Shrooms turn and duck (`--at 22,66`). Not checked: crunching a Bacobar,
 knocking a Laddish off its ladder.
 
-(44) Radley's Hideout (`--level 7`, rooms 8-A to 8-D): `GameObject15/16` On and Off Berries (platforms that pop up
+(44) BBQ Bog (`--level 7`, rooms 8-A to 8-D, ids 55–57 and 60): `GameObject15/16` On and Off Berries (platforms that pop up
 and go down on a timer, wobbling for the last 20 frames; nothing stands on one while it is down), `Enemy23` Bacoburn
 (the Bacobar's wall, but a stomp, slide or ground pound beats it at once and breaks it into three `Enemy24` Baco
 Bites, which hop back and forth), `Enemy30` Pararadish (floats down 2 px a frame on a parachute, folds it on landing,
@@ -491,3 +491,17 @@ bites (capture), and a player inside a Bacoburn is pushed out and hurt; room 3 t
 parachutes and hop at the player (`--at 25,12`, capture). Note: falling onto a Bacoburn at full speed usually ends in
 the push-out rather than a stomp (its own update pushes the player out in the frame they reach its body, before the
 player's next stomp test); not compared with the original. Progress: 72.8 % of functions, 79.9 % of lines.
+
+(45) The `--level` index is the world's tileset, not its place in levels.xml: 7 BBQ Bog (item 44 first called it
+Radley's Hideout by mistake), 8 Radley's Hideout (rooms 53, 59, 58, 17), 9 X Zone; `tools/pl_check.py worlds` lists
+them. Radley's Hideout room 9-B (`--level 8 --room 2`): `Enemy36` the first boss (sheet "easyboss": once the Start
+Fight trigger fires he runs back and forth, blocks every hit unless stunned, throws a `Beaker` every 120 frames;
+beaten, the music stops with the fanfare), `Beaker` (generated from PepperBomb: breaks into `BeakerGlassEffect`
+shards and three `BeakerBlob`s, generated from Cookie, which puff into dust) and `GameObject31` Spike Bed (kills the
+player or any enemy that touches it; once triggered it shakes, then rises 2 px a frame to its target row). X Zone:
+`GameObject32` Rainbow Sauce (the quicksauce pool with its own sheet, a bottom cap and `RainbowBitEffect` splashes).
+Checked with `pl_check.py run`: walking left into the trigger (`--at 5,79 --input L20-34`) starts the boss, who runs,
+turns and throws beakers that break (capture); the spike bed kills the player (`--at 6,86`); in X Zone room 1 the
+player sinks into the rainbow pool and splashes (`--at 12,30`). Not checked: stunning and beating Enemy36, the
+spike bed rising. Left in Radley's Hideout: `Enemy37` Radley Madish with `RocketBBQ` / `RocketMustard` (room 9-C).
+Progress: 75.2 % of functions, 82.4 % of lines.

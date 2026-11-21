@@ -38,6 +38,8 @@
 #include "game/papaGame/models/effects/RadishDirtEffect.h"
 #include "game/papaGame/models/effects/SauceBitEffect.h"
 #include "game/papaGame/models/effects/SauceSplatEffect.h"
+#include "game/papaGame/models/effects/RainbowBitEffect.h"
+#include "game/papaGame/models/effects/BeakerGlassEffect.h"
 #include "game/papaGame/models/effects/StuckCheeseEffect.h"
 #include "game/papaGame/models/effects/FeatherEffect.h"
 #include "game/papaGame/models/effects/ChiliBitEffect.h"
@@ -150,6 +152,12 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "RadishDirtEffect") {
         return std::make_unique<RadishDirtEffect>(gameObj);
+    }
+    if (type == "RainbowBitEffect") {
+        return std::make_unique<RainbowBitEffect>(gameObj);
+    }
+    if (type == "BeakerGlassEffect") {
+        return std::make_unique<BeakerGlassEffect>(gameObj);
     }
     if (type == "SauceBitEffect") {
         return std::make_unique<SauceBitEffect>(gameObj);

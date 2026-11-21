@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Cheap checks for the PL2 port: several jobs in one run, short output (local only, reads nothing from the net).
 
+  worlds                               --level index (the world's tileset) -> world name and its room ids
   rooms LO HI [--where e:23,30 o:15]   types placed in rooms LO..HI (room ids); '*' = no factory case yet;
                                        --where lists the placements (type,x,y,params) of those types
   run [--build] -s SPEC [-s SPEC ...]  optionally build Debug (prints only errors/warnings), then run each
@@ -54,6 +55,16 @@ def cmd_rooms(a):
             places += ['  %s %s' % (k, i) for i in items if i.split(',')[0] in want[k]]
         print(rid, title, ' | '.join(out))
         print('\n'.join(places)) if places else None
+
+
+def cmd_worlds(a):
+    s = open(os.path.join(DATA, 'pl2/levels.xml'), encoding='utf-8').read()
+    rows = []
+    for w in re.findall(r'<world>(.*?)</world>', s, re.S):
+        rooms = [r.split(',')[-1] for r in re.search(r'<roomArray>(.*?)<', w).group(1).split('|')]
+        rows.append((int(re.search(r'<tileset>(.*?)<', w).group(1)), re.search(r'<worldTitle>(.*?)<', w).group(1), rooms))
+    for t, name, rooms in sorted(rows):
+        print('--level %d  %-18s rooms %s' % (t, name, ' '.join('%d=%s' % (i, r) for i, r in enumerate(rooms))))
 
 
 def build():
@@ -142,6 +153,7 @@ def cmd_run(a):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest='cmd', required=True)
+    sub.add_parser('worlds').set_defaults(f=cmd_worlds)
     r = sub.add_parser('rooms')
     r.add_argument('lo', type=int)
     r.add_argument('hi', type=int)
