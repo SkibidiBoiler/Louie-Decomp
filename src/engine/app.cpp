@@ -1145,10 +1145,19 @@ void App::render(float alpha)
     updatePresentation();
     if (!hasData_) {
         SDL_SetRenderDrawColor(renderer_, 110, 28, 28, 255); // red: data folder missing
+    } else if (mode_ == Mode::Level) {
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255); // the bars beside a pillarboxed game screen
     } else {
         SDL_SetRenderDrawColor(renderer_, 200, 200, 210, 255);
     }
     SDL_RenderClear(renderer_);
+    if (hasData_ && mode_ == Mode::Level) {
+        // The stage itself keeps the light background under the game's screens.
+        SDL_SetRenderDrawColor(renderer_, 200, 200, 210, 255);
+        const SDL_FRect stage{0, 0, static_cast<float>(stage_.width) + 2 * viewExtra_,
+                              static_cast<float>(stage_.height)};
+        SDL_RenderFillRect(renderer_, &stage);
+    }
 
     if (mode_ == Mode::Import) {
         importScreen_->render(renderer_, static_cast<float>(stage_.width), static_cast<float>(stage_.height));
