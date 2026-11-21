@@ -42,6 +42,17 @@ Notes:
   bitmaps, strokes, masks; shapes on all cores). PL2: 44 s on PC (Release). PL3 levels decode too.
   Sheet logical sizes come from shape bounds (FFDec's SVG sizes differed by 1-5 px). Sounds not converted yet.
 
+- **Widescreen** (option "Pantalla ancha", `widescreen=1` in `settings.ini`, on by default): in a level with no
+  menu over it, the logical size is 700 + 2·extra by 416, extra = what the window's aspect leaves (at most 190;
+  POCO 2400×1080 → 112). `App::updatePresentation` sets it each frame and `GameDisplay::viewExtraX`; `redrawScreen`
+  widens `currentXcoord`/`screenPxWidth`/tile bounds only while drawing and puts the logic's values back, so
+  `GameCam`, culling of bullets and the rest of the logic see the original 700-px screen. Sky and backdrop are
+  repeated past their sheets. The wider view is kept inside the room (near its edges the player is off
+  centre; a room narrower than the view is centred, and only there sky/backdrop shows past its edges). The HUD is split at x = 222 (between
+  hearts and timer): left part to the left edge, the rest to the right edge, the plain bar between widened
+  (`GameHUD::render`/`hudPointer`). Menus (map, pause, results) stay pillarboxed. The pointer is converted back
+  to stage x (`pointer_.x -= viewExtra_`). DEV `--window WxH` sets the window size (e.g. 1600x720 = phone).
+
 ## Next
 
 1. Importer verified on the POCO (2026-11-14): PL2 imported from Download in about 45 s, level runs at 120 FPS.

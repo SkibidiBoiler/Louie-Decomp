@@ -51,6 +51,8 @@ void Settings::load()
             touchOpacity = f < 0.1f ? 0.1f : f > 1.0f ? 1.0f : f;
         } else if (std::sscanf(line.c_str(), "touch_size=%f", &f) == 1) {
             touchSize = f < 0.5f ? 0.5f : f > 2.0f ? 2.0f : f;
+        } else if (std::sscanf(line.c_str(), "widescreen=%d", &value) == 1) {
+            widescreen = value != 0;
         } else if (std::sscanf(line.c_str(), "show_overlay=%d", &value) == 1) {
             showOverlay = value != 0;
         } else if (std::sscanf(line.c_str(), "wait_intro_music=%d", &value) == 1) {
@@ -68,9 +70,10 @@ void Settings::save() const
     char text[256];
     const int n = std::snprintf(text, sizeof(text),
                                 "interpolation=%d\nfps_cap=%d\nlanguage=%s\ntouch_opacity=%.2f\ntouch_size=%.2f\n"
-                                "show_overlay=%d\nwait_intro_music=%d\n",
+                                "show_overlay=%d\nwait_intro_music=%d\nwidescreen=%d\n",
                                 interpolation ? 1 : 0, fpsCap, language.c_str(), static_cast<double>(touchOpacity),
-                                static_cast<double>(touchSize), showOverlay ? 1 : 0, waitIntroMusic ? 1 : 0);
+                                static_cast<double>(touchSize), showOverlay ? 1 : 0, waitIntroMusic ? 1 : 0,
+                                widescreen ? 1 : 0);
     if (!SDL_SaveFile(path.c_str(), text, static_cast<size_t>(n))) {
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot save settings: %s", SDL_GetError());
     }

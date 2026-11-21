@@ -42,6 +42,7 @@
   "options.fps_max": "Unlimited",
   "options.fps_original": "Original ({0})",
   "options.interpolation": "Smooth movement",
+  "options.widescreen": "Widescreen",
   "options.language": "Language",
   "options.language_system": "System",
   "options.touch_opacity": "Button transparency",

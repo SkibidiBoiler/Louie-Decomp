@@ -157,6 +157,26 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     smooth_ = smooth;
     drawAlpha_ = smooth ? a : 1.0;
     defineScreenBounds();
+    // Port (widescreen): draw a screen 2 * viewExtraX wider than the original one. Only for this drawing;
+    // the logic's bounds are put back at the end.
+    const double logicXcoord = currentXcoord, logicPxWidth = screenPxWidth;
+    const double logicTileLeft = currentXtileLeft, logicTileRight = currentXtileRight;
+    stageOffsetX_ = 0;
+    if (viewExtraX > 0) {
+        screenPxWidth += 2 * viewExtraX;
+        // Centred on the original screen, but kept inside the room (the room centred when it is narrower), so
+        // the sides show the room rather than the empty space past its edges.
+        double left = currentXcoord - viewExtraX;
+        if (levelPxWidth > screenPxWidth) {
+            left = std::clamp(left, 0.0, levelPxWidth - screenPxWidth);
+        } else {
+            left = (levelPxWidth - screenPxWidth) / 2;
+        }
+        stageOffsetX_ = currentXcoord - left;
+        currentXcoord = left;
+        currentXtileLeft = std::floor(left / tileWidth);
+        currentXtileRight = currentXtileLeft + std::ceil(screenPxWidth / tileWidth);
+    }
     reblitSky();
     reblitBackdrop();
     reblitTiles();
@@ -194,13 +214,28 @@ void GameDisplay::redrawScreen(float alpha, bool smooth)
     // SKELETON: masks are not drawn yet, so the iris shows its unmasked shapes.
     if (deadIrisMC) {
         const engine::RenderContext ctx{gameObj->renderer, gameObj->symbols, gameObj->textures, gameObj->text};
-        deadIrisMC->render(ctx, engine::Affine::translate(static_cast<float>(deadIrisX), static_cast<float>(deadIrisY)),
+        deadIrisMC->render(ctx,
+                           engine::Affine::translate(static_cast<float>(deadIrisX + stageOffsetX_),
+                                                     static_cast<float>(deadIrisY)),
                            engine::ColorTransform{});
+        if (viewExtraX > 0) {
+            // Port (widescreen): the iris clip covers the 700-px stage; black past its sides.
+            SDL_SetRenderDrawColor(gameObj->renderer, 0, 0, 0, 0xFF);
+            const SDL_FRect sides[2] = {
+                {0, 0, static_cast<float>(stageOffsetX_), static_cast<float>(screenPxHeight)},
+                {static_cast<float>(stageOffsetX_ + logicPxWidth), 0,
+                 static_cast<float>(screenPxWidth - stageOffsetX_ - logicPxWidth), static_cast<float>(screenPxHeight)}};
+            SDL_RenderFillRects(gameObj->renderer, sides, 2);
+        }
     }
     if (gameObj->obf_6Z) {
         const engine::RenderContext ctx{gameObj->renderer, gameObj->symbols, gameObj->textures, gameObj->text};
-        gameObj->obf_6Z->render(ctx);
+        gameObj->obf_6Z->render(ctx, viewExtraX); // Port (widescreen): anchored to the screen's edges
     }
+    currentXcoord = logicXcoord;
+    screenPxWidth = logicPxWidth;
+    currentXtileLeft = logicTileLeft;
+    currentXtileRight = logicTileRight;
     smooth_ = false;
 }
 
@@ -258,7 +293,8 @@ void GameDisplay::drawTransition()
     }
     const managers::BitmapManager &bitmaps = *gameObj->bitmapManager;
     SDL_Renderer *renderer = gameObj->renderer;
-    const double x = prevTransitionX_ + (transitionX - prevTransitionX_) * drawAlpha_;
+    // Port (widescreen): the wipe moves across the stage, which starts at stageOffsetX_.
+    const double x = prevTransitionX_ + (transitionX - prevTransitionX_) * drawAlpha_ + stageOffsetX_;
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
     if (isTransitioningIn) {
         const engine::Sheet *sheet = bitmaps.sheets->get("transition_in_effect");
@@ -351,6 +387,10 @@ void GameDisplay::reblitSky()
         dx = std::fmod(dx, w);
     }
     dx = w - dx;
+    if (viewExtraX > 0 && w > 0) {
+        dx = std::fmod(dx, w); // Port (widescreen): left of the room x < 0, which the original never has
+        dx += dx < 0 ? w : 0;
+    }
     const double rightW = w - dx;
     const double drawH = h - dy;
     const double leftW = w - rightW;
@@ -358,6 +398,11 @@ void GameDisplay::reblitSky()
     blit(bg, 0, 0, rightW, drawH, dx, dy);
     if (dx > 0) {
         blit(bg, rightW, 0, leftW, drawH, 0, dy);
+    }
+    // Port (widescreen): the same sky repeated past the sheet's width (which covers the original screen).
+    // The copy at dx is drawn whole (above it stops at w), then copies to its right.
+    for (double px = dx; viewExtraX > 0 && w > 0 && px < screenPxWidth; px += w) {
+        blit(bg, 0, 0, w, drawH, px, dy);
     }
     if (showLightning && std::fmod(lightningTimer, 2) == 1) {
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -382,7 +427,7 @@ void GameDisplay::reblitBackdrop()
     }
     const auto snap = [this](double v) { return smooth_ ? v : as3::round(v); };
     if (bgScrollType == "static") {
-        blit(mg, 0, 0, mgW, mgH, 0, 0);
+        blit(mg, 0, 0, mgW, mgH, stageOffsetX_, 0); // Port (widescreen): stays on the stage
         return;
     }
     if (bgScrollType != "attached" && bgScrollType != "scroll") {
@@ -411,6 +456,10 @@ void GameDisplay::reblitBackdrop()
             dy = mgH - std::fmod(y, mgH);
         }
     }
+    if (viewExtraX > 0 && mgW > 0) {
+        dx = std::fmod(dx, mgW); // Port (widescreen): left of the room x < 0, which the original never has
+        dx += dx < 0 ? mgW : 0;
+    }
     // The backdrop's vertical position follows how far down the level the camera is.
     double range = levelPxHeight - screenPxHeight;
     if (range < screenPxHeight) {
@@ -436,6 +485,12 @@ void GameDisplay::reblitBackdrop()
             blit(mg, rightW, bottomH, leftW, topH, 0, 0);
         }
     }
+    // Port (widescreen): the backdrop repeated past its width (the four copies above end at mgW): the copy at
+    // dx whole, then copies to its right.
+    for (double px = dx; viewExtraX > 0 && mgW > 0 && px < screenPxWidth; px += mgW) {
+        blit(mg, 0, 0, mgW, mgH, px, dy);
+        blit(mg, 0, 0, mgW, mgH, px, dy - mgH);
+    }
 }
 
 // AS: GameDisplay.reblitTiles
@@ -451,7 +506,7 @@ void GameDisplay::reblitTiles()
     const float s = tileSheet->scale;
     // Port: tiles are drawn at whole stage pixels into tileLayer_ with nearest sampling (no bleeding from
     // neighbouring cells of the tilesheet), then the layer is placed at the sub-pixel camera offset.
-    if (tileLayer_ == nullptr || tileLayerScale_ != s) {
+    if (tileLayer_ == nullptr || tileLayerScale_ != s || tileLayerWidth_ != screenPxWidth) {
         if (tileLayer_) {
             SDL_DestroyTexture(tileLayer_);
         }
@@ -464,6 +519,7 @@ void GameDisplay::reblitTiles()
         SDL_SetTextureBlendMode(tileLayer_, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
         SDL_SetTextureScaleMode(tileLayer_, SDL_SCALEMODE_LINEAR);
         tileLayerScale_ = s;
+        tileLayerWidth_ = screenPxWidth;
     }
     const double x0 = std::floor(currentXcoord), y0 = std::floor(currentYcoord);
     SDL_Texture *screen = SDL_GetRenderTarget(renderer);
