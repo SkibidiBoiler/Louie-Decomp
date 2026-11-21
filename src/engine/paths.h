@@ -9,7 +9,7 @@ namespace engine {
 std::string resolveDataDir(int argc, char *argv[]);
 
 // The app's own folder for settings and saved games, ending in a separator ("" if unavailable).
-// The first time, saves and settings left by the project's old name ("PapaLouieRecomp") are moved here.
+// The first time, saves and settings left by the project's old names ("PapaLouieRecomp", "LouieAttackRecomp") are moved here.
 std::string prefDir();
 
 bool directoryExists(const std::string &path);

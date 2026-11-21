@@ -29,8 +29,9 @@ std::string resolveDataDir(int argc, char *argv[])
 namespace {
 
 constexpr const char *kOrg = "SkibidiBoiler";
-constexpr const char *kApp = "LouieAttackRecomp";
-constexpr const char *kOldApp = "PapaLouieRecomp";
+constexpr const char *kApp = "LouieAttackDecomp";
+// Earlier names of the project; their saves and settings are adopted on the first run.
+constexpr const char *kOldApps[] = {"PapaLouieRecomp", "LouieAttackRecomp"};
 
 // Moves <old>/<entry> to <dir>/<entry> unless <dir> already has one.
 void adoptOldEntry(const std::string &old, const std::string &dir, const char *entry)
@@ -53,14 +54,16 @@ std::string findPrefDir()
     }
     std::string dir = pref;
     SDL_free(pref);
-    // <...>/SkibidiBoiler/LouieAttackRecomp/ -> <...>/SkibidiBoiler/PapaLouieRecomp/ (same parent folder).
+    // <...>/SkibidiBoiler/LouieAttackDecomp/ -> <...>/SkibidiBoiler/PapaLouieRecomp/ (same parent folder).
     const size_t appAt = dir.rfind(kApp);
     if (appAt != std::string::npos) {
-        std::string old = dir;
-        old.replace(appAt, std::strlen(kApp), kOldApp);
-        if (directoryExists(old)) {
-            adoptOldEntry(old, dir, "saves");
-            adoptOldEntry(old, dir, "settings.ini");
+        for (const char *oldApp : kOldApps) {
+            std::string old = dir;
+            old.replace(appAt, std::strlen(kApp), oldApp);
+            if (directoryExists(old)) {
+                adoptOldEntry(old, dir, "saves");
+                adoptOldEntry(old, dir, "settings.ini");
+            }
         }
     }
     return dir;

@@ -10,6 +10,7 @@
 #include "engine/input.h"
 #include "engine/lang.h"
 #include "engine/movieclip.h"
+#include "engine/options_menu.h"
 #include "engine/settings.h"
 #include "engine/sheets.h"
 #include "engine/stage.h"
@@ -45,6 +46,7 @@ private:
     void tickLevel();
     void parseInputScript(const char *script);
     void tap(float winX, float winY);
+    bool optionsEvent(const SDL_Event &ev);
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -97,6 +99,7 @@ private:
     bool dragging_ = false;
     bool freeCam_ = false; // DEV: the camera stays where --cam / a room switch put it until the player moves
     Input input_;
+    OptionsMenu options_{settings_, lang_, input_.touch};
     // DEV: scripted input (--input / --walk-test): actions held over logic-frame ranges; per-frame trace.
     struct ScriptedKey {
         Action action;

@@ -1,4 +1,4 @@
-# AGENTS.md — Louie Attack Recomp
+# AGENTS.md — Louie Attack Decomp
 
 Guía del proyecto para personas y agentes. **Este archivo tiene prioridad sobre los valores por defecto de
 cualquier skill** (`orchestrator`, `matcher`, `decomp-code-rules`, `native-platform-porting`, …).
@@ -122,7 +122,7 @@ build\windows\louieattack.exe --data "C:/Users/alfre/Proyectos/datos-papas/build
 #   Sin esas opciones de nivel el juego empieza en la pantalla de título. --lang es: idioma de la interfaz;
 #   --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por texto;
 #   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. Partidas guardadas de Windows:
-#   %APPDATA%\SkibidiBoiler\LouieAttackRecomp\saves\PapaLouie2_<ranura>.json
+#   %APPDATA%\SkibidiBoiler\LouieAttackDecomp\saves\PapaLouie2_<ranura>.json
 # Progreso de la traducción (funciones y líneas del AS con su `// AS:` en src/game; solo local, sin tokens):
 python -I tools/progress.py                 # --by-class: por clase; --missing <Clase>: funciones que faltan
 # Leer una función del código original deofuscado (solo local):

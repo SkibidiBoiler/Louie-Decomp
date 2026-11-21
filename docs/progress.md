@@ -342,8 +342,8 @@ cage (GameObject20's constructor read from the P-code), `CageFrontBars` / `CageB
 `§_-2K§`), `§_-9k§` (fresh player and managers per level; level changes run at the start of the next logic frame,
 `runPending`), `UserData` customer unlocks (`userdata.json`), `CustomerData.getTrappedCustomerIndex`.
 DEV `--at x,y` puts the player on a tile (`--room 2 --at 12,33` in level 0 drops him on the pulley).
-SKELETON: the level-complete and game-over screens (the next level / the same level starts), CageCustomerEffect
-(the trapped customer's puppet; only Marty and Rita are in the customer list), the boss "fake" finish, grab tiles,
+SKELETON: the level-complete and game-over screens (the next level / the same level starts),
+the boss "fake" finish, grab tiles,
 the camera pan, checkpoints restoring a level (CheckpointData), masks (the iris).
 Note: flipped frames are the TOP half of each sheet, unflipped below (`flipBlitOffset`).
 Steps were: (1) importer writes `framescripts.txt` from the ABC; (2) `engine::MovieClip`: named children, attached
@@ -360,5 +360,119 @@ menu, translations, touch-control editor, PL3 (shares the engine), PL1 (AS2, sep
 gold army onion (drops `GameItem_GoldHelmet`, `ItemGoldHelmetEffect`), `Enemy8` runt tomato, `Enemy15` leafy lark,
 `Enemy16` dill wheel (its own `moveChar` round floors, walls and ceilings; `obf_8J` linear easing). `moveChar` and
 `adjustSpeedForSlopes` are virtual; EnemyManager gives subclasses their parent's cycle arrays. Fort Onion is
-`--level 2`. Checked by trace: only the army onions of room 1. Next: test 8/15/16 and the helmet, then GameObject6,
-7, 17, 18.
+`--level 2`. Checked by trace: the army onions (room 1), the runt tomatoes hopping (room 2, `--at 76,14`), the leafy
+larks flying their rows (room 3, `--at 10,6`), the dill wheels rolling round floors, walls and ceilings and hurting
+the player (room 4, `--at 60,21`); the gold onion of room 1 (`--at 59,41 --input "J38-46,L60-70,R71-72,A73-75,A85-87,
+R100-140"`) drops its helmet (goldhelmet_drop sounds), which is picked up (specialitems 1, ItemGoldHelmetEffect).
+(35) Fort Onion, part 2: `GameObject6` / `GameObject7` horizontal blimps (shuttle between their column and a target
+column, or wait for the player; carry their riders; GameObject6 can be a boss's, tweening in), `GameObject17` floor
+switch (pressed by stepping on it; objects too), `GameObject18` door (solid while shut, four tiles; sorts itself
+and its front frame against the player) and `DoorFrontEffect`. `GameObject.stepOnObject` is virtual. The blimps'
+and the constructors' debug trace() calls are left out. Checked by trace: room 0's switch opens its three doors
+(papow ×3) and the player walks through (without it he stops at the first door); room 3's blimps 5 (a waiter) and
+10 (`--at 80,13`, small) carry the player; blimp 8 shuttles on its own. Captures of the open doors and the small
+blimp. Data for tests: `pl_import` output in `datos-papas/build-cur` (`--data` that folder) (outside the repo).
+(36) Fort Onion, part 3: `GameObject33` training sensor (on overlap or on screen it opens a bubble; off screen
+again, a basic training counts as done), `TrainingPopup` (trainingMC at the flag's frame, key caps, slides in and
+out, timeout), `§_-4R§.§_-6n§ / §_-c§ / §_-64§` (open / done / close the bubble, `§_-a§`), the `§_-9X§` container,
+`DataManager.setupKeyNames / getKeyLabel`; `CageCustomerEffect` (the trapped customer struggles, stands up when the
+cage opens, jumps with the player, flies into the portal) and `BitmapManager.createCagedSprites / finishedCageBlit`
+(the caged sheets, blitted after the player's in the stage intro, and in the `--level` start). `Effect.getSheet` is
+virtual. Port: a TextField's `visible = false` is an empty text. Checked by captures (level 0: "Use <- -> to Walk",
+then the jump bubble with the Up key; the struggling customer in level 2 room 4 and level 0 room 2) and trace (level
+0 room 2 `--at 12,33`: the customer jumps with the player and is pulled into the portal).
+The other training calls: `PlayerChar.startupPlayer` (the skill bubble: groundpound / glide / doublejump),
+`startPounding` / `startDoubleJumping` / `startGliding` / `startWallJumping` and crawling (done), the MainMenuScreen
+bubbles (character, challenges, styles, nowarpkeys; `showSectionTraining` is the part of tweenSections that opens
+them) and `ObjectManager.updateTrainingSigns` (`GameObject.updateTrainingSign` is empty). Checked by captures
+(`--level 2 --customer 8 / 23 / 15`: the pound, glide and double jump bubbles; the double jump closes its bubble).
+Not checked: the menu bubbles.
+(37) Sarge's Lair (`--level 3`), part 1: `GameObject14` drop berry (stood on, it drops after 20 frames with its
+riders, splats and grows back), `GameObject2` pushable boulder (pushed by the push skill, rolls, slows, rolls down
+slopes, carries riders, squashes enemies; its "push" training), `GameObject.checkPushingObject` / `isBeingPushed` /
+`saveDataAtCheckpoint`; `Enemy5` Kaiser onion, `Enemy9` / `Enemy10` / `Enemy11` Party Sub (a group walks together
+and waits while one car is stunned: `EnemyManager.sendMessageToEnemyGroup / getEnemyIDsFromGroup /
+checkGroupOnScreen`), `Enemy17` Dill Worm (hangs, notices the player below, drops, crawls after the player).
+Checked by trace: room 0 berries (`--at 5,21`) and boulder (`--at 96,17 --customer 14 --input "R20-120"`; Marty
+cannot push it), the Kaiser onion (`--at 52,13`), room 1 Party Subs (stomping one car of the group at
+`--at 29,24 --input "L60-75,J66-74"` stops the others until it recovers) and room 2's Dill Worm
+(`--at 78,56 --input "L20-45"`).
+(38) Sarge's Lair, part 2: the boss. `Enemy35` Sarge (dropped into the arena by the "Start Fight" trigger; jumps
+about and throws `SargePepper` (style by distance: flat, normal, high) or, once hurt, alternately `GiantPepper`; a
+stomp only stuns him, a ground pound (or a bullet, a quarter point) hurts him; hurt, he rolls for 200 frames, stops
+at x tile 20 and calls static blimps (more at one point left), which he jumps onto; at one point left he calls in
+six Kaiser onions, which die with him), `GameObject29` "Start Fight" (closes the doors and drops the boss; can lock
+the camera), `GameObject30` "End Fight" (unlocks the camera, opens the doors; with "spikes" it first plays the
+escape scene: `LaughEffect`, `BossEscapeEffect`; used in a later world). `GameCam.setCameraJiggle / setCameraLock /
+unlockCamera / jiggleCamera`, now also called by the player's ground pound, hurt, death and bazooka and by objects
+with `jigglecam`. `Enemy.sendTriggered` is virtual. DEV: the environment variable `PL_SEED` fixes `Math.random`'s
+seed so traced runs repeat. Checked by trace (`--level 3 --room 4 --at 2,25`): the drop, landing, throws and jumps;
+with `PL_SEED=3 --customer 8 --input "R20-60,R102-124,J102-112,D124-127,L130-150"` the stomp stuns him, the ground
+pound hurts him, he rolls, stops at tile 20, three blimps appear and he jumps onto them and throws giant peppers.
+With his health set to 1 for a local test (not committed), a ground pound kills him: the six onions die with him,
+"End Fight" switches off and the doors (closed by "Start Fight") open again.
+`BossIntroScreen` is not Sarge's: it shows `boss_intro_radish` (the radish boss) over tileset 4's backdrop, so it
+goes with that world. Not checked: the camera lock (this arena does not use it) and the escape scene (a later world).
+(39) Mount Monterey (`--level 4`): `GameObject8` / `GameObject9` vertical blimps (shuttle between two rows, or wait
+for the player), `GameObject12` / `GameObject13` dropping blimps (sink to a target row while ridden, rise back when
+left); `Enemy13` Brussel Lark (flies round a circle; a stomp kills it), `Enemy19` Blue Shroom (ducks and rises on a
+timer, faces the player, cannot be hit while down), `Enemy25` Swiss Zack (a crusher that cannot be hurt; its hit box
+follows the crusher), `Enemy26` Cheddar Mack (swings on a rope from the ceiling as a damped pendulum; the rope is
+drawn with the new `GameDisplay.drawScreenLine`, standing in for `screenBMP.draw` of a line; hits push the swing),
+`Enemy32` Jellyback (harmless, cannot be killed; stomping it throws the player high). Checked by trace with
+`PL_SEED=3`: room 0 larks circle at their radius (`--at 80,12`), the vertical blimp carries the player up to row 16
+and back (`--at 54,22`), the small dropping blimp sinks to row 19 and rises after the player steps off (`--at 110,10
+--input "R100-112"`); room 1 the Cheddar Mack swings (`--at 18,34`, capture shows the rope); room 2 the Blue Shroom
+cycles down 20 / up 45 frames (`--at 24,10`), a Jellyback bounces the player about 260 px (`--at 24,46 --input
+"R30-40,J30-40"`); room 3 the Swiss Zack cycles, thumps and hurts the player (`--at 20,40`, capture). Not checked:
+killing a lark or a Cheddar Mack, hitting a Blue Shroom.
+
+(40) Cheddar Hills (`--level 5`): `Enemy18` Dill Weed (rooted; chomps forward, left and right in turn with a hit box
+that grows with the chomp), `Enemy21` Bow Shroom (the Blue Shroom's duck cycle plus `ShroomArrow` shots, optionally
+only when the player is in sight), `Enemy27` Pepper Jack (notices the player within 160 x 96 px, charges faster and
+faster, skids 64 px past and turns; at a ledge it jumps towards the player instead of turning, so
+`Character.checkIfAtEdge` is now virtual), `Enemy31` Cheese Wheel (rolls one way, a stomp beats it);
+`GameObject10` / `GameObject11` circular blimps (fly round a circle, optional rope to the centre drawn with
+`drawScreenLine`), `GameObject26` Cheese Cannon (fires `CheeseBullet` at the player every shootDelay frames). The
+cheese: `PlayerChar.getCheesed` / `removeCheese` / `jumpCheesed` and `StuckCheeseEffect` (three jumps shake it
+off), plus `CheeseSplatEffect`; the `isCheesed` SKELETON gaps in `GameControls` and `CustomerChar` are filled.
+Checked by trace: room 0 a cannon shot cheeses the player (`--at 11,17`), walking does nothing and the third jump
+frees them; Dill Weeds cycle their chomps with sounds (`--at 22,33`); room 1 a Pepper Jack charges, hits, skids and
+turns (`--at 61,40`); room 2 four circular blimps circle and carry the player; room 3 a Bow Shroom's arrow hurts the
+player (`--at 29,87`). Not checked: the Cheese Wheel (spawned by objects off screen), a tethered blimp's rope (no
+tethered one in Cheddar Hills). Found and fixed in the importer (below): the blimp sheets showed the balloon only
+on frames 3, 10 and 13.
+
+(41) Importer (`src/import/raster.cpp`, `pl_import`): morph shapes (`DefineMorphShape` / `DefineMorphShape2`) are
+now drawn, as masks too, interpolated at the placement's ratio; before, they were skipped, so a morph used as a
+mask hid everything under it (the balloon of every `object_blimp_*` sheet is masked by a morph circle). Every
+vector sheet now starts at a whole stage pixel (the index origin is floored): the tilesheet parts had fractional
+origins (e.g. -24.67, -19.03), were pasted into the composite with resampling, and left faint seams at the tile
+edges (level 1's dirt showed a grid). `tools/swf2assets.py` gets the matching morph workaround for FFDec (morphs
+filled only on side 0 are refilled on side 1 in a working copy, since FFDec 26 renders them inverted). Checked by
+capture: level 0 room 1 without seams, level 5 room 2 with the circular blimps drawn. Data regenerated with
+`pl_import` into `datos-papas/build-cur` (the previous data kept in `build-cur-old-20261120`).
+
+(42) Ladders, pick-ups, options. `GameControls.jumpPlayerOnLadder`: pressing left or right on a ladder hops off it
+(the original calls it from keyDownListener; the port on the press of the action), so the player can jump from one
+ladder to the next (level 1, room id 27: up the ladder at column 10, right, up again on the ladder at column 14;
+checked by trace). Item pick-up effects are added at (0, 0) and follow the player from their first update; their
+interpolation now starts on the player, which removes a one-frame flash in the screen's top-left corner. The port's
+options menu (`src/engine/options_menu.*`, not in the original): a translucent gear button in the window's top-right
+corner (or F1) opens a translucent panel, in the touch buttons' style, with the frame rate limit, smooth movement,
+language, button transparency and size, and the FPS line; saved to settings.ini at once; the game pauses while it is
+open (DEV `--options` starts with it open). The shown display rate follows Android's mode switch (the window asks
+for the panel's fastest mode, and the POCO does switch to 120 Hz with the app in front).
+
+(43) The Saucelands (`--level 6`): `Enemy20` Thorn Shroom (the Blue Shroom's duck cycle, cannot be stunned: its
+thorns hurt a stomping player), `Enemy22` Bacobar (a tall bacon wall walking between two columns: hits make it
+wobble and a player inside it is pushed out 16 px and hurt; stomped on its top it crunches to half height and runs
+faster, and only then can be beaten), `Enemy28` Radish (walks after the player; a planted one has no hit box until
+the player is near, then pops out throwing `RadishDirtEffect` clods), `Enemy29` Laddish (climbs up and down a
+ladder; knocked off, it climbs again once recovered); `GameObject27` BBQ quicksauce (a tiling pool: the player sinks
+1 px a frame and walks at the quicksand speed 5; enemies in it are swallowed) and `GameDisplay.blitTilingObject`
+(the tiling objects were drawn as plain sprites). `climbDir` moves from CustomerChar to Character, as in the original.
+Checked by trace: room 0 the pool (`--at 123,17`, capture), room 2 a Bacobar pushes and hurts the player
+(`--at 124,35`, capture), the planted radishes pop out (`--at 118,5`), room 3 the Laddish climbs and turns at the
+ladder's end (`--at 15,15`) and the Thorn Shrooms turn and duck (`--at 22,66`). Not checked: crunching a Bacobar,
+knocking a Laddish off its ladder.

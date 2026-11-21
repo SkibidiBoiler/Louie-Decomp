@@ -334,6 +334,106 @@ def export_media(swf, out, scales, java, ffdec):
     print(f"  sounds: {len(list(dest.iterdir()))} files")
 
 
+def _morph_fill0_fields(body, p):
+    """Bit offsets of the style-change flags in a morph shape's start records whose fill sits only on side 0.
+
+    Returns None when the shape sets fill style 1 anywhere (then it is left alone)."""
+    b = Bits(body, p)
+    nf, nl = b.ub(4), b.ub(4)
+    found = []
+    while True:
+        if not b.ub(1):
+            at = b.byte * 8 + b.bit
+            flags = b.ub(5)
+            if flags == 0:
+                return found
+            if flags & 0x10:  # new styles: not in morph shapes
+                return None
+            if flags & 1:
+                n = b.ub(5)
+                b.sb(n)
+                b.sb(n)
+            if flags & 4:  # any fill style 1: leave the shape alone
+                return None
+            if flags & 2:
+                b.ub(nf)
+                found.append(at)
+            if flags & 8:
+                b.ub(nl)
+        elif b.ub(1):  # straight edge
+            n = b.ub(4) + 2
+            if b.ub(1):
+                b.sb(n)
+                b.sb(n)
+            else:
+                b.ub(1)
+                b.sb(n)
+        else:  # curved edge
+            n = b.ub(4) + 2
+            for _ in range(4):
+                b.sb(n)
+
+
+def fix_morph_fill_sides(buf):
+    """A copy of the (uncompressed) SWF for FFDec where every DefineMorphShape filled only on side 0 of its edges
+    is filled on side 1 instead (every fill style 0 change becomes a fill style 1 change).
+
+    Flash fills a closed outline the same whichever side of the edges carries the fill, but FFDec 26 renders a
+    morph shape filled on side 0 inverted (everything in its bounds but the outline). The blimps' balloon is masked
+    by such a circle, so most frames of every `object_blimp_*` sheet came out without the balloon."""
+    out = bytearray(buf)
+    _, pos = read_rect(buf, 8)
+    pos += 4
+    fixed = 0
+    while pos + 2 <= len(buf):
+        code_len = struct.unpack_from("<H", buf, pos)[0]
+        pos += 2
+        code, length = code_len >> 6, code_len & 0x3F
+        if length == 0x3F:
+            length = struct.unpack_from("<I", buf, pos)[0]
+            pos += 4
+        if code == 46:  # DefineMorphShape (fills and lines in the start records only)
+            body = buf[pos:pos + length]
+            p = 2
+            _, p = read_rect(body, p)
+            _, p = read_rect(body, p)
+            p += 4  # offset of the end edges
+            n = body[p]
+            p += 1
+            if n == 0xFF:
+                n = struct.unpack_from("<H", body, p)[0]
+                p += 2
+            for _ in range(n):
+                kind = body[p]
+                p += 1
+                if kind != 0:  # gradients and bitmaps: not needed, and their size varies
+                    break
+                p += 8
+            else:
+                nlines = body[p]
+                p += 1
+                if nlines == 0xFF:
+                    nlines = struct.unpack_from("<H", body, p)[0]
+                    p += 2
+                p += nlines * 12
+                fields = _morph_fill0_fields(body, p)
+                for at in fields or []:
+                    # Flags are 5 bits MSB first: NewStyles, LineStyle, FillStyle1, FillStyle0, MoveTo. With only
+                    # FillStyle0 set, its index field is where a lone FillStyle1 index would be.
+                    for bit, value in ((at + 2, 1), (at + 3, 0)):
+                        byte = pos + bit // 8
+                        mask = 0x80 >> (bit % 8)
+                        out[byte] = (out[byte] | mask) if value else (out[byte] & ~mask)
+                if fields:
+                    fixed += 1
+        pos += length
+        if code == 0:
+            break
+    out[0:3] = b"FWS"
+    struct.pack_into("<I", out, 4, len(out))
+    return bytes(out), fixed
+
+
 def export_sheets(swf, out, scales, java, ffdec, names, chars, classes):
     """Bake the classes the game rasterises at runtime: sprites (frame 1) at every scale, bitmaps as-is.
 
@@ -364,10 +464,14 @@ def export_sheets(swf, out, scales, java, ffdec, names, chars, classes):
                 found[int(d.name.split("_")[1])] = d
         return found
 
+    fixed_buf, fixed = fix_morph_fill_sides(decompress(Path(swf).read_bytes()))
+    render_swf = out / "sheets_render.swf"  # a working copy for FFDec, deleted below
+    render_swf.write_bytes(fixed_buf)
+    print(f"  sheets: {fixed} morph shapes refilled for FFDec")
     origins = {}
     with tempfile.TemporaryDirectory(dir=out) as tmp:
         run_ffdec(java, ffdec, ["-format", "sprite:svg", "-select", select, "-selectid", ids,
-                                "-export", "sprite", tmp, str(swf)], log)
+                                "-export", "sprite", tmp, str(render_swf)], log)
         for cid, d in sprite_dirs(tmp).items():
             head = (d / "1.svg").read_text(encoding="utf-8", errors="replace")[:2000]
             m = re.search(r'<g transform="matrix\(([^)]*)\)"', head)
@@ -381,9 +485,10 @@ def export_sheets(swf, out, scales, java, ffdec, names, chars, classes):
         dest.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=out) as tmp:
             run_ffdec(java, ffdec, ["-format", "sprite:png", "-zoom", str(s), "-select", select, "-selectid", ids,
-                                    "-export", "sprite", tmp, str(swf)], log)
+                                    "-export", "sprite", tmp, str(render_swf)], log)
             for cid, d in sprite_dirs(tmp).items():
                 shutil.move(str(d / "1.png"), str(dest / f"{by_id[cid]}.png"))
+    render_swf.unlink()
     lines = []
     for c in sprite_ids:
         ox, oy, (w, h) = origins.get(c, (0.0, 0.0, (0, 0)))

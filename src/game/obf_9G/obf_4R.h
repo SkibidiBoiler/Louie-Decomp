@@ -41,6 +41,7 @@
 #include "game/papaGame/screens/SlotSelectScreen.h"
 #include "game/papaGame/screens/SplashScreen.h"
 #include "game/papaGame/screens/StageIntroScreen.h"
+#include "game/papaGame/screens/TrainingPopup.h"
 
 namespace obf_9G {
 
@@ -83,6 +84,13 @@ public:
     void obf_Ap(); // AS: §_-Ap§, the level is torn down
     void obf_19();
     void obf_5a();
+    // AS: §_-4R§.§_-6n§ — open the training bubble for `flag` unless it is unknown or already trained.
+    bool obf_6n(const std::string &flag, bool isInGame, const std::string &key1 = "", const std::string &key2 = "",
+                const std::string &key3 = "", double timeout = -1);
+    // AS: §_-4R§.§_-c§ — the training of `flag` is done: remember it and close its bubble.
+    bool obf_c(const std::string &flag, bool tween = true);
+    // AS: §_-4R§.§_-64§ — close the training bubble (sliding out), or remove it at once.
+    void obf_64(bool tween = true);
 
     // Port: the Flipline API's screen manager is not ported (it was part of the online API). These stand in for
     // the parts of it the game uses: api.§_-1G§(name) switches between its screens (SplashScreen, SlotSelect,
@@ -130,6 +138,8 @@ public:
     Pending pending = Pending::None;
     std::unique_ptr<papaGame::models::GameHUD> obf_6Z; // created by loadLevelData, once the tables exist
     std::unique_ptr<engine::MovieClip> obf_5h; // AS: §_-5h§, the container the screens add their clips to
+    std::unique_ptr<engine::MovieClip> obf_9X; // AS: §_-9X§, a container above §_-5h§ (no mouse)
+    std::unique_ptr<papaGame::screens::TrainingPopup> obf_a; // AS: §_-a§, the training bubble
     std::unique_ptr<papaGame::screens::StageIntroScreen> obf_7L;
     std::unique_ptr<papaGame::screens::SplashScreen> splashScreen; // port: the API's SplashScreen instance
     std::unique_ptr<papaGame::screens::SlotSelectScreen> slotSelectScreen; // port: the API's SlotSelect

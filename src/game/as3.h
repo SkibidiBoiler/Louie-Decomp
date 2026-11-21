@@ -46,10 +46,15 @@ inline std::string String(double v)
     return buf;
 }
 
-// Math.random: uniform in [0, 1).
+// Math.random: uniform in [0, 1). DEV: the environment variable PL_SEED fixes the seed, so traced test runs
+// repeat.
 inline double random()
 {
-    static std::mt19937 rng{std::random_device{}()};
+    static std::mt19937 rng{[] {
+        const char *seed = std::getenv("PL_SEED");
+        return seed ? static_cast<std::mt19937::result_type>(std::strtoul(seed, nullptr, 10))
+                    : std::random_device{}();
+    }()};
     return std::uniform_real_distribution<double>(0.0, 1.0)(rng);
 }
 
@@ -80,6 +85,7 @@ struct Value {
     static Value num(double v) { return {true, v, {}}; }
     static Value str(std::string v) { return {false, 0.0, std::move(v)}; }
     double asNumber() const { return isNumber ? number : Number(string); }
+    std::string asString() const { return isNumber ? String(number) : string; } // String(value)
 };
 
 } // namespace as3

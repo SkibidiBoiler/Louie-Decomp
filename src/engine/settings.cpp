@@ -47,6 +47,12 @@ void Settings::load()
             interpolation = value != 0;
         } else if (std::sscanf(line.c_str(), "fps_cap=%d", &value) == 1) {
             fpsCap = value < 0 ? 0 : value;
+        } else if (float f = 0; std::sscanf(line.c_str(), "touch_opacity=%f", &f) == 1) {
+            touchOpacity = f < 0.1f ? 0.1f : f > 1.0f ? 1.0f : f;
+        } else if (std::sscanf(line.c_str(), "touch_size=%f", &f) == 1) {
+            touchSize = f < 0.5f ? 0.5f : f > 2.0f ? 2.0f : f;
+        } else if (std::sscanf(line.c_str(), "show_overlay=%d", &value) == 1) {
+            showOverlay = value != 0;
         }
     }
 }
@@ -57,9 +63,12 @@ void Settings::save() const
     if (path.empty()) {
         return;
     }
-    char text[192];
-    const int n = std::snprintf(text, sizeof(text), "interpolation=%d\nfps_cap=%d\nlanguage=%s\n",
-                                interpolation ? 1 : 0, fpsCap, language.c_str());
+    char text[256];
+    const int n = std::snprintf(text, sizeof(text),
+                                "interpolation=%d\nfps_cap=%d\nlanguage=%s\ntouch_opacity=%.2f\ntouch_size=%.2f\n"
+                                "show_overlay=%d\n",
+                                interpolation ? 1 : 0, fpsCap, language.c_str(), static_cast<double>(touchOpacity),
+                                static_cast<double>(touchSize), showOverlay ? 1 : 0);
     if (!SDL_SaveFile(path.c_str(), text, static_cast<size_t>(n))) {
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot save settings: %s", SDL_GetError());
     }

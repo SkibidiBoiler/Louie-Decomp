@@ -1,6 +1,7 @@
 #pragma once
 // AS: papaGame.display.GameCam — the camera (centre of the screen, in level pixels).
-// Ported so far: fields, setCameraBounds and adjustCamera. Mouse panning and jiggleCamera come later.
+// Ported so far: fields, setCameraBounds, adjustCamera, the camera lock and the jiggle. Mouse panning and
+// panCamera come later.
 #include "game/as3.h"
 
 namespace obf_9G { class obf_4R; }
@@ -16,6 +17,10 @@ public:
     // anchor's position and the result of that test.
     void adjustCamera(double anchorX, double anchorY, bool anchorIsPlayerChar, bool snap = false);
 
+    void setCameraJiggle(double amount, double duration);
+    void setCameraLock(double tileX, double tileY, bool stopPlayer = true);
+    void unlockCamera();
+    void jiggleCamera();
     // Port: remember the position before a logic step so rendering can interpolate between steps.
     void unsetCameraForceScrolling() { forcedScrollingCamera = false; } // AS: GameCam.unsetCameraForceScrolling
 
@@ -56,6 +61,17 @@ public:
     double forcedScrollingDirX = 0;
     double forcedScrollingDirY = 0;
     double forcedScrollingSpeed = 1;
+    bool jiggle = false;
+    double jiggleamount = 0;
+    double jiggleduration = 0;
+    double currentjiggle = 0;
+    double lastjigglex = 1;
+    double lastjiggley = 1;
+    double jiggleTrainAmount = 4;
+    double jiggleTrainDelay = 0;
+    double jiggleTrainDelayMax = 8;
+    double jiggleTrainDelayShort = 8;
+    double jiggleTrainDelayLong = 45;
     double cameraOffset = 0;
     double maxCameraOffset = 160;
 

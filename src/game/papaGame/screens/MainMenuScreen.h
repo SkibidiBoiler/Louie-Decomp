@@ -52,6 +52,7 @@ public:
     void clickBackToMap();
     void setSection(const std::string &section);
     void tweenSections();
+    void showSectionTraining(); // port: part of tweenSections
     void startClosingScreen();
     void closeMainMenuScreen();
     std::string getSectionTitle() const;

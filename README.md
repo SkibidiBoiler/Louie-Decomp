@@ -1,4 +1,4 @@
-# Louie Attack Recomp
+# Louie Attack Decomp
 
 An unofficial native port (C++20, SDL3) for Windows and Android of the Papa Louie Attack trilogy:
 *Papa Louie: When Pizzas Attack!*, *Papa Louie 2: When Burgers Attack!* and *Papa Louie 3: When Sundaes Attack!*.
@@ -67,7 +67,7 @@ with no Flash emulator and no browser.
 ## Getting the source
 
 ```bash
-git clone --recursive https://github.com/SkibidiBoiler/Louie-Attack-Recomp.git
+git clone --recursive https://github.com/SkibidiBoiler/Louie-Decomp.git
 ```
 
 If you cloned without `--recursive`, run `git submodule update --init --recursive` to fetch SDL3 and minimp3.

@@ -25,6 +25,8 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_94 = std::make_unique<papaGame::managers::ChallengeManager>(this);
     obf_7t = std::make_unique<papaGame::events::EventManager>(this);
     obf_5h = engine::MovieClip::createEmpty(*symbols);
+    obf_9X = engine::MovieClip::createEmpty(*symbols);
+    obf_9X->mouseEnabled = false;
 }
 
 bool obf_4R::loadLevelData(const std::string &gameDir_)
@@ -67,6 +69,7 @@ void obf_4R::obf_6V(double whichLevel)
         // SKELETON: the original blits the player sprite on the screens before the level starts.
         playerObj->blitter = std::make_unique<papaGame::managers::CharacterBlitter>(this);
         playerObj->blitter->createPlayerSprite();
+        bitmapManager->createCagedSprites();
     }
     const auto &start = obf_AQ->currentScreenData->startPoint;
     if (start.size() >= 3) {
@@ -384,6 +387,47 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
     }
 }
 
+// AS: §_-4R§.§_-6n§
+bool obf_4R::obf_6n(const std::string &flag, bool isInGame, const std::string &key1, const std::string &key2,
+                    const std::string &key3, double timeout)
+{
+    bool opened = false;
+    if (obf_51->isValidTrainingFlag(flag) && !obf_51->hasTrained(flag)) {
+        if (obf_a) {
+            obf_a->destroy();
+            obf_a.reset();
+        }
+        obf_a = std::make_unique<papaGame::screens::TrainingPopup>(this, flag, isInGame, key1, key2, key3, timeout);
+        opened = true;
+    }
+    return opened;
+}
+
+// AS: §_-4R§.§_-c§
+bool obf_4R::obf_c(const std::string &flag, bool tween)
+{
+    bool closed = false;
+    if (obf_a && obf_a->trainingFlag == flag) {
+        obf_51->setTrained(flag);
+        obf_64(tween);
+        closed = true;
+    }
+    return closed;
+}
+
+// AS: §_-4R§.§_-64§
+void obf_4R::obf_64(bool tween)
+{
+    if (tween) {
+        if (obf_a) {
+            obf_a->closePopup();
+        }
+    } else if (obf_a) {
+        obf_a->destroy();
+        obf_a.reset();
+    }
+}
+
 bool obf_4R::screensActive() const
 {
     return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr;
@@ -436,6 +480,10 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     if (obf_6p) {
         obf_6p->updateScreen();
     }
+    obf_9X->advance();
+    if (obf_a) {
+        obf_a->updatePopup();
+    }
     return screensActive();
 }
 
@@ -443,6 +491,7 @@ void obf_4R::renderScreens(engine::RenderContext &ctx)
 {
     ctx.masks = masks;
     obf_5h->render(ctx, engine::Affine{}, engine::ColorTransform{});
+    obf_9X->render(ctx, engine::Affine{}, engine::ColorTransform{});
     menuBar.render(ctx);
 }
 

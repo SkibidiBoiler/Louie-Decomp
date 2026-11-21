@@ -22,6 +22,7 @@ public:
     // Port: the base GameObject's constants, which the importer writes to objects.json.
     bool loadTables(const std::string &path);
 
+    void updateTrainingSigns();
     models::GameObject *getObject(double screenObjID, double whichScreen) const;
     void checkSteppingOnObjects(models::Character &c, bool byObject = false);
     void releaseStandingChars(models::GameObject &o); // port: no dangling whichMovingTile

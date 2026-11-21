@@ -4,6 +4,7 @@
 // Ported so far: screen bounds, sky, backdrop and tiles (the first steps of redrawScreen).
 #include <string>
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -46,6 +47,7 @@ public:
     void reblitObjects(bool foreground = true);
     void reblitItems(bool background, bool foreground = false);
     void reblitEffects(bool foreground = true);
+    void blitTilingObject(const models::GameObject &o);
     void blitLadder(const models::GameObject &o);
     bool checkOnScreen(const models::Character &c) const;
     // AS: startTransition / blitTransition / finishTransition — the wipe between rooms. blitTransition's
@@ -105,6 +107,13 @@ public:
     // Port: stands in for currentScreenData.tileBMP.copyPixels(sheet, rect, point, null, null, true); the stain
     // lasts until the room's tiles are set up again.
     void stampOnTiles(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx, double dy);
+
+    // Port: screenBMP.draw of a MovieClip holding one straight line (graphics.lineStyle(thickness, rgb, 1, true),
+    // moveTo, lineTo), in screen coordinates. The line's round caps are left out.
+    void drawScreenLine(double x1, double y1, double x2, double y2, double thickness, uint32_t rgb) const;
+    // Port: where a character is drawn this frame (between its last two logic positions when smoothing).
+    double drawnX(const models::Character &c) const;
+    double drawnY(const models::Character &c) const;
 
 private:
     void blit(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx, double dy) const;

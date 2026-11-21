@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(LouieAttackRecomp VERSION 0.1.0 LANGUAGES C CXX)
+project(LouieAttackDecomp VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -75,6 +75,7 @@ set(PL_SOURCES
     src/engine/movieclip.cpp
     src/engine/sheets.cpp
     src/engine/settings.cpp
+    src/engine/options_menu.cpp
     src/engine/json.cpp
     src/engine/lang.cpp
     src/engine/menu_bar.cpp
@@ -118,17 +119,25 @@ set(PL_SOURCES
     src/game/papaGame/models/bullets/ChiliCan.cpp
     src/game/papaGame/models/bullets/DogToy.cpp
     src/game/papaGame/models/bullets/PepperBomb.cpp
+    src/game/papaGame/models/bullets/SargePepper.cpp
+    src/game/papaGame/models/bullets/ShroomArrow.cpp
+    src/game/papaGame/models/bullets/CheeseBullet.cpp
+    src/game/papaGame/models/bullets/GiantPepper.cpp
     src/game/papaGame/models/bullets/RomanCandle.cpp
     src/game/papaGame/models/bullets/XandraStar.cpp
     src/game/papaGame/models/bullets/GummyOnion.cpp
     src/game/papaGame/models/bullets/Cookie.cpp
     src/game/papaGame/models/effects/CageBackBarsEffect.cpp
+    src/game/papaGame/models/effects/CageCustomerEffect.cpp
     src/game/papaGame/models/effects/CageFrontBarsEffect.cpp
     src/game/papaGame/models/effects/CageSpinnerEffect.cpp
     src/game/papaGame/models/effects/BBQBitEffect.cpp
     src/game/papaGame/models/effects/BlueberryBitEffect.cpp
     src/game/papaGame/models/effects/BlueberrySplatEffect.cpp
     src/game/papaGame/models/effects/CheeseBitEffect.cpp
+    src/game/papaGame/models/effects/CheeseSplatEffect.cpp
+    src/game/papaGame/models/effects/RadishDirtEffect.cpp
+    src/game/papaGame/models/effects/StuckCheeseEffect.cpp
     src/game/papaGame/models/effects/ChiliBitEffect.cpp
     src/game/papaGame/models/effects/ChiliSplatEffect.cpp
     src/game/papaGame/models/effects/CookieBitEffect.cpp
@@ -136,7 +145,10 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/SmokeRingEffect.cpp
     src/game/papaGame/models/effects/CrackerBreakEffect.cpp
     src/game/papaGame/models/effects/DizzyEffect.cpp
+    src/game/papaGame/models/effects/DoorFrontEffect.cpp
     src/game/papaGame/models/effects/DustEffect.cpp
+    src/game/papaGame/models/effects/BossEscapeEffect.cpp
+    src/game/papaGame/models/effects/LaughEffect.cpp
     src/game/papaGame/models/effects/EndPortalEffect.cpp
     src/game/papaGame/models/effects/ExplosionEffect.cpp
     src/game/papaGame/models/effects/ItemBalloonEffect.cpp
@@ -170,9 +182,23 @@ set(PL_SOURCES
     src/game/papaGame/models/items/GameItem_RadishCoin.cpp
     src/game/papaGame/models/items/GameItem_SargeCoin.cpp
     src/game/papaGame/models/objects/GameObject3.cpp
+    src/game/papaGame/models/objects/GameObject33.cpp
+    src/game/papaGame/models/objects/GameObject29.cpp
+    src/game/papaGame/models/objects/GameObject30.cpp
     src/game/papaGame/models/objects/GameObject4.cpp
     src/game/papaGame/models/objects/GameObject5.cpp
+    src/game/papaGame/models/objects/GameObject6.cpp
+    src/game/papaGame/models/objects/GameObject7.cpp
+    src/game/papaGame/models/objects/GameObject8.cpp
+    src/game/papaGame/models/objects/GameObject9.cpp
+    src/game/papaGame/models/objects/GameObject10.cpp
+    src/game/papaGame/models/objects/GameObject11.cpp
+    src/game/papaGame/models/objects/GameObject12.cpp
+    src/game/papaGame/models/objects/GameObject13.cpp
     src/game/papaGame/models/objects/GameObject1.cpp
+    src/game/papaGame/models/objects/GameObject14.cpp
+    src/game/papaGame/models/objects/GameObject17.cpp
+    src/game/papaGame/models/objects/GameObject18.cpp
     src/game/papaGame/models/objects/GameObject19.cpp
     src/game/papaGame/models/objects/GameObject20.cpp
     src/game/papaGame/models/objects/GameObject21.cpp
@@ -180,8 +206,15 @@ set(PL_SOURCES
     src/game/papaGame/models/objects/GameObject23.cpp
     src/game/papaGame/models/objects/GameObject24.cpp
     src/game/papaGame/models/objects/GameObject25.cpp
+    src/game/papaGame/models/objects/GameObject26.cpp
+    src/game/papaGame/models/objects/GameObject27.cpp
     src/game/papaGame/models/objects/GameObject28.cpp
+    src/game/papaGame/models/objects/GameObject2.cpp
     src/game/papaGame/models/enemies/Enemy1.cpp
+    src/game/papaGame/models/enemies/Enemy10.cpp
+    src/game/papaGame/models/enemies/Enemy11.cpp
+    src/game/papaGame/models/enemies/Enemy5.cpp
+    src/game/papaGame/models/enemies/Enemy9.cpp
     src/game/papaGame/models/enemies/Enemy2.cpp
     src/game/papaGame/models/enemies/Enemy6.cpp
     src/game/papaGame/models/enemies/Enemy3.cpp
@@ -192,6 +225,21 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy14.cpp
     src/game/papaGame/models/enemies/Enemy15.cpp
     src/game/papaGame/models/enemies/Enemy16.cpp
+    src/game/papaGame/models/enemies/Enemy17.cpp
+    src/game/papaGame/models/enemies/Enemy13.cpp
+    src/game/papaGame/models/enemies/Enemy18.cpp
+    src/game/papaGame/models/enemies/Enemy19.cpp
+    src/game/papaGame/models/enemies/Enemy20.cpp
+    src/game/papaGame/models/enemies/Enemy21.cpp
+    src/game/papaGame/models/enemies/Enemy22.cpp
+    src/game/papaGame/models/enemies/Enemy25.cpp
+    src/game/papaGame/models/enemies/Enemy26.cpp
+    src/game/papaGame/models/enemies/Enemy27.cpp
+    src/game/papaGame/models/enemies/Enemy28.cpp
+    src/game/papaGame/models/enemies/Enemy29.cpp
+    src/game/papaGame/models/enemies/Enemy31.cpp
+    src/game/papaGame/models/enemies/Enemy32.cpp
+    src/game/papaGame/models/enemies/Enemy35.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
     src/game/papaGame/screens/GameIntroScreen.cpp
@@ -199,6 +247,7 @@ set(PL_SOURCES
     src/game/papaGame/screens/NewCustomerScreen.cpp
     src/game/papaGame/screens/ScoreTallyScreen.cpp
     src/game/papaGame/screens/StageOutroScreen.cpp
+    src/game/papaGame/screens/TrainingPopup.cpp
     src/game/papaGame/screens/SlotSelectScreen.cpp
     src/game/papaGame/screens/SplashScreen.cpp
     src/game/papaGame/screens/StageIntroScreen.cpp

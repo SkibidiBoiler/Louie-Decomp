@@ -10,7 +10,11 @@
 #include "game/papaGame/models/effects/CookieBitEffect.h"
 #include "game/papaGame/models/effects/CrackerBreakEffect.h"
 #include "game/papaGame/models/effects/DizzyEffect.h"
+#include "game/papaGame/models/effects/CageCustomerEffect.h"
+#include "game/papaGame/models/effects/DoorFrontEffect.h"
+#include "game/papaGame/models/effects/BossEscapeEffect.h"
 #include "game/papaGame/models/effects/DustEffect.h"
+#include "game/papaGame/models/effects/LaughEffect.h"
 #include "game/papaGame/models/effects/EndPortalEffect.h"
 #include "game/papaGame/models/effects/ExplosionEffect.h"
 #include "game/papaGame/models/effects/ItemBalloonEffect.h"
@@ -30,6 +34,9 @@
 #include "game/papaGame/models/effects/BlueberryBitEffect.h"
 #include "game/papaGame/models/effects/BlueberrySplatEffect.h"
 #include "game/papaGame/models/effects/CheeseBitEffect.h"
+#include "game/papaGame/models/effects/CheeseSplatEffect.h"
+#include "game/papaGame/models/effects/RadishDirtEffect.h"
+#include "game/papaGame/models/effects/StuckCheeseEffect.h"
 #include "game/papaGame/models/effects/FeatherEffect.h"
 #include "game/papaGame/models/effects/ChiliBitEffect.h"
 #include "game/papaGame/models/effects/ChiliSplatEffect.h"
@@ -51,6 +58,18 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "StarburstEffect") {
         return std::make_unique<StarburstEffect>(gameObj);
+    }
+    if (type == "CageCustomerEffect") {
+        return std::make_unique<CageCustomerEffect>(gameObj);
+    }
+    if (type == "DoorFrontEffect") {
+        return std::make_unique<DoorFrontEffect>(gameObj);
+    }
+    if (type == "LaughEffect") {
+        return std::make_unique<LaughEffect>(gameObj);
+    }
+    if (type == "BossEscapeEffect") {
+        return std::make_unique<BossEscapeEffect>(gameObj);
     }
     if (type == "DustEffect") {
         return std::make_unique<DustEffect>(gameObj);
@@ -127,6 +146,15 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     if (type == "CheeseBitEffect") {
         return std::make_unique<CheeseBitEffect>(gameObj);
     }
+    if (type == "RadishDirtEffect") {
+        return std::make_unique<RadishDirtEffect>(gameObj);
+    }
+    if (type == "CheeseSplatEffect") {
+        return std::make_unique<CheeseSplatEffect>(gameObj);
+    }
+    if (type == "StuckCheeseEffect") {
+        return std::make_unique<StuckCheeseEffect>(gameObj);
+    }
     if (type == "ChiliBitEffect") {
         return std::make_unique<ChiliBitEffect>(gameObj);
     }
@@ -145,7 +173,7 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     if (type == "FeatherEffect") {
         return std::make_unique<FeatherEffect>(gameObj);
     }
-    return nullptr; // SKELETON: the other effect classes (CageCustomerEffect among them) are not ported yet
+    return nullptr; // SKELETON: the other effect classes are not ported yet
 }
 
 } // namespace

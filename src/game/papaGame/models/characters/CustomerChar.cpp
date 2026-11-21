@@ -9,7 +9,9 @@
 #include "game/obf_9G/obf_4R.h"
 #include "game/obf_AF/obf_1n.h"
 #include "game/papaGame/models/effects/DizzyEffect.h"
+#include "game/papaGame/models/effects/CageCustomerEffect.h"
 #include "game/papaGame/models/effects/EndPortalEffect.h"
+#include "game/papaGame/models/effects/StuckCheeseEffect.h"
 
 using obf_AF::obf_1n;
 using papaGame::data::CustomerData;
@@ -193,7 +195,16 @@ void CustomerChar::startupPlayer(double tileX, double tileY, bool newLevel, bool
     if (newLevel) {
         gameObj->obf_V->addEffect(x, y - 64, "EndPortalEffect", "startup");
     }
-    // SKELETON: the skill tutorials (§_-6n§).
+    // The skill's training bubble, until it has been trained.
+    const data::UserData &user = *gameObj->obf_51;
+    const std::string &skill = playerData()->skillType;
+    if (skill == CustomerData::SKILL_POUND && !user.hasTrained("groundpound")) {
+        gameObj->obf_6n("groundpound", true, gameObj->obf_AQ->getKeyLabel(data::DataManager::KEY_DOWN));
+    } else if (skill == CustomerData::SKILL_GLIDE && !user.hasTrained("glide")) {
+        gameObj->obf_6n("glide", true, gameObj->obf_AQ->getKeyLabel(data::DataManager::KEY_JUMP));
+    } else if (skill == CustomerData::SKILL_DOUBLEJUMP && !user.hasTrained("doublejump")) {
+        gameObj->obf_6n("doublejump", true);
+    }
     fallChar();
     prevX = x;
     prevY = y;
@@ -245,17 +256,19 @@ void CustomerChar::startSliding(double startSpeed, bool useSlope)
     }
 }
 
-// AS: PlayerChar.startPounding — SKELETON: the "groundpound" / "poundcontext" tutorials (§_-c§).
+// AS: PlayerChar.startPounding
 void CustomerChar::startPounding()
 {
     if (skillType == CustomerData::SKILL_POUND && !isGroundPounding) {
         isGroundPounding = true;
         jump = true;
         jumpspeed = 0;
+        gameObj->obf_c("groundpound");
+        gameObj->obf_c("poundcontext");
     }
 }
 
-// AS: PlayerChar.startDoubleJumping — SKELETON: the "doublejump" tutorial (§_-c§).
+// AS: PlayerChar.startDoubleJumping
 void CustomerChar::startDoubleJumping()
 {
     if (skillType == CustomerData::SKILL_DOUBLEJUMP && !isDoubleJumping) {
@@ -263,10 +276,11 @@ void CustomerChar::startDoubleJumping()
         jump = true;
         jumpspeed = jumpstart;
         gravity = jumpgravity;
+        gameObj->obf_c("doublejump");
     }
 }
 
-// AS: PlayerChar.startGliding — SKELETON: the "glide" tutorial (§_-c§).
+// AS: PlayerChar.startGliding
 void CustomerChar::startGliding()
 {
     if (skillType == CustomerData::SKILL_GLIDE && jump && !isGliding) {
@@ -283,10 +297,11 @@ void CustomerChar::startGliding()
         } else if (playerData()->customerName != "Professor Fitz") {
             gameObj->obf_7C->playSound("hatglider.wav", false, 0.3);
         }
+        gameObj->obf_c("glide");
     }
 }
 
-// AS: PlayerChar.startWallJumping — away from the wall. SKELETON: the "walljump" tutorial (§_-c§).
+// AS: PlayerChar.startWallJumping — away from the wall.
 void CustomerChar::startWallJumping(double dir, const std::string &key)
 {
     isWallJumping = true;
@@ -314,6 +329,7 @@ void CustomerChar::startWallJumping(double dir, const std::string &key)
         triggerjumpx = true;
         lastWallJumpKey = "left";
     }
+    gameObj->obf_c("walljump");
 }
 
 // AS: CustomerChar.stopGrabRiding — letting go of a moving rideable launches the player along it.
@@ -420,7 +436,9 @@ bool CustomerChar::checkIfOnLadder(double dir)
              map.getTileProperty(xtile, ytile + 1, "thrublock") > 0)) {
             return false;
         }
-        // SKELETON: false while cheesed.
+        if (isCheesed) {
+            return false;
+        }
         return true;
     }
     return false;
@@ -1078,7 +1096,9 @@ void CustomerChar::shootWeapon(const std::string &bulletName, bool, const char *
         gameObj->obf_7C->playSound("shoot_bazooka.wav");
     }
     ++bulletsFired;
-    // SKELETON: GameCam.setCameraJiggle(5, 5) for the bazooka.
+    if (data->weaponType == CustomerData::WEAPON_BAZOOKA) {
+        gameObj->obf_3Y->setCameraJiggle(5, 5);
+    }
 }
 
 // AS: CustomerChar.checkIfAttacking
@@ -1308,7 +1328,13 @@ void CustomerChar::updateObject()
                                 gameObj->obf_71->startMainIrisOut(portal->x, portal->y);
                             }
                         } else if (finishWaitTimer == finishWaitTimerMax) {
-                            // SKELETON: the CageCustomerEffect heads for the portal too (portalX / portalY).
+                            // The freed customer heads for the portal too.
+                            Effect *cust = fx.getEffect(finishCustomerFXIndex);
+                            if (cust && portal && cust->effectType == "CageCustomerEffect") {
+                                auto *caged = static_cast<effects::CageCustomerEffect *>(cust);
+                                caged->portalX = portal->x;
+                                caged->portalY = portal->y;
+                            }
                             gravity = 0;
                             jumpgravity = 0;
                             normalgravity = 0;
@@ -1551,7 +1577,7 @@ void CustomerChar::updateObject()
                 isGroundPounding = false;
                 jumpspeed = jumpstart / 2;
                 jump = true;
-                // SKELETON: GameCam.setCameraJiggle(10, 10).
+                gameObj->obf_3Y->setCameraJiggle(10, 10);
                 gameObj->obf_7C->playSound("papow.wav");
             }
         } else if (poundSound) {
@@ -1663,7 +1689,10 @@ void CustomerChar::updateObject()
     wasJumping = jump;
     wasTurning = isTurning;
     playerLastX = x;
-    // SKELETON: the crawl hint and Professor Fitz's copter sound.
+    if (isCrawling) {
+        gameObj->obf_c("crawl");
+    }
+    // SKELETON: Professor Fitz's copter sound.
 }
 
 // AS: PlayerChar.clearCombo
@@ -1710,10 +1739,12 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
         isDucking = false;
         duck = false;
     }
-    // SKELETON: removeCheese when isCheesed.
+    if (isCheesed) {
+        removeCheese();
+    }
     if (currentHealth <= 0) {
         currentHealth = 0;
-        // SKELETON: GameCam.setCameraJiggle(12, 10).
+        gameObj->obf_3Y->setCameraJiggle(12, 10);
         cancelAttack();
         dropWeapon();
         dirx = dir;
@@ -1737,7 +1768,7 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
         gameObj->obf_7C->playSound("player_died.wav");
         controls.stopHurtControls = true;
     } else {
-        // SKELETON: GameCam.setCameraJiggle(6, 8).
+        gameObj->obf_3Y->setCameraJiggle(6, 8);
         dirx = dir;
         if (dir != 0) {
             walkingDir = dir;
@@ -1758,6 +1789,63 @@ void CustomerChar::hurtPlayer(double dir, double damage, bool forced)
     }
     gameObj->obf_6Z->updatePlayerHealth(currentHealth);
     // SKELETON: throwCarriedObject(0).
+}
+
+// AS: PlayerChar.getCheesed — stuck in cheese (not while crawling): every move stops and a cheese lump sticks to the
+// player; a second hit fills the lump up again.
+void CustomerChar::getCheesed()
+{
+    managers::EffectManager &fx = *gameObj->obf_V;
+    if (isCrawling) {
+        return;
+    }
+    cancelAttack();
+    if (isClimbingLadder) {
+        jump = true;
+    } else if (isSliding) {
+        jump = true;
+        jumpspeed = -6;
+    }
+    jumpspeed = 0;
+    isGliding = false;
+    isGroundPounding = false;
+    isWallJumping = false;
+    canAutoWallJump = false;
+    isWallSliding = false;
+    isDoubleJumping = false;
+    isClimbingLadder = false;
+    isSliding = false;
+    isCheesed = true;
+    if (cheesedFXID == -1) {
+        cheesedFXID = fx.addEffect(x, y, "StuckCheeseEffect", "", true);
+    } else if (auto *cheese = static_cast<effects::StuckCheeseEffect *>(fx.getEffect(cheesedFXID))) {
+        cheese->refillCheese();
+    }
+    gameObj->obf_7C->playSound("getcheesed.mp3");
+}
+
+// AS: PlayerChar.removeCheese — in the air, the player gets a small hop on the way out.
+void CustomerChar::removeCheese()
+{
+    if (!isCheesed) {
+        return;
+    }
+    if (jump) {
+        jumpspeed = jumpstart + 2;
+    }
+    isCheesed = false;
+    if (cheesedFXID != -1) {
+        gameObj->obf_V->removeEffect(cheesedFXID);
+    }
+    cheesedFXID = -1;
+}
+
+// AS: PlayerChar.jumpCheesed — each jump shakes a piece of the lump off.
+void CustomerChar::jumpCheesed()
+{
+    if (auto *cheese = static_cast<effects::StuckCheeseEffect *>(gameObj->obf_V->getEffect(cheesedFXID))) {
+        cheese->playerJumped();
+    }
 }
 
 // AS: PlayerChar.shovePlayer — pushed back without damage.
@@ -1877,7 +1965,7 @@ bool CustomerChar::checkForHittingEnemies(bool justChecking)
             isDoubleJumping = false;
             isWallJumping = false;
             isGroundPounding = false;
-            // SKELETON: GameCam.setCameraJiggle(10, 10).
+            gameObj->obf_3Y->setCameraJiggle(10, 10);
             gameObj->obf_7C->playSound("papow.wav");
         } else if (canGetHit() && !justChecking) {
             if (e->checkSpriteCollision(body) && !e->isDead) {

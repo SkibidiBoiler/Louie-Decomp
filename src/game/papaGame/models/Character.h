@@ -91,7 +91,7 @@ public:
     bool checkIfLadderBelow();
     bool checkIfHalfOnCloud(double dir);
     bool checkMovingTiles(double y);
-    void checkIfAtEdge(double speed, double dir);
+    virtual void checkIfAtEdge(double speed, double dir);
     virtual bool moveChar(double dirx, double diry, double jumpDir, bool bounceAtWalls = false, bool checkEdges = false,
                           bool collide = true, double fixedSpeed = INT_MAX); // overridden by Enemy16
     virtual void fallChar();
@@ -157,6 +157,7 @@ public:
 
     // getMyCorners results
     double downY = 0, upY = 0, standupY = 0, standupmidY = 0, leftX = 0, rightX = 0;
+    double climbDir = 1;
     double midY = 0, downmidY = 0, upmidY = 0;
     bool HitUpLeft = false, HitDownLeft = false, HitUpRight = false, HitDownRight = false;
     bool HitMidLeft = false, HitMidRight = false, HitUpMidLeft = false, HitUpMidRight = false;

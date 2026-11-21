@@ -2,6 +2,7 @@
 
 #include "game/obf_9G/obf_4R.h"
 #include "game/papaGame/models/effects/CageBackBarsEffect.h"
+#include "game/papaGame/models/effects/CageCustomerEffect.h"
 #include "game/papaGame/models/effects/CageFrontBarsEffect.h"
 #include "game/papaGame/models/effects/CageSpinnerEffect.h"
 
@@ -15,7 +16,6 @@ void GameObject19::init(double xtile_, double ytile_, double id_, double whichSc
     managers::EffectManager &fx = *gameObj->obf_V;
     backBarsID = fx.addEffect(x + 4 + fx_offset, y + 32, "CageBackBarsEffect", fx_subtype);
     if (!gameObj->obf_51->hasCustomerUnlocked(customerActualIndex)) {
-        // SKELETON: CageCustomerEffect (the trapped customer's puppet) is not ported; addEffect returns -1.
         customerFXID = fx.addEffect(x + 64, y + 128, "CageCustomerEffect", as3::String(cageCustomerIndex), false,
                                     facingDir);
     }
@@ -94,7 +94,7 @@ void GameObject19::updateObject()
 void GameObject19::deactivateObject()
 {
     managers::EffectManager &fx = *gameObj->obf_V;
-    for (double effectID : {frontBarsID, backBarsID, spinnerID}) {
+    for (double effectID : {frontBarsID, backBarsID, customerFXID, spinnerID}) {
         if (effectID == -1) {
             continue;
         }
@@ -106,11 +106,12 @@ void GameObject19::deactivateObject()
             static_cast<effects::CageFrontBarsEffect *>(e)->openCage();
         } else if (e->effectType == "CageBackBarsEffect") {
             static_cast<effects::CageBackBarsEffect *>(e)->openCage();
+        } else if (e->effectType == "CageCustomerEffect") {
+            static_cast<effects::CageCustomerEffect *>(e)->openCage();
         } else if (e->effectType == "CageSpinnerEffect") {
             static_cast<effects::CageSpinnerEffect *>(e)->openCage();
         }
     }
-    // SKELETON: the CageCustomerEffect's openCage (customerFXID).
     data::UserData &user = *gameObj->obf_51;
     user.savedCharacterIndex = customerActualIndex;
     user.savedCharacterWasUnlocked = user.hasCustomerUnlocked(customerActualIndex);

@@ -2,6 +2,7 @@
 // AS: papaGame.models.GameObject (extends Character) — the base of GameObject1..GameObject33: ladders, blocks,
 // checkpoints, cages, blimps, switches...
 // SKELETON: grabbing / throwing / riding, pushing, stepping on objects, triggers between objects and camera pans.
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -46,13 +47,14 @@ public:
     virtual void unregisterSpawn() {}
     virtual bool checkOnScreen();
     virtual void checkAdditionalBlitting(bool /*foreground*/, bool /*before*/ = false) {}
+    virtual void updateTrainingSign() {} // AS: GameObject.updateTrainingSign (empty; no subclass overrides it)
     void allowReactions() { canReact = true; } // AS: GameObject.allowReactions
     void updateObject() override;
     virtual void getHit(double /*damage*/ = 1) {}
     bool acceptsDamage(const std::string &kind, const std::string &weapon) const;
-    virtual bool checkPushingObject() { return false; } // SKELETON: pushable objects
+    bool checkPushingObject() const { return isPushable && isBeingPushed; } // AS: GameObject.checkPushingObject
     void checkStartStepping(Character &c, bool alreadyOnObject = false);
-    void stepOnObject(Character &c);
+    virtual void stepOnObject(Character &c);
     virtual void stopStandingOnObject(Character &c);
     virtual bool checkStandingOnObject(Character &c);
 
@@ -74,6 +76,8 @@ public:
     bool isGrabbable = false;
     bool isGrabbed = false;
     bool isPushable = false;
+    bool isBeingPushed = false;
+    bool saveDataAtCheckpoint = false; // read by ObjectManager.saveObjectsAtCheckpoint (not ported yet)
     AnimationCycle activeCycleFrames, inactiveCycleFrames, activatingCycleFrames, deactivatingCycleFrames;
     bool jigglecam = false;
     double jiggleamount = 10;
@@ -116,6 +120,17 @@ public:
     std::vector<std::string> brokenByObjects{"all"};
     bool canTravelBetweenRooms = true;
     bool isTilingObject = false;
+    // A tiling object repeats its frame over tilingWidth x tilingHeight tiles (GameDisplay.blitTilingObject): the
+    // top row from the cap band of the sheet, the others from the no-cap band, an optional bottom cap, and an
+    // optional colour fill below.
+    double tilingWidth = 7;
+    uint32_t tilingColorFill = 4294901760; // ARGB
+    bool tilingHasCap = false;
+    double tilingCapBlitOffsetY = 0;
+    double tilingNoCapBlitOffsetY = 0;
+    bool tilingUseColorFill = true;
+    bool tilingHasBottomCap = false;
+    double tilingBottomCapBlitOffsetY = 0;
     bool isLadder = false;
     double tilingHeight = 5;
     double topCapFrame = 0;

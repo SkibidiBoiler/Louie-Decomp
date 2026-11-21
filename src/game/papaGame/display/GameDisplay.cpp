@@ -291,6 +291,35 @@ void GameDisplay::blit(const engine::Sheet &sheet, double sx, double sy, double 
                                          static_cast<float>(dy));
 }
 
+void GameDisplay::drawScreenLine(double x1, double y1, double x2, double y2, double thickness, uint32_t rgb) const
+{
+    const double len = std::hypot(x2 - x1, y2 - y1);
+    if (len <= 0) {
+        return;
+    }
+    const float nx = static_cast<float>(-(y2 - y1) / len * thickness / 2);
+    const float ny = static_cast<float>((x2 - x1) / len * thickness / 2);
+    const SDL_FColor color{((rgb >> 16) & 0xFF) / 255.0f, ((rgb >> 8) & 0xFF) / 255.0f, (rgb & 0xFF) / 255.0f, 1.0f};
+    const float ax = static_cast<float>(x1), ay = static_cast<float>(y1);
+    const float bx = static_cast<float>(x2), by = static_cast<float>(y2);
+    const SDL_Vertex v[4] = {{{ax + nx, ay + ny}, color, {0, 0}},
+                             {{ax - nx, ay - ny}, color, {0, 0}},
+                             {{bx - nx, by - ny}, color, {0, 0}},
+                             {{bx + nx, by + ny}, color, {0, 0}}};
+    const int indices[6] = {0, 1, 2, 0, 2, 3};
+    SDL_RenderGeometry(gameObj->renderer, nullptr, v, 4, indices, 6);
+}
+
+double GameDisplay::drawnX(const models::Character &c) const
+{
+    return c.prevX + (c.x - c.prevX) * drawAlpha_;
+}
+
+double GameDisplay::drawnY(const models::Character &c) const
+{
+    return c.prevY + (c.y - c.prevY) * drawAlpha_;
+}
+
 void GameDisplay::stampOnTiles(const engine::Sheet &sheet, double sx, double sy, double sw, double sh, double dx,
                                double dy)
 {
@@ -609,7 +638,7 @@ void GameDisplay::reblitEnemies(bool foreground)
     }
 }
 
-// AS: GameDisplay.reblitObjects (SKELETON: blitTilingObject, blitCollisionArea)
+// AS: GameDisplay.reblitObjects (SKELETON: blitCollisionArea)
 void GameDisplay::reblitObjects(bool foreground)
 {
     managers::ObjectManager &manager = *gameObj->obf_7u;
@@ -626,6 +655,10 @@ void GameDisplay::reblitObjects(bool foreground)
             continue;
         }
         if (gameObj->playerObj->whichMovingTile == o && i != count) {
+            continue;
+        }
+        if (o->isTilingObject) {
+            blitTilingObject(*o);
             continue;
         }
         if (o->isLadder) {
@@ -652,6 +685,64 @@ void GameDisplay::reblitObjects(bool foreground)
             blit(*manager.objectSheets[index], sx, sy, w, h, dx, dy);
         }
         o->checkAdditionalBlitting(foreground);
+    }
+}
+
+// AS: GameDisplay.blitTilingObject — the object's frame repeated over its tiling area, one sprite per
+// spritewidth x spriteheight block (a last half block when the size is not a whole number of them); the top row from
+// the cap band, a last row from the bottom cap band, the others from the no-cap band; then the colour fill below.
+// The original tests `isActivated || true`: an inactive one is drawn too.
+void GameDisplay::blitTilingObject(const models::GameObject &o)
+{
+    const managers::ObjectManager &manager = *gameObj->obf_7u;
+    const auto index = static_cast<size_t>(o.sheetIndex);
+    if (o.sheetIndex < 0 || index >= manager.objectSheets.size() || !manager.objectSheets[index]) {
+        return;
+    }
+    const engine::Sheet &sheet = *manager.objectSheets[index];
+    const double frame = o.animationFrame;
+    const double perRow = o.sheetWidth;
+    const double offsetX = o.spriteTargetX - o.spriteCenterX;
+    const double offsetY = o.spriteTargetY - o.spriteCenterY;
+    const double tilesW = o.spritewidth / tileWidth;
+    const double tilesH = o.spriteheight / tileWidth;
+    const double cols = std::ceil(o.tilingWidth / tilesW);
+    const double rows = std::ceil(o.tilingHeight / tilesH);
+    const double startY = o.ytile;
+    double startX = o.xtile;
+    if (o.dirx == -1) {
+        startX = o.xtile - (o.tilingWidth - 1 * tilesW); // QUIRK: as written, (tilingWidth - tilesW)
+    }
+    for (double c = 0; c < cols; ++c) {
+        for (double r = 0; r < rows; ++r) {
+            double band = o.tilingNoCapBlitOffsetY;
+            if (r == 0 && o.tilingHasCap) {
+                band = o.tilingCapBlitOffsetY;
+            } else if (r > 0 && r == rows - 1 && o.tilingHasBottomCap) {
+                band = o.tilingBottomCapBlitOffsetY;
+            }
+            const double sx = (frame - std::floor(frame / perRow) * perRow) * o.spritewidth;
+            const double sy = std::floor(frame / perRow) * o.spriteheight + band;
+            double sw = o.spritewidth, sh = o.spriteheight;
+            if (r == rows - 1 && o.tilingHeight / tilesH != rows) {
+                sh = o.spriteheight / 2;
+            }
+            if (c == cols - 1 && o.tilingWidth / tilesW != cols) {
+                sw = o.spritewidth / 2;
+            }
+            const double dx = (startX + c * tilesW) * tileWidth - currentXcoord - offsetX - tileWidth / 2;
+            const double dy = (startY + r * tilesH) * tileWidth - currentYcoord - offsetY - tileWidth / 2;
+            blit(sheet, sx, sy, sw, sh, smooth_ ? dx : std::floor(dx), smooth_ ? dy : std::floor(dy));
+        }
+    }
+    if (o.tilingUseColorFill) {
+        const uint32_t argb = o.tilingColorFill;
+        SDL_SetRenderDrawBlendMode(gameObj->renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(gameObj->renderer, (argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, (argb >> 24) & 0xFF);
+        const SDL_FRect rect{static_cast<float>(o.xtile * tileWidth - currentXcoord),
+                             static_cast<float>(o.ytile * tileWidth + o.spriteheight - currentYcoord - offsetY - tileWidth / 2),
+                             static_cast<float>(o.tilingWidth * tileWidth), static_cast<float>(screenPxHeight)};
+        SDL_RenderFillRect(gameObj->renderer, &rect);
     }
 }
 

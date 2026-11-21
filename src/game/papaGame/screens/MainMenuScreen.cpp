@@ -342,7 +342,10 @@ void MainMenuScreen::clickCharacterStyle(double style)
     bool bought = false, wear = false;
     if (!user.hasOutfitUnlocked(selectedCharacterIndex, style - 1)) {
         bought = user.purchaseOutfit(selectedCharacterIndex, style - 1);
-        wear = bought; // SKELETON: §_-64§(false) (closes a tutorial pop-up)
+        if (bought) {
+            wear = true;
+            gameObj->obf_64(false);
+        }
     } else {
         wear = true;
     }
@@ -371,6 +374,7 @@ void MainMenuScreen::clickCharacterStyle(double style)
 void MainMenuScreen::clickCharacterThumb(double index)
 {
     gameObj->obf_7C->playSound("buttonclick.wav");
+    gameObj->obf_c("character", false);
     selectCharacter(index, gameObj->obf_51->getBestOutfit(index));
 }
 
@@ -609,6 +613,7 @@ void MainMenuScreen::clickPlayMap(int world)
         user.lastAreaRevealed = mapLastUnlocked;
     }
     gameObj->obf_7C->playSound("buttonclick.wav");
+    gameObj->obf_c("nowarpkeys", false);
     isOpeningMapDetail = true;
     MainMenuParams next;
     next.section = "character";
@@ -621,6 +626,8 @@ void MainMenuScreen::clickPlayMap(int world)
 void MainMenuScreen::clickStartLevel()
 {
     isStartingLevel = true;
+    gameObj->obf_c("challenges", false);
+    gameObj->obf_64(false);
     data::UserData &user = *gameObj->obf_51;
     if (selectedCharacterIndex >= 0 && selectedCharacterIndex < static_cast<double>(user.customersUsed.size())) {
         user.customersUsed[static_cast<size_t>(selectedCharacterIndex)] = 1;
@@ -650,6 +657,7 @@ void MainMenuScreen::setupCredits()
 // AS: MainMenuScreen.destroy
 void MainMenuScreen::destroy()
 {
+    gameObj->obf_c("nowarpkeys", false);
     for (const char *event : {"clickCredits", "clickExit", "clickCreditsRedirect", "clickCreditsRedirectBack",
                               "clickMap", "clickStartLevel", "clickBackToMap", "clickExitMapSelect", "clickInfo",
                               "clickBackToGame", "clickQuit"}) {
@@ -666,12 +674,14 @@ void MainMenuScreen::destroy()
 // AS: MainMenuScreen.clickExit — back to the title screen.
 void MainMenuScreen::clickExit()
 {
+    gameObj->obf_64(false);
     gameObj->showApiScreen("SplashScreen");
 }
 
 // AS: MainMenuScreen.clickExitMapSelect
 void MainMenuScreen::clickExitMapSelect()
 {
+    gameObj->obf_64(false);
     gameObj->showApiScreen("SplashScreen");
 }
 
@@ -679,6 +689,7 @@ void MainMenuScreen::clickExitMapSelect()
 void MainMenuScreen::clickBackToMap()
 {
     isReturningToMap = true;
+    gameObj->obf_64(false);
     MainMenuParams next;
     next.section = "map";
     gameObj->showApiScreen("MainMenu", next);
@@ -734,6 +745,7 @@ void MainMenuScreen::tweenSections()
             if (incoming) {
                 incoming->setY(0);
             }
+            showSectionTraining();
             if (old) {
                 old->setVisible(false);
             }
@@ -748,6 +760,26 @@ void MainMenuScreen::tweenSections()
         tweening_ = false;
         if (isClosing) {
             closeMainMenuScreen();
+        }
+    }
+}
+
+// Port: the training bubbles tweenSections opens once a section has slid in (its debug trace() calls are left out).
+void MainMenuScreen::showSectionTraining()
+{
+    data::UserData &user = *gameObj->obf_51;
+    if (newSection == "character") {
+        if (!user.hasTrained("character") && user.getTotalCustomersUnlocked() > 2) {
+            gameObj->obf_6n("character", false);
+        } else if (!user.hasTrained("challenges") && user.hasTrained("nowarpkeys")) {
+            gameObj->obf_6n("challenges", false);
+        } else if (!user.hasTrained("styles") && user.getLevelHighScore(2) > 0 &&
+                   user.getTotalMoney() >= gameObj->obf_AQ->getOutfitPrice(user.selectedCharacter, 1)) {
+            gameObj->obf_6n("styles", false);
+        }
+    } else if (newSection == "map") {
+        if (!user.hasTrained("nowarpkeys") && !willRevealMap && user.getLevelHighScore(user.lastAreaRevealed) > 0) {
+            gameObj->obf_6n("nowarpkeys", false);
         }
     }
 }
