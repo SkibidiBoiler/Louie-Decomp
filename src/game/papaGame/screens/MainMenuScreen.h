@@ -2,7 +2,7 @@
 // AS: papaGame.screens.MainMenuScreen — the map of areas and, before a level, the customer and outfit choice,
 // with the credits, badges, baddies, controls and help sections the bar's tabs open.
 // The store, social and "first game" links went to web sites and are not shown.
-// SKELETON: the baddies, medals (badges), controls and help sections, and the tutorial pop-ups (§_-6n§ / §_-c§).
+// SKELETON: the baddies, controls and help sections, and the tutorial pop-ups (§_-6n§ / §_-c§).
 #include <memory>
 #include <string>
 #include <vector>
@@ -37,6 +37,12 @@ public:
     void clickPlayMap(int world);
     void clickStartLevel();
     void setupCredits();
+    void setupMedals(bool setup = true);
+    void populateMedals();
+    void clickNextMedals();
+    void clickPrevMedals();
+    void animateMedalsTransition(); // the medals panel's ENTER_FRAME (port: from enterFrame)
+    void clickMedals() { setSection("medals"); } // AS: MainMenuScreen.clickMedals
     void setupInfo(bool setup = true);
     void setupConfirmQuit(bool setup = true);
     void clickInfo() { setSection("info"); }
@@ -88,6 +94,11 @@ private:
     engine::MovieClip *section(const std::string &name) { return clip->findChild(name); }
     bool tweening_ = false;     // port: the tweenSections ENTER_FRAME listener is on
     bool updatingChar_ = false; // port: the updateCharacter ENTER_FRAME listener is on
+    double medalsPage = 0;
+    double medalsPerPage = 8;
+    std::string medalsDirection = "next";
+    bool medalsTransitioning = true;
+    bool animatingMedals_ = false; // port: the animateMedalsTransition ENTER_FRAME listener is on
 };
 
 } // namespace papaGame::screens

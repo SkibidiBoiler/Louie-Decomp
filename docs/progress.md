@@ -581,3 +581,10 @@ functions, 89.3 % of lines.
 and loading screens, Flash bitmap drawing and asset loading, the never-created RocketBBQ / RocketMustard): 126
 functions, 1423 lines; `--excluded` lists them with the reason. Progress over the ported scope: 86.1 % of functions,
 92.8 % of lines.
+
+(53) Menu BADGES tab: MainMenuScreen setupMedals, populateMedals, clickNextMedals, clickPrevMedals,
+animateMedalsTransition, clickMedals; the tab is on the main and pause menu bars ("clickMedals"). Eight badges a
+page with title, description and tally, reward, points, picture and earned mark; locked ones show "Hidden Badge"
+(port texts badge.* in lang/). Not drawn: the grey (ColorMatrixFilter) on unearned badges. The drop-down's reward and
+points texts use the same keys. Checked: captures of pages 1 and 2 from the pause menu. Progress: 86.4 % of functions,
+93.1 % of lines.

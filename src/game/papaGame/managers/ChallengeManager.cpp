@@ -711,8 +711,10 @@ void ChallengeManager::checkForDisplayingDropdown()
             if (engine::MovieClip *panel = badge->findChild("panel")) {
                 panel->setText("title_txt", getChallengeTitle(-1, -1, which));
                 panel->setText("description_txt", getChallengeDescription(-1, -1, which));
-                panel->setText("reward_txt", "+ $" + obf_AF::obf_81::obf_7w(getChallengeRewardAmount(-1, -1, which)));
-                panel->setText("points_txt", as3::String(getChallengeRewardAmount(-1, -1, which)) + " Pts.");
+                panel->setText("reward_txt", gameObj->lang->get("badge.reward", obf_AF::obf_81::obf_7w(
+                                                                       getChallengeRewardAmount(-1, -1, which))));
+                panel->setText("points_txt", gameObj->lang->get("badge.points",
+                                                                as3::String(getChallengeRewardAmount(-1, -1, which))));
                 if (engine::MovieClip *thumb = panel->findChild("thumb")) {
                     thumb->gotoAndStop(static_cast<int>(which) + 1);
                 }

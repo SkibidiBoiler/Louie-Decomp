@@ -68,5 +68,9 @@
   "launcher.sub_pl2": "When Burgers Attack!",
   "launcher.sub_pl3": "When Sundaes Attack!",
   "launcher.sub_pl1": "When Pizzas Attack!",
-  "launcher.importing_short": "Importando... {0} %"
+  "launcher.importing_short": "Importando... {0} %",
+  "badge.reward": "+ ${0}",
+  "badge.points": "{0} pts.",
+  "badge.hidden_title": "Insignia oculta",
+  "badge.hidden_text": "¡Todavía no puedes ver esta insignia!"
 }

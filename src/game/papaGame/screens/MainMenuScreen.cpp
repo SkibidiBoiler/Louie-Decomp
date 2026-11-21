@@ -32,6 +32,7 @@ void MainMenuScreen::setupScreen()
     isOnCharSelect = params.isCharSelect;
     clip = &container->addChild(engine::MovieClip::create(*gameObj->symbols, "mainMenuMC"), "");
     gameObj->addContainerListener("clickCredits", [this] { clickCredits(); });
+    gameObj->addContainerListener("clickMedals", [this] { clickMedals(); });
     gameObj->addContainerListener("clickExit", [this] { clickExit(); });
     gameObj->addContainerListener("clickCreditsRedirect", [this] { setSection("credits"); });
     gameObj->addContainerListener("clickCreditsRedirectBack", [this] { setSection("map"); });
@@ -49,8 +50,9 @@ void MainMenuScreen::setupScreen()
     if (!isOnCharSelect) {
         setupInfo();
     }
-    // SKELETON: setupBaddies, setupControls, setupHelp, setupMedals.
+    // SKELETON: setupBaddies, setupControls, setupHelp.
     setupCredits();
+    setupMedals();
     setupConfirmQuit();
     if (gameObj->obf_AQ->currentScreenData == nullptr && gameObj->obf_7C->currentTrack != "otherscreens.wav") {
         gameObj->obf_7C->playTrack("AlternateTrack", 1, 0, "outin");
@@ -1103,6 +1105,143 @@ void MainMenuScreen::enterFrame()
     }
     if (updatingChar_ && clip) {
         updateCharacter();
+    }
+    if (animatingMedals_ && clip) {
+        animateMedalsTransition();
+    }
+}
+
+// AS: MainMenuScreen.setupMedals — the badge pages: earned / total, the first page, its slide-in. (Removing the
+// listeners, setup false, is left to the clip going away.)
+void MainMenuScreen::setupMedals(bool setup)
+{
+    const data::UserData &user = *gameObj->obf_51;
+    const managers::ChallengeManager &challenges = *gameObj->obf_94;
+    medalsPage = 0;
+    medalsDirection = "next";
+    medalsTransitioning = true;
+    engine::MovieClip *medals = section("medals");
+    if (!setup || !medals) {
+        animatingMedals_ = false;
+        return;
+    }
+    if (engine::MovieClip *next = medals->findChild("next_btn")) {
+        next->onClick = [this] { clickNextMedals(); };
+    }
+    if (engine::MovieClip *prev = medals->findChild("prev_btn")) {
+        prev->onClick = [this] { clickPrevMedals(); };
+        prev->setVisible(false);
+    }
+    medals->setText("total_txt",
+                    as3::String(user.getTotalBadgesEarned()) + "/" + as3::String(challenges.getNumberOfBadges()));
+    populateMedals();
+    animatingMedals_ = true;
+}
+
+// AS: MainMenuScreen.populateMedals — this page's eight badges: title, description and tally, reward, picture and
+// earned mark (an unearned one is greyed in the original: a ColorMatrixFilter, getDesaturatedFilter, which the
+// port does not draw); a locked one is the "Hidden Badge". Then the page arrows and number, and the slide-in.
+void MainMenuScreen::populateMedals()
+{
+    const data::UserData &user = *gameObj->obf_51;
+    const managers::ChallengeManager &challenges = *gameObj->obf_94;
+    const engine::Lang &lang = *gameObj->lang;
+    engine::MovieClip *medals = section("medals");
+    engine::MovieClip *panel = medals ? medals->findChild("panel") : nullptr;
+    if (!panel) {
+        return;
+    }
+    const double first = 0 + medalsPage * medalsPerPage;
+    const double last = std::min(challenges.getNumberOfBadges() - 1, first + (medalsPerPage - 1));
+    const double count = last - first + 1;
+    for (int i = 0; i < static_cast<int>(medalsPerPage); ++i) {
+        engine::MovieClip *p = panel->findChild("panel" + std::to_string(i + 1));
+        if (!p) {
+            continue;
+        }
+        const double which = i + first;
+        if (i < count) {
+            p->setVisible(true);
+            const double reward = challenges.getChallengeRewardAmount(-1, -1, which);
+            p->setText("title_txt", challenges.getChallengeTitle(-1, -1, which));
+            p->setText("description_txt",
+                       challenges.getChallengeDescription(-1, -1, which) + " " + challenges.getBadgeTallyString(which));
+            p->setText("reward_txt", lang.get("badge.reward", obf_AF::obf_81::obf_7w(reward)));
+            p->setText("points_txt", lang.get("badge.points", as3::String(reward)));
+            engine::MovieClip *thumb = p->findChild("thumb");
+            if (thumb) {
+                thumb->gotoAndStop(static_cast<int>(which) + 1);
+            }
+            if (engine::MovieClip *earned = p->findChild("earned")) {
+                earned->setVisible(user.hasBadge(which));
+            }
+            if (challenges.shouldLockBadge(which)) {
+                if (thumb) {
+                    thumb->gotoAndStop(49);
+                }
+                p->setText("title_txt", lang.get("badge.hidden_title"));
+                p->setText("description_txt", lang.get("badge.hidden_text"));
+                p->setText("reward_txt", "");
+                p->setText("points_txt", "");
+            }
+        } else {
+            p->setVisible(false);
+        }
+    }
+    const double pages = std::ceil(challenges.getNumberOfBadges() / medalsPerPage);
+    if (engine::MovieClip *prev = medals->findChild("prev_btn")) {
+        prev->setVisible(medalsPage > 0);
+    }
+    if (engine::MovieClip *next = medals->findChild("next_btn")) {
+        next->setVisible(medalsPage < pages - 1);
+    }
+    medals->setText("page_txt", as3::String(medalsPage + 1) + " / " + as3::String(pages));
+    panel->gotoLabel(medalsDirection == "next" ? "innext" : "inprev", true);
+}
+
+// AS: MainMenuScreen.clickNextMedals
+void MainMenuScreen::clickNextMedals()
+{
+    if (!medalsTransitioning) {
+        ++medalsPage;
+        medalsDirection = "next";
+        medalsTransitioning = true;
+        if (engine::MovieClip *panel = section("medals")->findChild("panel")) {
+            panel->gotoLabel("outnext", true);
+        }
+        animatingMedals_ = true;
+    }
+}
+
+// AS: MainMenuScreen.clickPrevMedals
+void MainMenuScreen::clickPrevMedals()
+{
+    if (!medalsTransitioning) {
+        --medalsPage;
+        medalsDirection = "prev";
+        medalsTransitioning = true;
+        if (engine::MovieClip *panel = section("medals")->findChild("panel")) {
+            panel->gotoLabel("outprev", true);
+        }
+        animatingMedals_ = true;
+    }
+}
+
+// AS: MainMenuScreen.animateMedalsTransition — when the old page is out the new one is filled; when it is in, done.
+void MainMenuScreen::animateMedalsTransition()
+{
+    engine::MovieClip *medals = section("medals");
+    engine::MovieClip *panel = medals ? medals->findChild("panel") : nullptr;
+    if (!panel) {
+        animatingMedals_ = false;
+        return;
+    }
+    const std::string label = panel->currentFrameLabel();
+    if (label == "outnextframe" || label == "outprevframe") {
+        populateMedals();
+    } else if (label == "innextframe" || label == "inprevframe") {
+        animatingMedals_ = false;
+        medalsTransitioning = false;
     }
 }
 
