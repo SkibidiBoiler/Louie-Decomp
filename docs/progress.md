@@ -641,3 +641,9 @@ The original held that frame while it drew the player's and the caged customers'
 let the music play out; the port draws them at once, so the level started with the music cut. With the option off
 the intro ends as soon as the sprites are ready, as before. Not checked in the game (the intro needs a save with a
 level to start).
+
+(61) `FliplineLogoScreen` (the owner asked to keep it): the Flipline Studios logo animation plays before the title
+screen at 24 fps, as in the original; at its "stopframe" label the game goes back to 30 fps and the title screen
+opens (obf_4R obf_7X / obf_4E; `obf_4R::stageFrameRate` is the original's stage.frameRate, which the app's fixed step
+follows). Its button's link to flipline.com (§_-36§) stays out (progress.py EXCLUDED), as do the analytics events.
+Checked: captures at frames 50 and 120 (the logo, "logic 24/s") and the log showing the title screen after it.

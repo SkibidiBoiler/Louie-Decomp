@@ -32,7 +32,7 @@ EXCLUDED = {
     "§_-5d§": ("*", _PRELOAD),
     "§_-88§": ("*", _PRELOAD),
     "LoadingLevelsScreen": ("*", _PRELOAD),
-    "FliplineLogoScreen": ("*", _PRELOAD),
+    "FliplineLogoScreen": ({"§_-36§"}, _ONLINE),
     "LicenseLogoScreen": ("*", _PRELOAD),
     "SponsorLogoScreen": ("*", _PRELOAD),
     "RocketBBQ": ("*", _UNUSED),

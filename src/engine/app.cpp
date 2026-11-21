@@ -379,7 +379,7 @@ void App::loadGame(const std::string &game)
             SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
                     game_->obf_AQ->currentScreens.size());
         } else {
-            game_->showApiScreen("SplashScreen"); // the original starts at the title screen
+            game_->obf_7X(); // the original starts with the Flipline logo, then the title screen
         }
     } else {
         game_.reset();
@@ -1074,6 +1074,10 @@ void App::tick()
         }
         game_->waitIntroMusic = settings_.waitIntroMusic;
         game_->updateScreens(pointer_);
+        if (game_->stageFrameRate > 0 && game_->stageFrameRate != stage_.frameRate) { // stage.frameRate = n
+            stage_.frameRate = game_->stageFrameRate;
+            stepNs_ = static_cast<uint64_t>(1e9 / stage_.frameRate);
+        }
         game_->obf_7C->advanceTime(1000.0 / stage_.frameRate);
     }
     pointer_.pressed = false;

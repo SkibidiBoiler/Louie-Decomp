@@ -36,6 +36,7 @@
 #include "game/papaGame/screens/GameIntroScreen.h"
 #include "game/papaGame/screens/MainMenuScreen.h"
 #include "game/papaGame/screens/BossIntroScreen.h"
+#include "game/papaGame/screens/FliplineLogoScreen.h"
 #include "game/papaGame/screens/GameOutroScreen.h"
 #include "game/papaGame/screens/ParadeScreen.h"
 #include "game/papaGame/screens/NewCustomerScreen.h"
@@ -84,6 +85,8 @@ public:
     void obf_4Z(double whichCustomer); // AS: §_-4Z§, the new customer screen
     void obf_6s(); // AS: §_-6s§
     void obf_6I(); // AS: §_-6I§ (show the boss intro)
+    void obf_7X(); // AS: §_-7X§ (show the Flipline logo)
+    void obf_4E(); // AS: §_-4E§ (remove the Flipline logo)
     void obf_3q(); // AS: §_-3q§ (remove the parade)
     void obf_49(); // AS: §_-49§ (show the game ending)
     void obf_2r(); // AS: §_-2r§ (remove the game ending)
@@ -113,6 +116,7 @@ public:
     bool updateScreens(const engine::PointerState &pointer);
     engine::PointerState pointer; // port: this frame's pointer (stage mouse position and button, for drags)
     bool waitIntroMusic = true;   // port option: the level intro waits for its music (StageIntroScreen)
+    double stageFrameRate = 0;    // port: stage.frameRate as the game sets it (0 = the SWF's); the app follows it
     bool screensActive() const;
     // Port: keyboard text for a screen's text input (the name entry): set while one has focus.
     std::function<void(const std::string &)> onTextInput;
@@ -163,6 +167,7 @@ public:
     std::unique_ptr<papaGame::screens::StageOutroScreen> obf_6j;
     std::unique_ptr<papaGame::screens::NewCustomerScreen> obf_6p;
     std::unique_ptr<papaGame::screens::BossIntroScreen> obf_59;
+    std::unique_ptr<papaGame::screens::FliplineLogoScreen> obf_t;
     std::unique_ptr<papaGame::screens::ParadeScreen> obf_5s;
     std::unique_ptr<papaGame::screens::GameOutroScreen> obf_7K;
     std::unique_ptr<papaGame::screens::ScoreTallyScreen> scoreTallyScreen; // port: the API's EndOfDay
@@ -183,6 +188,7 @@ private:
     std::unique_ptr<papaGame::screens::ScoreTallyScreen> pendingDestroyTally_;
     std::unique_ptr<papaGame::screens::NewCustomerScreen> pendingDestroyNewCustomer_;
     std::unique_ptr<papaGame::screens::BossIntroScreen> pendingDestroyBossIntro_;
+    std::unique_ptr<papaGame::screens::FliplineLogoScreen> pendingDestroyLogo_;
     std::unique_ptr<papaGame::screens::ParadeScreen> pendingDestroyParade_;
     std::unique_ptr<papaGame::screens::GameOutroScreen> pendingDestroyGameOutro_;
 };

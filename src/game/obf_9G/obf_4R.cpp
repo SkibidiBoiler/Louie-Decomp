@@ -190,6 +190,21 @@ void obf_4R::obf_6s()
     }
 }
 
+// AS: §_-4R§.§_-7X§
+void obf_4R::obf_7X()
+{
+    obf_t = std::make_unique<papaGame::screens::FliplineLogoScreen>(this);
+}
+
+// AS: §_-4R§.§_-4E§
+void obf_4R::obf_4E()
+{
+    if (obf_t) {
+        obf_t->destroy();
+        pendingDestroyLogo_ = std::move(obf_t); // port: it may be running; freed on the next frame
+    }
+}
+
 // AS: §_-4R§.§_-6I§
 void obf_4R::obf_6I()
 {
@@ -489,7 +504,7 @@ void obf_4R::obf_64(bool tween)
 
 bool obf_4R::screensActive() const
 {
-    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr || obf_59 != nullptr || obf_5s != nullptr ||
+    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr || obf_59 != nullptr || obf_t != nullptr || obf_5s != nullptr ||
            obf_7K != nullptr;
 }
 
@@ -505,6 +520,7 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer_)
     pendingDestroyTally_.reset();
     pendingDestroyNewCustomer_.reset();
     pendingDestroyBossIntro_.reset();
+    pendingDestroyLogo_.reset();
     pendingDestroyParade_.reset();
     pendingDestroyGameOutro_.reset();
     engine::MovieClip::collectGarbage();
@@ -548,6 +564,9 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer_)
     }
     if (obf_59) {
         obf_59->updateScreen();
+    }
+    if (obf_t) {
+        obf_t->updateScreen();
     }
     if (obf_5s) {
         obf_5s->updateScreen();
