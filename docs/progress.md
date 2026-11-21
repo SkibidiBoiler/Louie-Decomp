@@ -532,5 +532,8 @@ and the counted challenges' tallies). `DataManager.saveCheckpoint` / `clearCheck
 state first. The map shows the checkpoint ribbon on that level. Dying with lives left still respawns at the last safe
 spot (`restartPlayer`), as in the original; the checkpoint is used when the level is entered again.
 `tools/pl_check.py run --grep RE` prints matching log lines. Checked: touching the checkpoint in Leaf Landing room 1
-(`--level 0 --room 1 --at 15,37 --input R10-30`) saves it ("4 room states saved"). Not checked: entering the level
-again from the map (needs menu taps), the ribbon on the map.
+(`--level 0 --room 1 --at 15,37 --input R10-30`) saves it ("4 room states saved"); DEV `--reenter N` starts the current level again at
+frame N (as `--level` does): with `--input R10-30 --reenter 90` the level loads from the checkpoint ("Use Checkpoint
+Data", tallies restored) and the player starts in room 1 at tile 17,38. Pause menu, quit and its confirmation work
+with `--tap "35,398@60;80,20@100;274,232@160"`, but a game started with `--level` has no slot loaded, so the map's
+world buttons do not answer: the ribbon on the map is not checked.
