@@ -11,6 +11,8 @@
 #include "game/papaGame/models/effects/DizzyEffect.h"
 #include "game/papaGame/models/effects/CageCustomerEffect.h"
 #include "game/papaGame/models/effects/EndPortalEffect.h"
+#include "game/papaGame/models/effects/FoodiniBalloonEffect.h"
+#include "game/papaGame/models/effects/FoodiniGlideEffect.h"
 #include "game/papaGame/models/effects/StuckCheeseEffect.h"
 
 using obf_AF::obf_1n;
@@ -208,6 +210,11 @@ void CustomerChar::startupPlayer(double tileX, double tileY, bool newLevel, bool
     fallChar();
     prevX = x;
     prevY = y;
+    // AS: CustomerChar.startupPlayer — then Foodini gets his balloon.
+    if (playerData()->customerName == "Foodini") {
+        balloonFXID = gameObj->obf_V->addEffect(x, y - 32, "FoodiniBalloonEffect");
+        foodiniGlideBalloonIDs.clear();
+    }
 }
 
 // AS: PlayerChar.canFudgeJump — a few frames after walking off a ledge a jump still counts.
@@ -985,7 +992,7 @@ void CustomerChar::endAnimationCycle()
     } else if (cycleName == "attack1_swing1" || cycleName == "attack2_swing1" || cycleName == "attack1_melee" ||
                cycleName == "attack2_melee" || cycleName == "attack3_melee" || cycleName == "attack4_melee") {
         isAttacking = false;
-        // SKELETON: Foodini's balloon effect is reset here.
+        resetFoodiniBalloon();
     } else if (cycleName == "shoot_longgun" || cycleName == "shoot_pistol" || cycleName == "shoot_bazooka") {
         // Guns keep firing while the attack key is held, until the round is spent.
         if (controls.keyPressedAction && bulletsFired < bulletsPerRound) {
@@ -1199,7 +1206,11 @@ void CustomerChar::startAttacking()
     }
     isDoubleJumping = false;
     isGliding = false;
-    // SKELETON: Foodini's balloon (balloonFXID) is hidden here.
+    if (balloonFXID != -1) {
+        if (models::Effect *balloon = gameObj->obf_V->getEffect(balloonFXID)) {
+            static_cast<effects::FoodiniBalloonEffect *>(balloon)->isVisible = false;
+        }
+    }
     if (weaponType == CustomerData::WEAPON_MELEE || weaponType == CustomerData::WEAPON_TOSS) {
         gameObj->obf_7C->playSound("attack_punch_" + as3::String(std::min(2.0, attackVariation)) + ".wav");
     } else if (hasWeaponType == "swing1" || hasWeaponType == "swing2" || hasWeaponType == "kahuna" ||
@@ -1239,11 +1250,23 @@ void CustomerChar::setupAttackRect()
     }
 }
 
-// AS: CustomerChar.cancelAttack (PlayerChar.cancelAttack, then Foodini's balloon reset, which is a SKELETON)
+// AS: CustomerChar.cancelAttack (PlayerChar.cancelAttack, then Foodini's balloon comes back)
 void CustomerChar::cancelAttack()
 {
     isAttacking = false;
     canAttack = true;
+    resetFoodiniBalloon();
+}
+
+// Port: `FoodiniBalloonEffect(effects.getEffect(balloonFXID)).resetBalloon()`, which the original repeats in
+// endAnimationCycle and cancelAttack.
+void CustomerChar::resetFoodiniBalloon()
+{
+    if (balloonFXID != -1) {
+        if (models::Effect *balloon = gameObj->obf_V->getEffect(balloonFXID)) {
+            static_cast<effects::FoodiniBalloonEffect *>(balloon)->resetBalloon();
+        }
+    }
 }
 
 // AS: CustomerChar.usingGun
@@ -1273,7 +1296,14 @@ void CustomerChar::updateObject()
     } else {
         collRect = standCollRect;
     }
-    // SKELETON: forceGrabYoffset and the boss music delay.
+    // SKELETON: forceGrabYoffset.
+    if (bossDelayMusicTimer > 0) {
+        ++bossDelayMusicTimer;
+        if (bossDelayMusicTimer >= bossDelayMusicTimerMax) {
+            gameObj->obf_7C->playTrack("AlternateTrack", INT_MAX, 0, "crossfade");
+            bossDelayMusicTimer = 0;
+        }
+    }
     if (isDoubleJumping && !jump) {
         if (data->customerName == "Scooter" && (isWalking || isSkidding || onSlope != 0) && speed > 0 &&
             controls.keyPressedDown) {
@@ -1585,9 +1615,37 @@ void CustomerChar::updateObject()
             poundSound = nullptr;
         }
         if (isGliding) {
-            // SKELETON: Foodini's six FoodiniGlideEffect balloons (foodiniGlideBalloonIDs) and floating them away.
+            if (playerData()->customerClipName == "Foodini" && foodiniGlideBalloonIDs.empty()) {
+                managers::EffectManager &fx = *gameObj->obf_V;
+                const double b1 = fx.addEffect(x, y, "FoodiniGlideEffect", "glide", false, -12, -35);
+                const double b6 = fx.addEffect(x, y, "FoodiniGlideEffect", "glide", false, 13, -34);
+                const double b2 = fx.addEffect(x, y, "FoodiniGlideEffect", "glide", false, -9, -40);
+                const double b5 = fx.addEffect(x, y, "FoodiniGlideEffect", "glide", false, 10, -38);
+                const double b3 = fx.addEffect(x, y, "FoodiniGlideEffect", "glide", false, -4, -44);
+                const double b4 = fx.addEffect(x, y, "FoodiniGlideEffect", "glide", false, 5, -45);
+                foodiniGlideBalloonIDs = {b1, b2, b3, b4, b5, b6};
+            }
             if (!jump) {
                 isGliding = false;
+            }
+        } else if (!foodiniGlideBalloonIDs.empty()) {
+            // QUIRK: the original wraps this in try/catch: a balloon already gone (reeled in) throws, which skips
+            // clearing the list, so the same throw repeats every frame until a new glide.
+            bool thrown = false;
+            for (size_t bb = 0; bb < foodiniGlideBalloonIDs.size(); ++bb) {
+                models::Effect *e = gameObj->obf_V->getEffect(foodiniGlideBalloonIDs[bb]);
+                if (e == nullptr) {
+                    thrown = true;
+                    break;
+                }
+                auto *bfx = static_cast<effects::FoodiniGlideEffect *>(e);
+                bfx->floatAway();
+                if (bb == foodiniGlideBalloonIDs.size() - 1 && !bfx->isAttached) {
+                    balloonsLastFloatedAway = gameObj->obf_8o->gameplayTimer;
+                }
+            }
+            if (!thrown) {
+                foodiniGlideBalloonIDs.clear();
             }
         }
         if (!canGlideBoost && !jump) {

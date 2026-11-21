@@ -92,62 +92,88 @@ uint64_t gPointerTick = 1;
 
 MaskLayers::~MaskLayers()
 {
-    if (content_) {
-        SDL_DestroyTexture(content_);
-    }
-    if (mask_) {
-        SDL_DestroyTexture(mask_);
+    for (Level &l : levels_) {
+        if (l.content) {
+            SDL_DestroyTexture(l.content);
+        }
+        if (l.mask) {
+            SDL_DestroyTexture(l.mask);
+        }
     }
 }
 
+// A mask inside masked content (a nested mask) draws into the next pair of textures and is composited onto the
+// outer content texture, so it clips as in Flash instead of being skipped.
 void MaskLayers::draw(SDL_Renderer *renderer, const std::function<void(const Affine &)> &content,
                       const std::function<void(const Affine &)> &mask)
 {
-    int lw = 0, lh = 0;
-    SDL_RendererLogicalPresentation mode;
-    SDL_GetRenderLogicalPresentation(renderer, &lw, &lh, &mode);
-    SDL_FRect area;
-    if (lw <= 0 || lh <= 0 || !SDL_GetRenderLogicalPresentationRect(renderer, &area)) {
-        content(Affine{});
+    SDL_Texture *previous = SDL_GetRenderTarget(renderer);
+    const bool nested = previous != nullptr && depth_ > 0;
+    if (previous != nullptr && !nested) {
+        content(Affine{}); // drawing into some other target: unclipped, as before
         return;
     }
-    const int w = std::max(1, static_cast<int>(area.w)), h = std::max(1, static_cast<int>(area.h));
-    if (w != w_ || h != h_ || !content_ || !mask_) {
-        if (content_) {
-            SDL_DestroyTexture(content_);
+    int lw = lw_, lh = lh_;
+    if (!nested) {
+        SDL_RendererLogicalPresentation mode;
+        SDL_GetRenderLogicalPresentation(renderer, &lw, &lh, &mode);
+        SDL_FRect area;
+        if (lw <= 0 || lh <= 0 || !SDL_GetRenderLogicalPresentationRect(renderer, &area)) {
+            content(Affine{});
+            return;
         }
-        if (mask_) {
-            SDL_DestroyTexture(mask_);
+        lw_ = lw;
+        lh_ = lh;
+        w_ = std::max(1, static_cast<int>(area.w));
+        h_ = std::max(1, static_cast<int>(area.h));
+    }
+    if (levels_.size() <= depth_) {
+        levels_.resize(depth_ + 1);
+    }
+    Level &level = levels_[depth_];
+    if (level.w != w_ || level.h != h_ || !level.content || !level.mask) {
+        if (level.content) {
+            SDL_DestroyTexture(level.content);
         }
-        content_ = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
-        mask_ = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
-        w_ = w;
-        h_ = h;
-        if (!content_ || !mask_) {
+        if (level.mask) {
+            SDL_DestroyTexture(level.mask);
+        }
+        level.content = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w_, h_);
+        level.mask = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w_, h_);
+        level.w = w_;
+        level.h = h_;
+        if (!level.content || !level.mask) {
             content(Affine{});
             return;
         }
         // content *= mask alpha
-        SDL_SetTextureBlendMode(mask_, SDL_ComposeCustomBlendMode(
-                                           SDL_BLENDFACTOR_ZERO, SDL_BLENDFACTOR_SRC_ALPHA, SDL_BLENDOPERATION_ADD,
-                                           SDL_BLENDFACTOR_ZERO, SDL_BLENDFACTOR_SRC_ALPHA, SDL_BLENDOPERATION_ADD));
-        SDL_SetTextureBlendMode(content_, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+        SDL_SetTextureBlendMode(level.mask, SDL_ComposeCustomBlendMode(
+                                                SDL_BLENDFACTOR_ZERO, SDL_BLENDFACTOR_SRC_ALPHA, SDL_BLENDOPERATION_ADD,
+                                                SDL_BLENDFACTOR_ZERO, SDL_BLENDFACTOR_SRC_ALPHA, SDL_BLENDOPERATION_ADD));
+        SDL_SetTextureBlendMode(level.content, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
     }
-    // Stage coordinates -> texture pixels.
-    const Affine toTexture = Affine{static_cast<float>(w) / static_cast<float>(lw), 0, 0,
-                                    static_cast<float>(h) / static_cast<float>(lh), 0, 0};
-    SDL_SetRenderTarget(renderer, mask_);
+    // Stage coordinates -> texture pixels (a nested call already draws in texture pixels).
+    const Affine toTexture = nested ? Affine{}
+                                    : Affine{static_cast<float>(w_) / static_cast<float>(lw), 0, 0,
+                                             static_cast<float>(h_) / static_cast<float>(lh), 0, 0};
+    ++depth_;
+    SDL_SetRenderTarget(renderer, level.mask);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
     mask(toTexture);
-    SDL_SetRenderTarget(renderer, content_);
+    SDL_SetRenderTarget(renderer, level.content);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
     content(toTexture);
-    SDL_RenderTexture(renderer, mask_, nullptr, nullptr);
-    SDL_SetRenderTarget(renderer, nullptr);
-    const SDL_FRect stage{0, 0, static_cast<float>(lw), static_cast<float>(lh)};
-    SDL_RenderTexture(renderer, content_, nullptr, &stage);
+    SDL_RenderTexture(renderer, level.mask, nullptr, nullptr);
+    --depth_;
+    SDL_SetRenderTarget(renderer, previous);
+    if (nested) {
+        SDL_RenderTexture(renderer, level.content, nullptr, nullptr);
+    } else {
+        const SDL_FRect stage{0, 0, static_cast<float>(lw), static_cast<float>(lh)};
+        SDL_RenderTexture(renderer, level.content, nullptr, &stage);
+    }
 }
 
 MovieClip *MovieClip::lastOver_ = nullptr;
@@ -319,6 +345,12 @@ MovieClip &MovieClip::addChild(std::unique_ptr<MovieClip> clip, std::string name
     return *attached_.back().clip;
 }
 
+MovieClip &MovieClip::addChildAtBottom(std::unique_ptr<MovieClip> clip, std::string name)
+{
+    attached_.insert(attached_.begin(), Attached{std::move(name), std::move(clip), true});
+    return *attached_.front().clip;
+}
+
 MovieClip *MovieClip::firstChildClip()
 {
     if (!children_.empty()) {
@@ -446,7 +478,7 @@ void MovieClip::renderChild(const RenderContext &ctx, const Child &child, const 
                 maskChild = &c;
             }
         }
-        if (maskChild && ctx.masks && SDL_GetRenderTarget(ctx.renderer) == nullptr) {
+        if (maskChild && ctx.masks) {
             const Affine maskM = parent * childLocal(*maskChild, ctx.interpolate, ctx.alpha);
             const MovieClip *content = child.clip.get();
             ctx.masks->draw(
@@ -476,6 +508,11 @@ void MovieClip::renderChild(const RenderContext &ctx, const Child &child, const 
 
 void MovieClip::render(const RenderContext &ctx, const Affine &parent, const ColorTransform &parentColor) const
 {
+    for (const Attached &a : attached_) {
+        if (a.below && a.clip->visible_) {
+            a.clip->render(ctx, parent * a.clip->ownLocal(), parentColor);
+        }
+    }
     // A frame-0 button shows its "up" state; the hit area (frame 3) is never drawn.
     for (size_t i = 0; i < children_.size(); ++i) {
         const Child &child = children_[i];
@@ -489,7 +526,7 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
         while (last + 1 < children_.size() && children_[last + 1].track->depth <= track.clipDepth) {
             ++last;
         }
-        const bool canMask = ctx.masks && SDL_GetRenderTarget(ctx.renderer) == nullptr;
+        const bool canMask = ctx.masks != nullptr;
         if (!canMask) {
             for (size_t j = i + 1; j <= last; ++j) {
                 renderChild(ctx, children_[j], parent, parentColor);
@@ -511,7 +548,7 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
         i = last;
     }
     for (const Attached &a : attached_) {
-        if (a.clip->visible_) {
+        if (!a.below && a.clip->visible_) {
             a.clip->render(ctx, parent * a.clip->ownLocal(), parentColor);
         }
     }

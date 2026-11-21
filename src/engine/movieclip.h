@@ -25,8 +25,13 @@ public:
               const std::function<void(const Affine &)> &mask);
 
 private:
-    SDL_Texture *content_ = nullptr, *mask_ = nullptr;
-    int w_ = 0, h_ = 0;
+    struct Level {
+        SDL_Texture *content = nullptr, *mask = nullptr;
+        int w = 0, h = 0;
+    };
+    std::vector<Level> levels_; // one pair per nesting depth
+    size_t depth_ = 0;
+    int w_ = 0, h_ = 0, lw_ = 0, lh_ = 0;
 };
 
 struct RenderContext {
@@ -86,6 +91,8 @@ public:
     void forEachChild(const std::function<void(const std::string &, MovieClip &)> &fn);
     // addChild: a runtime child drawn above the timeline children, with an identity transform.
     MovieClip &addChild(std::unique_ptr<MovieClip> clip, std::string name);
+    // addChildAt(clip, 0): under everything already in this clip (the last one added this way is the lowest).
+    MovieClip &addChildAtBottom(std::unique_ptr<MovieClip> clip, std::string name);
     // removeChild for a clip added with addChild. The clip is destroyed at the next collectGarbage (a screen
     // often removes the clip whose button handler is running).
     void removeChild(const MovieClip *clip);
@@ -189,6 +196,7 @@ private:
     struct Attached {
         std::string name;
         std::unique_ptr<MovieClip> clip;
+        bool below = false; // added with addChildAt(..., 0): drawn under the timeline children
     };
     std::vector<Attached> attached_;
     std::vector<std::pair<std::string, std::string>> texts_; // text field instance -> its text

@@ -10,6 +10,7 @@
 #include "game/papaGame/models/effects/CookieBitEffect.h"
 #include "game/papaGame/models/effects/CrackerBreakEffect.h"
 #include "game/papaGame/models/effects/DizzyEffect.h"
+#include "game/papaGame/models/effects/PlayerStunSparkleEffect.h"
 #include "game/papaGame/models/effects/CageCustomerEffect.h"
 #include "game/papaGame/models/effects/DoorFrontEffect.h"
 #include "game/papaGame/models/effects/BossEscapeEffect.h"
@@ -36,6 +37,15 @@
 #include "game/papaGame/models/effects/CheeseBitEffect.h"
 #include "game/papaGame/models/effects/CheeseSplatEffect.h"
 #include "game/papaGame/models/effects/RadishDirtEffect.h"
+#include "game/papaGame/models/effects/SauceBitEffect.h"
+#include "game/papaGame/models/effects/SauceSplatEffect.h"
+#include "game/papaGame/models/effects/RainbowBitEffect.h"
+#include "game/papaGame/models/effects/BeakerGlassEffect.h"
+#include "game/papaGame/models/effects/BossPropellerEffect.h"
+#include "game/papaGame/models/effects/FoodiniBalloonEffect.h"
+#include "game/papaGame/models/effects/FoodiniGlideEffect.h"
+#include "game/papaGame/models/effects/ItemGlowEffect.h"
+#include "game/papaGame/models/effects/WarpCoinEffect.h"
 #include "game/papaGame/models/effects/StuckCheeseEffect.h"
 #include "game/papaGame/models/effects/FeatherEffect.h"
 #include "game/papaGame/models/effects/ChiliBitEffect.h"
@@ -55,6 +65,9 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     using namespace models::effects;
     if (type == "DizzyEffect") {
         return std::make_unique<DizzyEffect>(gameObj);
+    }
+    if (type == "PlayerStunSparkleEffect") {
+        return std::make_unique<PlayerStunSparkleEffect>(gameObj);
     }
     if (type == "StarburstEffect") {
         return std::make_unique<StarburstEffect>(gameObj);
@@ -148,6 +161,33 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "RadishDirtEffect") {
         return std::make_unique<RadishDirtEffect>(gameObj);
+    }
+    if (type == "RainbowBitEffect") {
+        return std::make_unique<RainbowBitEffect>(gameObj);
+    }
+    if (type == "FoodiniBalloonEffect") {
+        return std::make_unique<FoodiniBalloonEffect>(gameObj);
+    }
+    if (type == "FoodiniGlideEffect") {
+        return std::make_unique<FoodiniGlideEffect>(gameObj);
+    }
+    if (type == "ItemGlowEffect") {
+        return std::make_unique<ItemGlowEffect>(gameObj);
+    }
+    if (type == "WarpCoinEffect") {
+        return std::make_unique<WarpCoinEffect>(gameObj);
+    }
+    if (type == "BossPropellerEffect") {
+        return std::make_unique<BossPropellerEffect>(gameObj);
+    }
+    if (type == "BeakerGlassEffect") {
+        return std::make_unique<BeakerGlassEffect>(gameObj);
+    }
+    if (type == "SauceBitEffect") {
+        return std::make_unique<SauceBitEffect>(gameObj);
+    }
+    if (type == "SauceSplatEffect") {
+        return std::make_unique<SauceSplatEffect>(gameObj);
     }
     if (type == "CheeseSplatEffect") {
         return std::make_unique<CheeseSplatEffect>(gameObj);

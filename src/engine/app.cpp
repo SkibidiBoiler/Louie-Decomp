@@ -135,6 +135,10 @@ SDL_AppResult App::init(int argc, char *argv[])
         } else if (std::strcmp(argv[i], "--trace") == 0) { // DEV: log the player's state every logic frame
             trace_ = true;
             scriptFrame_ = std::max(scriptFrame_, 0);
+        } else if (std::strcmp(argv[i], "--parade") == 0) { // DEV: show the parade (then the ending) at frame N
+            paradeFrame_ = std::strtoull(argv[i + 1], nullptr, 10);
+        } else if (std::strcmp(argv[i], "--reenter") == 0) { // DEV: start the current level again at frame N
+            reenterFrame_ = std::strtoull(argv[i + 1], nullptr, 10);
         } else if (std::strcmp(argv[i], "--frames") == 0) { // DEV: quit after N logic frames
             quitAfterFrames_ = std::atoi(argv[i + 1]);
         } else if (std::strcmp(argv[i], "--touch") == 0) { // DEV: show the on-screen buttons
@@ -381,7 +385,7 @@ void App::loadGame(const std::string &game)
             SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
                     game_->obf_AQ->currentScreens.size());
         } else {
-            game_->showApiScreen("SplashScreen"); // the original starts at the title screen
+            game_->obf_7X(); // the original starts with the Flipline logo, then the title screen
         }
     } else {
         game_.reset();
@@ -448,6 +452,12 @@ void App::tickLevel()
     auto &controls = *game_->obf_8o;
     const bool *keys = SDL_GetKeyboardState(nullptr);
     const bool panning = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
+    {
+        const auto &u = *game_->obf_51; // the player's keys (CONTROLS tab)
+        input_.keyBindings = {static_cast<int>(u.keyCodeLeft), static_cast<int>(u.keyCodeRight),
+                              static_cast<int>(u.keyCodeUp),   static_cast<int>(u.keyCodeDown),
+                              static_cast<int>(u.keyCodeJump), static_cast<int>(u.keyCodeAttack)};
+    }
     ActionState actions = panning ? ActionState{} : input_.poll();
     if (scriptFrame_ >= 0) {
         ++scriptFrame_;
@@ -685,6 +695,10 @@ SDL_AppResult App::event(const SDL_Event &ev)
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
     case SDL_EVENT_KEY_DOWN:
+        if (mode_ == Mode::Level && game_ && game_->wantsKey()) { // the CONTROLS tab waits for a key
+            game_->keyDown(engine::scancodeToFlashKey(ev.key.scancode));
+            break;
+        }
         switch (ev.key.key) {
         case SDLK_ESCAPE:
         case SDLK_AC_BACK:
@@ -1015,6 +1029,13 @@ void App::tick()
         return; // the options menu pauses the game
     }
     ++frame_;
+    if (game_ && paradeFrame_ != 0 && frame_ == paradeFrame_) { // DEV: --parade
+        game_->obf_14(true);
+    }
+    if (game_ && reenterFrame_ != 0 && frame_ == reenterFrame_) { // DEV: --reenter (checks the checkpoint load)
+        SDL_Log("DEV: enter level %s again", std::to_string(static_cast<int>(game_->obf_AQ->currentLevel)).c_str());
+        game_->obf_6V(game_->obf_AQ->currentLevel);
+    }
     if (game_) {
         game_->runPending(); // may end the level
     }
@@ -1058,7 +1079,12 @@ void App::tick()
                 SDL_StopTextInput(window_);
             }
         }
+        game_->waitIntroMusic = settings_.waitIntroMusic;
         game_->updateScreens(pointer_);
+        if (game_->stageFrameRate > 0 && game_->stageFrameRate != stage_.frameRate) { // stage.frameRate = n
+            stage_.frameRate = game_->stageFrameRate;
+            stepNs_ = static_cast<uint64_t>(1e9 / stage_.frameRate);
+        }
         game_->obf_7C->advanceTime(1000.0 / stage_.frameRate);
     }
     pointer_.pressed = false;

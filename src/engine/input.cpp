@@ -209,19 +209,106 @@ void Input::event(const SDL_Event &ev, SDL_Window *window)
     (void)window; // touch buttons get their events from the caller (only while playing)
 }
 
+SDL_Scancode flashKeyToScancode(int c)
+{
+    if (c >= 65 && c <= 90) {
+        return static_cast<SDL_Scancode>(SDL_SCANCODE_A + (c - 65));
+    }
+    if (c >= 49 && c <= 57) {
+        return static_cast<SDL_Scancode>(SDL_SCANCODE_1 + (c - 49));
+    }
+    if (c >= 97 && c <= 105) {
+        return static_cast<SDL_Scancode>(SDL_SCANCODE_KP_1 + (c - 97));
+    }
+    if (c >= 112 && c <= 123) {
+        return static_cast<SDL_Scancode>(SDL_SCANCODE_F1 + (c - 112));
+    }
+    switch (c) {
+    case 48: return SDL_SCANCODE_0;
+    case 96: return SDL_SCANCODE_KP_0;
+    case 8: return SDL_SCANCODE_BACKSPACE;
+    case 9: return SDL_SCANCODE_TAB;
+    case 13: return SDL_SCANCODE_RETURN;
+    case 16: return SDL_SCANCODE_LSHIFT;
+    case 17: return SDL_SCANCODE_LCTRL;
+    case 18: return SDL_SCANCODE_LALT;
+    case 20: return SDL_SCANCODE_CAPSLOCK;
+    case 32: return SDL_SCANCODE_SPACE;
+    case 33: return SDL_SCANCODE_PAGEUP;
+    case 34: return SDL_SCANCODE_PAGEDOWN;
+    case 35: return SDL_SCANCODE_END;
+    case 36: return SDL_SCANCODE_HOME;
+    case 37: return SDL_SCANCODE_LEFT;
+    case 38: return SDL_SCANCODE_UP;
+    case 39: return SDL_SCANCODE_RIGHT;
+    case 40: return SDL_SCANCODE_DOWN;
+    case 45: return SDL_SCANCODE_INSERT;
+    case 46: return SDL_SCANCODE_DELETE;
+    case 106: return SDL_SCANCODE_KP_MULTIPLY;
+    case 107: return SDL_SCANCODE_KP_PLUS;
+    case 109: return SDL_SCANCODE_KP_MINUS;
+    case 110: return SDL_SCANCODE_KP_PERIOD;
+    case 111: return SDL_SCANCODE_KP_DIVIDE;
+    case 186: return SDL_SCANCODE_SEMICOLON;
+    case 187: return SDL_SCANCODE_EQUALS;
+    case 188: return SDL_SCANCODE_COMMA;
+    case 189: return SDL_SCANCODE_MINUS;
+    case 190: return SDL_SCANCODE_PERIOD;
+    case 191: return SDL_SCANCODE_SLASH;
+    case 192: return SDL_SCANCODE_GRAVE;
+    case 219: return SDL_SCANCODE_LEFTBRACKET;
+    case 220: return SDL_SCANCODE_BACKSLASH;
+    case 221: return SDL_SCANCODE_RIGHTBRACKET;
+    case 222: return SDL_SCANCODE_APOSTROPHE;
+    default: return SDL_SCANCODE_UNKNOWN;
+    }
+}
+
+int scancodeToFlashKey(SDL_Scancode sc)
+{
+    switch (sc) {
+    case SDL_SCANCODE_RSHIFT: return 16;
+    case SDL_SCANCODE_RCTRL: return 17;
+    case SDL_SCANCODE_RALT: return 18;
+    case SDL_SCANCODE_KP_ENTER: return 13;
+    default: break;
+    }
+    for (int c = 1; c < 256; ++c) {
+        if (flashKeyToScancode(c) == sc) {
+            return c;
+        }
+    }
+    return 0;
+}
+
 ActionState Input::poll() const
 {
     ActionState s;
     const bool *k = SDL_GetKeyboardState(nullptr);
-    // The original's defaults: arrows, Up also jumps, Space attacks. Z / X as extra jump / attack keys.
-    if (k[SDL_SCANCODE_LEFT] || k[SDL_SCANCODE_A]) set(s, Action::Left);
-    if (k[SDL_SCANCODE_RIGHT] || k[SDL_SCANCODE_D]) set(s, Action::Right);
-    if (k[SDL_SCANCODE_DOWN] || k[SDL_SCANCODE_S]) set(s, Action::Down);
-    if (k[SDL_SCANCODE_UP] || k[SDL_SCANCODE_W] || k[SDL_SCANCODE_Z]) {
+    // The game's keys (the original's defaults: arrows, Up also jumps, Space attacks; the CONTROLS tab changes them).
+    // Port extras, while no game key uses them: W A S D, Z (jump) and X (attack).
+    auto held = [&](int code) {
+        const SDL_Scancode sc = flashKeyToScancode(code);
+        return sc != SDL_SCANCODE_UNKNOWN && k[sc];
+    };
+    auto extra = [&](SDL_Scancode sc) {
+        for (int b : keyBindings) {
+            if (flashKeyToScancode(b) == sc) {
+                return false;
+            }
+        }
+        return k[sc];
+    };
+    if (held(keyBindings[0]) || extra(SDL_SCANCODE_A)) set(s, Action::Left);
+    if (held(keyBindings[1]) || extra(SDL_SCANCODE_D)) set(s, Action::Right);
+    if (held(keyBindings[2])) set(s, Action::Up);
+    if (held(keyBindings[3]) || extra(SDL_SCANCODE_S)) set(s, Action::Down);
+    if (held(keyBindings[4])) set(s, Action::Jump);
+    if (extra(SDL_SCANCODE_W) || extra(SDL_SCANCODE_Z)) {
         set(s, Action::Up);
         set(s, Action::Jump);
     }
-    if (k[SDL_SCANCODE_SPACE] || k[SDL_SCANCODE_X]) set(s, Action::Attack);
+    if (held(keyBindings[5]) || extra(SDL_SCANCODE_X)) set(s, Action::Attack);
     if (gamepad_) {
         const float lx = SDL_GetGamepadAxis(gamepad_, SDL_GAMEPAD_AXIS_LEFTX) / 32767.0f;
         const float ly = SDL_GetGamepadAxis(gamepad_, SDL_GAMEPAD_AXIS_LEFTY) / 32767.0f;

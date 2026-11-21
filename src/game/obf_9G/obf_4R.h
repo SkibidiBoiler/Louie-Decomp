@@ -35,6 +35,10 @@
 #include "game/papaGame/models/characters/CustomerChar.h"
 #include "game/papaGame/screens/GameIntroScreen.h"
 #include "game/papaGame/screens/MainMenuScreen.h"
+#include "game/papaGame/screens/BossIntroScreen.h"
+#include "game/papaGame/screens/FliplineLogoScreen.h"
+#include "game/papaGame/screens/GameOutroScreen.h"
+#include "game/papaGame/screens/ParadeScreen.h"
 #include "game/papaGame/screens/NewCustomerScreen.h"
 #include "game/papaGame/screens/ScoreTallyScreen.h"
 #include "game/papaGame/screens/StageOutroScreen.h"
@@ -80,7 +84,14 @@ public:
     void obf_58(); // AS: §_-58§
     void obf_4Z(double whichCustomer); // AS: §_-4Z§, the new customer screen
     void obf_6s(); // AS: §_-6s§
-    void obf_14(bool fromLevel = true); // AS: §_-14§, the parade
+    void obf_6I(); // AS: §_-6I§ (show the boss intro)
+    void obf_7X(); // AS: §_-7X§ (show the Flipline logo)
+    void obf_4E(); // AS: §_-4E§ (remove the Flipline logo)
+    void obf_3q(); // AS: §_-3q§ (remove the parade)
+    void obf_49(); // AS: §_-49§ (show the game ending)
+    void obf_2r(); // AS: §_-2r§ (remove the game ending)
+    void obf_28(); // AS: §_-28§ (remove the boss intro)
+    void obf_14(bool showWeapons = true); // AS: §_-14§, the parade
     void obf_Ap(); // AS: §_-Ap§, the level is torn down
     void obf_19();
     void obf_5a();
@@ -103,12 +114,18 @@ public:
     // Port: one logic frame of the screens: the pointer (menu bar, then the screens' buttons), then their
     // ENTER_FRAME handlers. True while a menu screen is up.
     bool updateScreens(const engine::PointerState &pointer);
+    engine::PointerState pointer; // port: this frame's pointer (stage mouse position and button, for drags)
+    bool waitIntroMusic = true;   // port option: the level intro waits for its music (StageIntroScreen)
+    double stageFrameRate = 0;    // port: stage.frameRate as the game sets it (0 = the SWF's); the app follows it
     bool screensActive() const;
     // Port: keyboard text for a screen's text input (the name entry): set while one has focus.
     std::function<void(const std::string &)> onTextInput;
     std::function<void(int key)> onKeyDown; // SDL keycode
     // `offsetX`: where the stage's x = 0 is drawn (the widescreen option centres the screens).
     void renderScreens(engine::RenderContext &ctx, float offsetX = 0);
+    // Port: the stage's KEY_DOWN listener the CONTROLS tab adds while it waits for a key (Flash key code).
+    bool wantsKey() const;
+    void keyDown(int keyCode);
 
     SDL_Renderer *renderer = nullptr; // port
     const engine::SymbolLibrary *symbols = nullptr; // port
@@ -140,6 +157,8 @@ public:
     std::unique_ptr<papaGame::models::GameHUD> obf_6Z; // created by loadLevelData, once the tables exist
     std::unique_ptr<engine::MovieClip> obf_5h; // AS: §_-5h§, the container the screens add their clips to
     std::unique_ptr<engine::MovieClip> obf_9X; // AS: §_-9X§, a container above §_-5h§ (no mouse)
+    // Port: the clips the original adds to the game object itself later (the badge drop-down), above the others.
+    std::unique_ptr<engine::MovieClip> rootClips;
     std::unique_ptr<papaGame::screens::TrainingPopup> obf_a; // AS: §_-a§, the training bubble
     std::unique_ptr<papaGame::screens::StageIntroScreen> obf_7L;
     std::unique_ptr<papaGame::screens::SplashScreen> splashScreen; // port: the API's SplashScreen instance
@@ -148,6 +167,10 @@ public:
     std::unique_ptr<papaGame::screens::MainMenuScreen> mainMenuScreen; // port: the API's MainMenu / MapSelectMenu
     std::unique_ptr<papaGame::screens::StageOutroScreen> obf_6j;
     std::unique_ptr<papaGame::screens::NewCustomerScreen> obf_6p;
+    std::unique_ptr<papaGame::screens::BossIntroScreen> obf_59;
+    std::unique_ptr<papaGame::screens::FliplineLogoScreen> obf_t;
+    std::unique_ptr<papaGame::screens::ParadeScreen> obf_5s;
+    std::unique_ptr<papaGame::screens::GameOutroScreen> obf_7K;
     std::unique_ptr<papaGame::screens::ScoreTallyScreen> scoreTallyScreen; // port: the API's EndOfDay
     const engine::Lang *lang = nullptr;      // port: the menu bars' texts
     engine::MaskLayers *masks = nullptr;     // port: offscreen layers for masks
@@ -165,6 +188,10 @@ private:
     std::unique_ptr<papaGame::screens::StageOutroScreen> pendingDestroyOutro_;
     std::unique_ptr<papaGame::screens::ScoreTallyScreen> pendingDestroyTally_;
     std::unique_ptr<papaGame::screens::NewCustomerScreen> pendingDestroyNewCustomer_;
+    std::unique_ptr<papaGame::screens::BossIntroScreen> pendingDestroyBossIntro_;
+    std::unique_ptr<papaGame::screens::FliplineLogoScreen> pendingDestroyLogo_;
+    std::unique_ptr<papaGame::screens::ParadeScreen> pendingDestroyParade_;
+    std::unique_ptr<papaGame::screens::GameOutroScreen> pendingDestroyGameOutro_;
 };
 
 } // namespace obf_9G

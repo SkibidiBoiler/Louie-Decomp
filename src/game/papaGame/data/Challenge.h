@@ -1,7 +1,7 @@
 #pragma once
 // AS: papaGame.data.Challenge — one level challenge or badge: its type, what it counts and its tally. The
-// setup* methods only copy their params (the importer's `new Challenge(...)` arguments): ChallengeManager's
-// reader does that. SKELETON: setupTitles and meetsJuggleRequirements (juggles are not counted yet).
+// setup* methods (setupTitles too) only copy their params (the importer's `new Challenge(...)` arguments):
+// ChallengeManager's reader does that. SKELETON: meetsJuggleRequirements (juggles are not counted yet).
 #include <string>
 #include <vector>
 
@@ -59,6 +59,8 @@ struct Challenge {
     void removeFromTally(double amount = 1) { tally -= amount; }
     bool meetsEnemyRequirements(double type, const std::string &weapon, const std::string &category) const;
     bool meetsMasteryRequirements(const std::string &weapon) const;
+    // AS: Challenge.getRewardAmount
+    double getRewardAmount() const { return rewardMoney; }
 
     std::string title;
     std::string description;
@@ -85,6 +87,8 @@ struct Challenge {
     double whichCustomer = 1;
     std::string upgradeType = "any";
     bool showTally = false;
+    std::vector<std::string> requiredCustomerUnlocks; // null in the original when absent
+    double requiredLevelUnlock = -1;
 };
 
 } // namespace papaGame::data

@@ -1,9 +1,11 @@
 #pragma once
 // AS: papaGame.managers.ChallengeManager (§_-94§ on the game object) — level challenges and badges.
-// What the player does is recorded here: each level challenge or badge it completes is saved. SKELETON: the
-// drop-down that announces a completed challenge or badge (the queues fill), juggles, and the badges' texts.
+// What the player does is recorded here: each level challenge or badge it completes is saved and announced by a
+// drop-down. SKELETON: juggles.
 #include <string>
 #include <vector>
+
+#include "engine/movieclip.h"
 
 #include "game/papaGame/data/Challenge.h"
 
@@ -46,11 +48,28 @@ public:
     void showEarningBadge(double which);
     void showCompletingChallenge(double which);
     void showEarningTreasure(double which);
+    std::string getChallengeTitle(double whichWorld, double whichChallenge, double whichBadge = -1) const;
+    std::string getChallengeDescription(double whichWorld, double whichChallenge, double whichBadge = -1) const;
+    double getChallengeRewardAmount(double whichWorld, double whichChallenge, double whichBadge = -1) const;
+    std::string getBadgeTallyString(double whichBadge) const;
+    double getBadgeTally(double whichBadge) const;
+    bool shouldLockBadge(double whichBadge) const;
+    void checkForDisplayingDropdown();
+    void clickBadgeDropdown();
+    void animateBadgeDropdown(); // the original's ENTER_FRAME on the drop-down; obf_4R calls it every frame
 
     obf_9G::obf_4R *gameObj = nullptr;
     std::vector<data::Challenge> challenges;
     std::vector<data::Challenge> badges;
     std::vector<double> badgeQueue, challengeQueue, treasureQueue;
+    engine::MovieClip *badgeDropdown = nullptr; // owned by gameObj->rootClips
+    double dropdownX = 188;
+    double dropdownStartY = 0;
+    double dropdownHeight = 81;
+    double dropdownSpeed = 8;
+    double dropdownOnScreenWait = 150;
+    double dropdownOnScreenTimer = 0;
+    std::string dropdownCurrentType;
 
 private:
     // Port: the blocks every record* repeats for a completed level challenge and an earned badge.

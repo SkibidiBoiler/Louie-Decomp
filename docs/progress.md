@@ -487,3 +487,174 @@ Checked by trace: room 0 the pool (`--at 123,17`, capture), room 2 a Bacobar pus
 (`--at 124,35`, capture), the planted radishes pop out (`--at 118,5`), room 3 the Laddish climbs and turns at the
 ladder's end (`--at 15,15`) and the Thorn Shrooms turn and duck (`--at 22,66`). Not checked: crunching a Bacobar,
 knocking a Laddish off its ladder.
+
+(44) BBQ Bog (`--level 7`, rooms 8-A to 8-D, ids 55–57 and 60): `GameObject15/16` On and Off Berries (platforms that pop up
+and go down on a timer, wobbling for the last 20 frames; nothing stands on one while it is down), `Enemy23` Bacoburn
+(the Bacobar's wall, but a stomp, slide or ground pound beats it at once and breaks it into three `Enemy24` Baco
+Bites, which hop back and forth), `Enemy30` Pararadish (floats down 2 px a frame on a parachute, folds it on landing,
+then hops after the player), `Enemy33` Awesome Saucer (glides between two columns on a sine wave, slowing into each
+turn, and drops a `SauceBullet` on a timer, with `SauceBitEffect` / `SauceSplatEffect` where it lands). The
+Pararadish's spawner is an enemy (the Radley Madish boss, not ported yet): `Enemy.unregisterSpawn(type, id)` is a
+port virtual with an empty body until Enemy37 overrides it. Checked by trace: room 0 a berry carries the player and
+drops them after its 60 frames (`--at 27,80`), room 1 a saucer turns at its target column and its sauce splats
+(`--at 36,17`), room 2 a ground pound (`--customer 8 --at 20,60 --input D3-5`) crunches a Bacoburn into three hopping
+bites (capture), and a player inside a Bacoburn is pushed out and hurt; room 3 the Pararadishes land, fold their
+parachutes and hop at the player (`--at 25,12`, capture). Note: falling onto a Bacoburn at full speed usually ends in
+the push-out rather than a stomp (its own update pushes the player out in the frame they reach its body, before the
+player's next stomp test); not compared with the original. Progress: 72.8 % of functions, 79.9 % of lines.
+
+(45) The `--level` index is the world's tileset, not its place in levels.xml: 7 BBQ Bog (item 44 first called it
+Radley's Hideout by mistake), 8 Radley's Hideout (rooms 53, 59, 58, 17), 9 X Zone; `tools/pl_check.py worlds` lists
+them. Radley's Hideout room 9-B (`--level 8 --room 2`): `Enemy36` the first boss (sheet "easyboss": once the Start
+Fight trigger fires he runs back and forth, blocks every hit unless stunned, throws a `Beaker` every 120 frames;
+beaten, the music stops with the fanfare), `Beaker` (generated from PepperBomb: breaks into `BeakerGlassEffect`
+shards and three `BeakerBlob`s, generated from Cookie, which puff into dust) and `GameObject31` Spike Bed (kills the
+player or any enemy that touches it; once triggered it shakes, then rises 2 px a frame to its target row). X Zone:
+`GameObject32` Rainbow Sauce (the quicksauce pool with its own sheet, a bottom cap and `RainbowBitEffect` splashes).
+Checked with `pl_check.py run`: walking left into the trigger (`--at 5,79 --input L20-34`) starts the boss, who runs,
+turns and throws beakers that break (capture); the spike bed kills the player (`--at 6,86`); in X Zone room 1 the
+player sinks into the rainbow pool and splashes (`--at 12,30`). Not checked: stunning and beating Enemy36, the
+spike bed rising. Left in Radley's Hideout: `Enemy37` Radley Madish with `RocketBBQ` / `RocketMustard` (room 9-C).
+Progress: 75.2 % of functions, 82.4 % of lines.
+
+(46) Radley Madish (`Enemy37`, Radley's Hideout room 9-C, `--level 8 --room 0`): triggered, he flies after the
+player (easing to 180 px beside and above them, on a wave) with `BossPropellerEffect` and the looping copter sound,
+and on a timer grabs, loads and fires a rocket: `Enemy38` BBQ rocket / `Enemy39` mustard rocket, enemies that home in
+on the player turning at most 0.06 rad a frame (`setAnimationAngle` picks the frame of the angle rounded to 10
+degrees) and splash on a wall. A hit knocks a BBQ rocket away; a hit mustard rocket turns round and homes in on him,
+and it knocks him down: he lands, runs for 120 frames (stun him, then hit him), then takes off again. With 3 hit
+points he lets out one Pararadish at a time, with 2 up to three, with 1 a Burgerzilla and BBQ rockets in bursts of
+three; beaten, the music returns 150 frames after the fanfare (`CustomerChar.bossDelayMusicTimer`, the PlayerChar
+fields). The Pararadish and Burgerzilla now call his `unregisterSpawn(type, id)`; `EnemyManager.enemyByID` is the
+port's `manager["Enemy" + id]`; `Enemy.placeEnemy` is virtual (the rockets are placed in pixels). The bullets
+RocketBBQ / RocketMustard are not added by any code and stay untranslated. Checked with `pl_check.py run`: walking into
+the trigger (`--at 6,16 --input L20-34`) starts him; he flies, fires BBQ rockets that splash, lets out a Pararadish
+(capture); attacking every 8 frames after stepping right (`R40-60` plus `A` pulses) hits a mustard rocket back and he
+falls, lands and runs. The propeller is drawn (green, behind him; it is easy to miss against the trees). Not
+checked: stunning and hitting him on the ground, his 2 and 1 hit-point phases, the end of the fight.
+Progress: 77.4 % of functions, 84.7 % of lines.
+
+(47) Checkpoints: `CheckpointData` (a copy of every room's data with the starting room's start point moved to the
+checkpoint tile, plus the hurt / water flags, kills, lives lost, gameplay time, money, Burgerzillas, special items
+and the counted challenges' tallies). `DataManager.saveCheckpoint` / `clearCheckpoint` keep it,
+`setupLevelScreens` loads the level from it when it is for that level ("Use Checkpoint Data"), and
+`handleCheckpointProgress` (now called when a level starts) restores the tallies. `ObjectManager.saveObjectsAtCheckpoint`
+(the objects with saveDataAtCheckpoint: the boulders) and `ItemManager.saveItemsAtCheckpoint` write the room's live
+state first. The map shows the checkpoint ribbon on that level. Dying with lives left still respawns at the last safe
+spot (`restartPlayer`), as in the original; the checkpoint is used when the level is entered again.
+`tools/pl_check.py run --grep RE` prints matching log lines. Checked: touching the checkpoint in Leaf Landing room 1
+(`--level 0 --room 1 --at 15,37 --input R10-30`) saves it ("4 room states saved"); DEV `--reenter N` starts the current level again at
+frame N (as `--level` does): with `--input R10-30 --reenter 90` the level loads from the checkpoint ("Use Checkpoint
+Data", tallies restored) and the player starts in room 1 at tile 17,38. Pause menu, quit and its confirmation work
+with `--tap "35,398@60;80,20@100;274,232@160"`, but a game started with `--level` has no slot loaded, so the map's
+world buttons do not answer: the ribbon on the map is not checked.
+
+(48) Effects: `FoodiniBalloonEffect` (Foodini's balloon on a string, at most 60 px from his hand: it rises, is
+pulled along, bobs on eased quarter waves, leans one frame per 10 degrees, hides during his attack, floats away when
+he is gone), `FoodiniGlideEffect` (the six small balloons of his glide: they ease to their spots above him and,
+when the glide ends, float away, or are reeled back in if balloons were let go less than 40 frames before),
+`WarpCoinEffect` (the warp key rising over the player) and `ItemGlowEffect` (its glow). The strings are drawn with
+`drawBalloonString` (straight, or the original's quadratic curve as short lines). CustomerChar's Foodini SKELETONs
+are filled: the balloon at startupPlayer, hidden on attack, reset at the attack's end and in cancelAttack
+(`resetFoodiniBalloon`, a port helper), the glide balloons (QUIRK kept: a balloon already reeled in throws in the
+original, which leaves the list uncleared). Checked with `--customer 25` (Foodini): the balloon follows him (capture)
+and the glide balloons appear and rise away. Not checked: the warp key effect (end of a level), the strings'
+look. Progress: 79.2 % of functions, 86.3 % of lines.
+
+(49) `BossIntroScreen`: on the first play of Radley's Hideout (level 8, high score 0) the level start shows Papa
+Louie trapped (customerTrappedMC) facing the radish boss over the tilesheet 4 backdrop, with MidBossTrack; after 120
+frames the iris closes and the level starts (obf_4R obf_6I / obf_28; the SKELETON before obf_52 is gone). QUIRK kept:
+the puppet holds the selected character's weapon. The GlowFilter on the puppets is not drawn (no filters in the
+port). Engine: `MovieClip::addChildAtBottom` (addChildAt 0, under the timeline children). `CustomerData.getCustomerIndex`.
+`PlayerStunSparkleEffect` translated and registered (PL2 never adds it; build checked only). Checked: capture of
+the intro at frame 70 (`--level 8`) and the trace of the level starting after it. Progress: 79.9 % of functions,
+87.1 % of lines.
+
+(50) `ParadeScreen` and `GameOutroScreen`: after the last boss (StageOutroScreen of level 8) every unlocked customer
+marches across in roster order (running puppets with weapons; the next one starts when the newest is 200 px in, or
+80 px when they share a skill), then an iris opens the ending: the unlocked customers posed in three rows around Papa
+Louie under "The End"; after 250 frames the EndOfDay tally. obf_4R obf_14 (the SKELETON that showed the tally is
+gone), obf_3q, obf_49, obf_2r. QUIRK kept: releaseNextGroup's group size is an unset local, so marchers are never
+staggered. DEV `--parade N` shows it at app frame N. Checked: captures of the parade (Marty and Rita) and of the
+ending. Not checked: the walking/waving parade (showWeapons false, only from the API menu), the hand-over to the
+tally. Progress: 80.9 % of functions, 88.9 % of lines.
+
+(51) Challenge drop-down: ChallengeManager checkForDisplayingDropdown, animateBadgeDropdown, clickBadgeDropdown
+(the queued treasure, challenge or badge eases down from the top, stays 150 frames or until clicked, goes up, and the
+next follows; QUIRK kept: a treasure's panel gets neither part set up), getChallengeTitle / Description /
+RewardAmount, getBadgeTally / TallyString, shouldLockBadge (Challenge gets requiredCustomers / requiredLevel and
+getRewardAmount). The original adds the drop-down to the game object itself: the port's `obf_4R::rootClips` holds it
+above the screens and takes the pointer when it is under it. Checked: rescuing Prudence in Leaf Landing shows
+"Challenge Complete! Rescued Prudence!" (capture) with getstar.wav. Not checked: a badge's panel. Progress: 81.4 % of
+functions, 89.3 % of lines.
+
+(52) `tools/progress.py` leaves out what the port drops or replaces on purpose (EXCLUDED: online services, sponsor
+and loading screens, Flash bitmap drawing and asset loading, the never-created RocketBBQ / RocketMustard): 126
+functions, 1423 lines; `--excluded` lists them with the reason. Progress over the ported scope: 86.1 % of functions,
+92.8 % of lines.
+
+(53) Menu BADGES tab: MainMenuScreen setupMedals, populateMedals, clickNextMedals, clickPrevMedals,
+animateMedalsTransition, clickMedals; the tab is on the main and pause menu bars ("clickMedals"). Eight badges a
+page with title, description and tally, reward, points, picture and earned mark; locked ones show "Hidden Badge"
+(port texts badge.* in lang/). Not drawn: the grey (ColorMatrixFilter) on unearned badges. The drop-down's reward and
+points texts use the same keys. Checked: captures of pages 1 and 2 from the pause menu. Progress: 86.4 % of functions,
+93.1 % of lines.
+
+(54) Menu BADDIES tab: MainMenuScreen setupBaddies, clickEnemyThumb, selectEnemy, clickBaddies, the roll-over /
+roll-out of the thumbnails; DataManager enemyKey (from datamanager.json), getEnemyName, getEnemyClipName,
+getEnemyIDFromIndex. The thumbnails are the enemythumb_<clip> clips themselves (the original draws them into one
+bitmap with a drop shadow: generateEnemyBitmap / getEnemyBitmap, now in progress.py's EXCLUDED). Port texts
+baddies.* in lang/. The tab is on the main and pause menu bars. Checked: after killing three Red Tomatoes in Leaf
+Landing the tab shows 1/33, the tomato's thumbnail, picture and "Derrotados: 3" (capture). Progress: 86.8 % of
+functions, 93.6 % of lines.
+
+(55) Menu CONTROLS tab: MainMenuScreen setupControls, clickControlsButton, cancelSettingControls (also when leaving
+the section), controlsKeyListener, the buttons' roll-over / roll-out, clickControls; the tab is on the main and pause
+menu bars. The keyboard now follows the player's keys: engine `Input::keyBindings` (Flash key codes, set from UserData
+every frame) with `flashKeyToScancode` / `scancodeToFlashKey`; the port's extra keys (W A S D, Z, X) work while no game
+key uses them. While the tab waits for a key, the app sends the next key to `obf_4R::keyDown` (the original's stage
+KEY_DOWN listener). Checked: capture of the tab with the six keys. Not checked: changing a key (no scripted raw keys).
+The key labels' missing letters are fixed (see 57). Progress: 87.1 % of functions, 93.9 % of lines.
+
+(56) Menu HELP tab: MainMenuScreen setupHelp, setupHelpKeys (also when the section opens), showHelp, clickHelpTab,
+the tabs' roll-over / roll-out, the two scroll bars (click / hold / release of the arrows, click / drag / release of
+the dragger, for the tab list and the page), clickHelp. The 18 topic names are port texts (help.topic1..18 in lang/).
+Port: drags keep the grab offset (startDrag), the stage MOUSE_UP is the pointer going up, `obf_4R::pointer` holds the
+frame's pointer; moving a timeline child vertically keeps its timeline x (setChildY). QUIRK kept:
+releaseHelpMainArrow clears helpTabScrollDir. Not ported: the `useSection: "help"` parameter (never sent). Checked:
+captures of topics 1 and 2 (Attacking shows the player's Space key). Not checked: the scroll bars. The pause bar's six tabs fit (see 57). Progress: 88.0 % of functions, 94.5 % of lines.
+
+(57) Text and menu bar fixes: a character missing from a field's embedded font is drawn from the embedding of the
+same font with the most glyphs (Flash embeds only the characters a field was made with; the CONTROLS labels showed
+"Sace", "Let"). The menu bar's tab row starts after the back button when it would go under it, with narrower buttons
+(no side padding) when it would run off the right edge (the pause menu's six tabs). Checked: captures of the CONTROLS
+tab (Space, Up, Left, Right) and of the pause bar.
+
+(58) Fix: the sky and backdrop of a level played after another kept the first level's. The original makes a new
+BitmapManager for each level (its bgsheet / mgsheet start null); the port keeps one, and getTilesheetBitmap sets
+whichTileset before getBackgroundBitmap / getMiddlegroundBitmap ask, so they returned the old sheets. obf_6V now drops
+them. Note: worlds share backdrops in the original (bgNames / mgNames): Leaf Landing and Lettuce Lane use tilesheet1,
+Fort Onion and Sarge's Lair tilesheet2, Mount Monterey and Cheddar Hills tilesheet3, The Saucelands, BBQ Bog and
+Radley's Hideout tilesheet4, X Zone tilesheet5. The room order per world is levels.xml's roomArray (Radley's Hideout
+starts in room 2, "9-A"; Sarge's Lair's 4-F is its fourth room), as in the original. Checked by reading the code
+path; not checked by playing two levels in a row.
+
+(59) Engine fixes from the owner's phone captures: nested masks now clip (MaskLayers keeps one texture pair per
+nesting depth and composites onto the outer one; before, a mask inside masked content was skipped and its hidden art
+showed: the second portal ring in the character select's level circle). The menu bar's bottom panel hides on the
+CREDITS section when it holds no button (the credits picture reaches the bottom of the stage). Checked: captures of
+the map (unchanged) and of the credits (whole picture). Not checked: the character select (needs a save with a level
+unlocked) and the map's black cloud seen on the phone.
+
+(60) Port option "Full level intro music" (settings `wait_intro_music`, on by default; options menu): the level intro
+(StageIntroScreen, 80 frames, 2.7 s) holds its last frame until "startofday.wav" (4.5 s) ends, at most 150 frames.
+The original held that frame while it drew the player's and the caged customers' sprites over several frames, which
+let the music play out; the port draws them at once, so the level started with the music cut. With the option off
+the intro ends as soon as the sprites are ready, as before. Not checked in the game (the intro needs a save with a
+level to start).
+
+(61) `FliplineLogoScreen` (the owner asked to keep it): the Flipline Studios logo animation plays before the title
+screen at 24 fps, as in the original; at its "stopframe" label the game goes back to 30 fps and the title screen
+opens (obf_4R obf_7X / obf_4E; `obf_4R::stageFrameRate` is the original's stage.frameRate, which the app's fixed step
+follows). Its button's link to flipline.com (§_-36§) stays out (progress.py EXCLUDED), as do the analytics events.
+Checked: captures at frames 50 and 120 (the logo, "logic 24/s") and the log showing the title screen after it.

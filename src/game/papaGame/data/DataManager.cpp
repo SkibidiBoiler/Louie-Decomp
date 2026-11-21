@@ -116,7 +116,20 @@ void DataManager::setupLevelScreens(double whichLevel)
     const double whichTileset = whichLevel;
     currentLevel = whichLevel;
     currentWorldData = std::make_unique<WorldData>(gameObj, *worldXML);
-    // SKELETON: the checkpoint branch (checkpointData) is not ported yet; this is the "Normal Loading" path.
+    if (checkpointData != nullptr && checkpointData->getCheckpointLevel() == whichLevel) {
+        SDL_Log(">>>>>  Use Checkpoint Data");
+        currentScreen = checkpointData->getStartingRoomIndex();
+        std::vector<std::unique_ptr<ScreenData>> savedArray = checkpointData->getScreenDataArray();
+        for (size_t i = 0; i < savedArray.size(); ++i) {
+            if (static_cast<double>(i) == currentScreen) {
+                currentScreenData = savedArray[i].get();
+            }
+            currentScreens.push_back(std::move(savedArray[i]));
+        }
+        setupCollisionArrays();
+        return;
+    }
+    SDL_Log(">>>>> Normal Loading");
     currentScreen = currentWorldData->worldStartRoom;
     const std::vector<double> roomArray = currentWorldData->getWorldRoomIDs();
     for (size_t i = 0; i < roomArray.size(); ++i) {
@@ -175,17 +188,45 @@ void DataManager::initializeScreenObjects(double whichScreen)
     }
 }
 
-// AS: DataManager.saveCheckpoint (SKELETON: CheckpointData, the saved room states and tallies to restart from)
+// AS: DataManager.saveCheckpoint — replaces the level's checkpoint with one at this tile of the current room.
 void DataManager::saveCheckpoint(double tileX, double tileY)
 {
-    SDL_Log("Saving Checkpoint... (level %s, room %s, tile %s,%s)", as3::String(currentLevel).c_str(),
-            as3::String(currentScreen).c_str(), as3::String(tileX).c_str(), as3::String(tileY).c_str());
+    SDL_Log("Saving Checkpoint...");
+    checkpointData.reset();
+    checkpointData = std::make_unique<CheckpointData>(gameObj, currentLevel, currentScreen, currentScreens, tileX, tileY);
 }
 
 // AS: DataManager.clearCheckpoint
 void DataManager::clearCheckpoint()
 {
     SDL_Log("Clearing Checkpoint");
+    checkpointData.reset();
+}
+
+// AS: DataManager.handleCheckpointProgress — restarting from this level's checkpoint brings back the time and the
+// tallies it saved.
+void DataManager::handleCheckpointProgress()
+{
+    if (checkpointData != nullptr && checkpointData->whichLevel == currentLevel) {
+        const CheckpointData &c = *checkpointData;
+        SDL_Log("Restore progress from checkpoint");
+        gameObj->obf_8o->gameplayTimer = c.save_gameplayTimer;
+        UserData &user = *gameObj->obf_51;
+        user.gotHurt = c.save_gotHurt;
+        user.fellInWater = c.save_fellInWater;
+        user.killsTally = c.save_killsTally;
+        user.livesLost = c.save_livesLost;
+        user.burgerzillas = c.burgerzillas_tally;
+        user.money = c.money_tally;
+        user.specialitems = c.specialitems_tally;
+        managers::ChallengeManager &cm = *gameObj->obf_94;
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 1, c.challenge1_tally);
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 2, c.challenge2_tally);
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 3, c.challenge3_tally);
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 4, c.challenge4_tally);
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 5, c.challenge5_tally);
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 6, c.challenge6_tally);
+    }
 }
 
 // AS: DataManager.clearLevelScreens
@@ -241,6 +282,22 @@ bool DataManager::loadTables(const std::string &path)
     if (const engine::JsonValue *v = tables_.get("coinsToUnlockWorld")) {
         for (const auto &n : v->items) {
             coinsToUnlockWorld.push_back(n.number);
+        }
+    }
+    enemyKey.clear();
+    if (const engine::JsonValue *v = tables_.get("enemyKey")) {
+        for (const auto &e : v->items) {
+            EnemyKeyEntry k;
+            if (const engine::JsonValue *f = e.get("id")) {
+                k.id = f->number;
+            }
+            if (const engine::JsonValue *f = e.get("title")) {
+                k.title = f->string;
+            }
+            if (const engine::JsonValue *f = e.get("clip")) {
+                k.clip = f->string;
+            }
+            enemyKey.push_back(k);
         }
     }
     auto number = [&](const char *name) {
@@ -359,6 +416,49 @@ double DataManager::getOutfitPrice(double customer, double outfit) const
         return 999999;
     }
     return 999999;
+}
+
+// AS: DataManager.getEnemyName — by BADDIES index, else by enemy id; "???" when none.
+std::string DataManager::getEnemyName(double index, double id) const
+{
+    std::string result = "???";
+    if (index != -1 && index < static_cast<double>(enemyKey.size())) {
+        result = enemyKey[static_cast<size_t>(index)].title;
+    } else {
+        for (const EnemyKeyEntry &k : enemyKey) {
+            if (k.id == id) {
+                result = k.title;
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+// AS: DataManager.getEnemyClipName
+std::string DataManager::getEnemyClipName(double index, double id) const
+{
+    std::string result = "???";
+    if (index != -1 && index < static_cast<double>(enemyKey.size())) {
+        result = enemyKey[static_cast<size_t>(index)].clip;
+    } else {
+        for (const EnemyKeyEntry &k : enemyKey) {
+            if (k.id == id) {
+                result = k.clip;
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+// AS: DataManager.getEnemyIDFromIndex
+double DataManager::getEnemyIDFromIndex(double index) const
+{
+    if (index > -1 && index < static_cast<double>(enemyKey.size())) {
+        return enemyKey[static_cast<size_t>(index)].id;
+    }
+    return -1;
 }
 
 } // namespace papaGame::data

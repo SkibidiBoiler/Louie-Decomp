@@ -14,6 +14,8 @@
 #include "game/papaGame/models/objects/GameObject12.h"
 #include "game/papaGame/models/objects/GameObject13.h"
 #include "game/papaGame/models/objects/GameObject14.h"
+#include "game/papaGame/models/objects/GameObject15.h"
+#include "game/papaGame/models/objects/GameObject16.h"
 #include "game/papaGame/models/objects/GameObject17.h"
 #include "game/papaGame/models/objects/GameObject18.h"
 #include "game/papaGame/models/objects/GameObject19.h"
@@ -28,6 +30,8 @@
 #include "game/papaGame/models/objects/GameObject3.h"
 #include "game/papaGame/models/objects/GameObject29.h"
 #include "game/papaGame/models/objects/GameObject30.h"
+#include "game/papaGame/models/objects/GameObject31.h"
+#include "game/papaGame/models/objects/GameObject32.h"
 #include "game/papaGame/models/objects/GameObject33.h"
 #include "game/papaGame/models/objects/GameObject4.h"
 #include "game/papaGame/models/objects/GameObject5.h"
@@ -57,6 +61,8 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 12: return std::make_unique<GameObject12>(gameObj);
     case 13: return std::make_unique<GameObject13>(gameObj);
     case 14: return std::make_unique<GameObject14>(gameObj);
+    case 15: return std::make_unique<GameObject15>(gameObj);
+    case 16: return std::make_unique<GameObject16>(gameObj);
     case 17: return std::make_unique<GameObject17>(gameObj);
     case 18: return std::make_unique<GameObject18>(gameObj);
     case 19: return std::make_unique<GameObject19>(gameObj);
@@ -71,6 +77,8 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 28: return std::make_unique<GameObject28>(gameObj);
     case 29: return std::make_unique<GameObject29>(gameObj);
     case 30: return std::make_unique<GameObject30>(gameObj);
+    case 31: return std::make_unique<GameObject31>(gameObj);
+    case 32: return std::make_unique<GameObject32>(gameObj);
     case 33: return std::make_unique<GameObject33>(gameObj);
     default: return nullptr; // SKELETON: the other object types are not ported yet
     }
@@ -234,6 +242,18 @@ void ObjectManager::clearObjects(double whichScreen, bool all, bool /*resetCount
 void ObjectManager::saveObjects()
 {
     clearObjects(1, true);
+}
+
+// AS: ObjectManager.saveObjectsAtCheckpoint — the objects that keep their state at a checkpoint (the boulders)
+// write it into the room's data.
+void ObjectManager::saveObjectsAtCheckpoint()
+{
+    for (int i = static_cast<int>(objects.size()) - 1; i >= 0; --i) {
+        models::GameObject *o = objects[static_cast<size_t>(i)];
+        if (o && o->saveDataAtCheckpoint) {
+            o->saveObjectData();
+        }
+    }
 }
 
 // AS: ObjectManager.buildObjects — rows of objectArray: [type, x, y, triggers, params...]; type 0 is gone.

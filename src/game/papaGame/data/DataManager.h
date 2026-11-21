@@ -10,6 +10,7 @@
 
 #include "engine/json.h"
 #include "engine/xml.h"
+#include "game/papaGame/data/CheckpointData.h"
 #include "game/papaGame/data/LevelData.h"
 #include "game/papaGame/data/ScreenData.h"
 #include "game/papaGame/data/WorldData.h"
@@ -37,7 +38,11 @@ public:
     void initializeScreenObjects(double whichScreen);
     void saveCheckpoint(double tileX = -1, double tileY = -1);
     void clearCheckpoint();
+    void handleCheckpointProgress();
     double getOutfitPrice(double customer, double outfit) const; // AS: DataManager.getOutfitPrice
+    std::string getEnemyName(double index = -1, double id = -1) const;
+    std::string getEnemyClipName(double index = -1, double id = -1) const;
+    double getEnemyIDFromIndex(double index) const;
     void setupKeyNames();
     std::string getKeyLabel(const std::string &key) const;
 
@@ -62,6 +67,7 @@ public:
     std::vector<std::unique_ptr<ScreenData>> currentScreens;
     ScreenData *currentScreenData = nullptr;
     std::unique_ptr<WorldData> currentWorldData;
+    std::unique_ptr<CheckpointData> checkpointData;
     double currentLevel = 1;
     double currentScreen = 0;
     double currentTileset = 1;
@@ -70,6 +76,11 @@ public:
     using Grid = std::vector<std::vector<double>>;
     Grid outfitPrices;                     // from datamanager.json
     std::vector<double> coinsToUnlockWorld; // from datamanager.json
+    struct EnemyKeyEntry {
+        double id = 0;
+        std::string title, clip;
+    };
+    std::vector<EnemyKeyEntry> enemyKey; // from datamanager.json: the BADDIES list
     Grid standardCollisionArray, standardThruArray, standardGrabArray;
     const Grid *collisionArray = nullptr;
     const Grid *thruArray = nullptr;

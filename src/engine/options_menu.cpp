@@ -198,6 +198,9 @@ void OptionsMenu::change(int row, int dir)
     case Overlay:
         settings_.showOverlay = !settings_.showOverlay;
         break;
+    case IntroMusic:
+        settings_.waitIntroMusic = !settings_.waitIntroMusic;
+        break;
     case Close:
         setOpen(false);
         return;
@@ -218,6 +221,7 @@ const char *OptionsMenu::labelKey(int row) const
     case TouchOpacity: return "options.touch_opacity";
     case TouchSize: return "options.touch_size";
     case Overlay: return "options.overlay";
+    case IntroMusic: return "options.intro_music";
     default: return "options.close";
     }
 }
@@ -235,10 +239,12 @@ std::string OptionsMenu::valueText(int row) const
         return std::to_string(settings_.fpsCap);
     case Interpolation:
     case Widescreen:
-    case Overlay: {
+    case Overlay:
+    case IntroMusic: {
         const bool on = row == Interpolation ? settings_.interpolation
                         : row == Widescreen  ? settings_.widescreen
-                                             : settings_.showOverlay;
+                        : row == Overlay     ? settings_.showOverlay
+                                             : settings_.waitIntroMusic;
         return lang_.get(on ? "options.on" : "options.off");
     }
     case Language:

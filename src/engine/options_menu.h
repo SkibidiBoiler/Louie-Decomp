@@ -31,7 +31,7 @@ public:
     void render(SDL_Renderer *renderer, TextLibrary &text, int w, int h) const;
 
 private:
-    enum Row { Fps, Interpolation, Widescreen, Language, TouchOpacity, TouchSize, Overlay, Close, RowCount };
+    enum Row { Fps, Interpolation, Widescreen, Language, TouchOpacity, TouchSize, Overlay, IntroMusic, Close, RowCount };
     struct Layout {
         float gearX = 0, gearY = 0, gearR = 0;
         float panelX = 0, panelY = 0, panelW = 0, rowH = 0, titleH = 0;

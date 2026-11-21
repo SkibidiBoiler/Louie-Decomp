@@ -16,7 +16,7 @@ void StageIntroScreen::setupScreen()
 {
     clip = &gameObj->obf_5h->addChild(engine::MovieClip::create(*gameObj->symbols, "stageIntroMC"), "");
     gameObj->obf_7C->endMusic();
-    gameObj->obf_7C->playSound("startofday.wav");
+    introSound = gameObj->obf_7C->playSound("startofday.wav");
     clip->setPosition(350, 208);
     std::unique_ptr<engine::MovieClip> model =
         buildModel(gameObj->obf_51->selectedCharacter, gameObj->obf_51->selectedStyle);
@@ -34,7 +34,15 @@ void StageIntroScreen::updateScreen()
 {
     ++delayTimer;
     const int frame = clip->currentFrame() + 1, total = clip->frameCount();
-    if (frame == total && playerReady && cagesReady) {
+    // Port option: the original stayed on its last frame while it drew the player's and the caged customers' sprites
+    // over several frames, which let "startofday.wav" play out; the port draws them at once, so with the option on
+    // the last frame is held (at most kMaxMusicWait frames) until the music ends.
+    bool musicDone = true;
+    if (frame == total && gameObj->waitIntroMusic && introSound && introSound->playing() && musicWait_ < kMaxMusicWait) {
+        ++musicWait_;
+        musicDone = false;
+    }
+    if (frame == total && playerReady && cagesReady && musicDone) {
         gameObj->obf_6V(gameObj->obf_8W);
         gameObj->obf_q(); // destroys this screen
     } else if (frame == total - 1 && !playerReady) {
