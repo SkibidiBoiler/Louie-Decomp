@@ -2,7 +2,7 @@
 // AS: papaGame.screens.MainMenuScreen — the map of areas and, before a level, the customer and outfit choice,
 // with the credits, badges, baddies, controls and help sections the bar's tabs open.
 // The store, social and "first game" links went to web sites and are not shown.
-// SKELETON: the controls and help sections, and the tutorial pop-ups (§_-6n§ / §_-c§).
+// SKELETON: the help section, and the tutorial pop-ups (§_-6n§ / §_-c§).
 #include <memory>
 #include <string>
 #include <vector>
@@ -39,6 +39,12 @@ public:
     void setupCredits();
     void setupMedals(bool setup = true);
     void setupBaddies(bool setup = true);
+    void setupControls(bool setup = true);
+    void clickControlsButton(const std::string &which);
+    void cancelSettingControls();
+    void controlsKeyListener(double keyCode);
+    void clickControls() { setSection("controls"); } // AS: MainMenuScreen.clickControls
+    std::string settingWhichKey = "none";
     void clickEnemyThumb(int index);
     void selectEnemy(double index);
     void clickBaddies() { setSection("baddies"); } // AS: MainMenuScreen.clickBaddies

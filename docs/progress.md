@@ -596,3 +596,12 @@ bitmap with a drop shadow: generateEnemyBitmap / getEnemyBitmap, now in progress
 baddies.* in lang/. The tab is on the main and pause menu bars. Checked: after killing three Red Tomatoes in Leaf
 Landing the tab shows 1/33, the tomato's thumbnail, picture and "Derrotados: 3" (capture). Progress: 86.8 % of
 functions, 93.6 % of lines.
+
+(55) Menu CONTROLS tab: MainMenuScreen setupControls, clickControlsButton, cancelSettingControls (also when leaving
+the section), controlsKeyListener, the buttons' roll-over / roll-out, clickControls; the tab is on the main and pause
+menu bars. The keyboard now follows the player's keys: engine `Input::keyBindings` (Flash key codes, set from UserData
+every frame) with `flashKeyToScancode` / `scancodeToFlashKey`; the port's extra keys (W A S D, Z, X) work while no game
+key uses them. While the tab waits for a key, the app sends the next key to `obf_4R::keyDown` (the original's stage
+KEY_DOWN listener). Checked: capture of the tab with the six keys. Not checked: changing a key (no scripted raw keys).
+Known: the key labels miss letters ("Sace", "Let"): the label field's font lacks those glyphs in the port's text
+renderer. Progress: 87.1 % of functions, 93.9 % of lines.

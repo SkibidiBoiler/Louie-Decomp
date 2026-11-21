@@ -400,12 +400,13 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, "title.choose_slot", {{Kind::Back, "menu.back", "clickBack"}}, layout);
     } else if (name == "MainMenu") {
-        // SKELETON: the CONTROLS and HELP tabs (their sections are not ported yet).
+        // SKELETON: the HELP tab (their sections are not ported yet).
         mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
                       {{Kind::Tab, "menu.baddies", "clickBaddies"},
                        {Kind::Tab, "menu.badges", "clickMedals"},
+                       {Kind::Tab, "menu.controls", "clickControls"},
                        {Kind::Tab, "menu.credits", "clickCredits"},
                        {Kind::Back, "menu.quit", "clickExit"}},
                       layout);
@@ -417,7 +418,7 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
                        {Kind::Tab, "menu.back_to_map", "clickBackToMap"}},
                       layout);
     } else if (name == "PauseMenu") {
-        // SKELETON: the CONTROLS and HELP tabs (their sections are not ported yet).
+        // SKELETON: the HELP tab (their sections are not ported yet).
         mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
@@ -425,6 +426,7 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
                        {Kind::Tab, "menu.info", "clickInfo"},
                        {Kind::Tab, "menu.baddies", "clickBaddies"},
                        {Kind::Tab, "menu.badges", "clickMedals"},
+                       {Kind::Tab, "menu.controls", "clickControls"},
                        {Kind::Tab, "menu.credits", "clickCredits"},
                        {Kind::Back, "menu.quit_level", "clickQuit"}},
                       layout);
@@ -554,6 +556,18 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
         obf_a->updatePopup();
     }
     return screensActive();
+}
+
+bool obf_4R::wantsKey() const
+{
+    return mainMenuScreen && mainMenuScreen->settingWhichKey != "none";
+}
+
+void obf_4R::keyDown(int keyCode)
+{
+    if (wantsKey()) {
+        mainMenuScreen->controlsKeyListener(keyCode);
+    }
 }
 
 void obf_4R::renderScreens(engine::RenderContext &ctx)

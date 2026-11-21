@@ -446,6 +446,12 @@ void App::tickLevel()
     auto &controls = *game_->obf_8o;
     const bool *keys = SDL_GetKeyboardState(nullptr);
     const bool panning = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
+    {
+        const auto &u = *game_->obf_51; // the player's keys (CONTROLS tab)
+        input_.keyBindings = {static_cast<int>(u.keyCodeLeft), static_cast<int>(u.keyCodeRight),
+                              static_cast<int>(u.keyCodeUp),   static_cast<int>(u.keyCodeDown),
+                              static_cast<int>(u.keyCodeJump), static_cast<int>(u.keyCodeAttack)};
+    }
     ActionState actions = panning ? ActionState{} : input_.poll();
     if (scriptFrame_ >= 0) {
         ++scriptFrame_;
@@ -682,6 +688,10 @@ SDL_AppResult App::event(const SDL_Event &ev)
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
     case SDL_EVENT_KEY_DOWN:
+        if (mode_ == Mode::Level && game_ && game_->wantsKey()) { // the CONTROLS tab waits for a key
+            game_->keyDown(engine::scancodeToFlashKey(ev.key.scancode));
+            break;
+        }
         switch (ev.key.key) {
         case SDLK_ESCAPE:
         case SDLK_AC_BACK:

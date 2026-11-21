@@ -116,6 +116,9 @@ public:
     std::function<void(const std::string &)> onTextInput;
     std::function<void(int key)> onKeyDown; // SDL keycode
     void renderScreens(engine::RenderContext &ctx);
+    // Port: the stage's KEY_DOWN listener the CONTROLS tab adds while it waits for a key (Flash key code).
+    bool wantsKey() const;
+    void keyDown(int keyCode);
 
     SDL_Renderer *renderer = nullptr; // port
     const engine::SymbolLibrary *symbols = nullptr; // port

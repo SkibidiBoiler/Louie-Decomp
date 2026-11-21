@@ -34,6 +34,7 @@ void MainMenuScreen::setupScreen()
     gameObj->addContainerListener("clickCredits", [this] { clickCredits(); });
     gameObj->addContainerListener("clickMedals", [this] { clickMedals(); });
     gameObj->addContainerListener("clickBaddies", [this] { clickBaddies(); });
+    gameObj->addContainerListener("clickControls", [this] { clickControls(); });
     gameObj->addContainerListener("clickExit", [this] { clickExit(); });
     gameObj->addContainerListener("clickCreditsRedirect", [this] { setSection("credits"); });
     gameObj->addContainerListener("clickCreditsRedirectBack", [this] { setSection("map"); });
@@ -52,7 +53,8 @@ void MainMenuScreen::setupScreen()
         setupInfo();
     }
     setupBaddies();
-    // SKELETON: setupControls, setupHelp.
+    setupControls();
+    // SKELETON: setupHelp.
     setupCredits();
     setupMedals();
     setupConfirmQuit();
@@ -724,6 +726,9 @@ void MainMenuScreen::setSection(const std::string &name)
             c->setY(480);
         }
     }
+    if (currentSection == "controls") {
+        cancelSettingControls();
+    }
     if (newSection == "map" && willRevealMap) {
         gameObj->obf_7C->playSound("checkpoint.wav");
     }
@@ -1226,6 +1231,95 @@ void MainMenuScreen::selectEnemy(double index)
         detail->setPosition(10, 101);
         enemyDetail = &baddies->addChild(std::move(detail), "");
     }
+}
+
+namespace {
+const char *const kControlKeys[][2] = {{"attack", papaGame::data::DataManager::KEY_ATTACK},
+                                       {"jump", papaGame::data::DataManager::KEY_JUMP},
+                                       {"down", papaGame::data::DataManager::KEY_DOWN},
+                                       {"up", papaGame::data::DataManager::KEY_UP},
+                                       {"left", papaGame::data::DataManager::KEY_LEFT},
+                                       {"right", papaGame::data::DataManager::KEY_RIGHT}};
+} // namespace
+
+// AS: MainMenuScreen.setupControls — each key's label and its button (click to change it; roll-over lights it).
+// (Removing the listeners, setup false, is left to the clip going away.)
+void MainMenuScreen::setupControls(bool setup)
+{
+    const data::DataManager &dm = *gameObj->obf_AQ;
+    engine::MovieClip *controls = section("controls");
+    if (!setup || !controls) {
+        return;
+    }
+    for (const auto &k : kControlKeys) {
+        const std::string which = k[0];
+        controls->setText(which + "_txt", dm.getKeyLabel(k[1]));
+        engine::MovieClip *btn = controls->findChild(which + "_btn");
+        if (!btn) {
+            continue;
+        }
+        btn->onClick = [this, which] { clickControlsButton(which); };
+        // AS: MainMenuScreen.rolloverControlsButton / rolloutControlsButton
+        btn->onRollOver = [this, btn] {
+            if (settingWhichKey == "none") {
+                btn->gotoLabel("rollover", false);
+            }
+        };
+        btn->onRollOut = [this, btn] {
+            if (settingWhichKey == "none") {
+                btn->gotoLabel("click", false);
+            }
+        };
+        btn->gotoLabel("click", false);
+    }
+}
+
+// AS: MainMenuScreen.clickControlsButton — the button asks for a key (the button's name gives the action).
+void MainMenuScreen::clickControlsButton(const std::string &which)
+{
+    if (settingWhichKey == "none") {
+        if (engine::MovieClip *btn = section("controls")->findChild(which + "_btn")) {
+            btn->gotoLabel("presskey", false);
+        }
+        settingWhichKey = which;
+    }
+}
+
+// AS: MainMenuScreen.cancelSettingControls
+void MainMenuScreen::cancelSettingControls()
+{
+    if (settingWhichKey != "none") {
+        if (engine::MovieClip *controls = section("controls")) {
+            for (const auto &k : kControlKeys) {
+                if (engine::MovieClip *btn = controls->findChild(std::string(k[0]) + "_btn")) {
+                    btn->gotoLabel("click", false);
+                }
+            }
+        }
+        settingWhichKey = "none";
+    }
+}
+
+// AS: MainMenuScreen.controlsKeyListener (KEY_DOWN) — the key is taken unless another action uses it; the labels
+// are refreshed. The "ChangedControls" analytics event is dropped.
+void MainMenuScreen::controlsKeyListener(double keyCode)
+{
+    const data::DataManager &dm = *gameObj->obf_AQ;
+    engine::MovieClip *controls = section("controls");
+    const bool ok = gameObj->obf_51->setKey(keyCode, settingWhichKey);
+    engine::MovieClip *btn = controls ? controls->findChild(settingWhichKey + "_btn") : nullptr;
+    if (ok) {
+        if (btn) {
+            btn->gotoLabel("click", false);
+        }
+        for (const auto &k : kControlKeys) {
+            controls->setText(std::string(k[0]) + "_txt", dm.getKeyLabel(k[1]));
+        }
+        keysWereChanged = true;
+    } else if (btn) {
+        btn->gotoLabel("alreadyused", false);
+    }
+    settingWhichKey = "none";
 }
 
 // AS: MainMenuScreen.setupMedals — the badge pages: earned / total, the first page, its slide-in. (Removing the
