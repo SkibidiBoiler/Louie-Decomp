@@ -112,6 +112,7 @@ public:
     // ENTER_FRAME handlers. True while a menu screen is up.
     bool updateScreens(const engine::PointerState &pointer);
     engine::PointerState pointer; // port: this frame's pointer (stage mouse position and button, for drags)
+    bool waitIntroMusic = true;   // port option: the level intro waits for its music (StageIntroScreen)
     bool screensActive() const;
     // Port: keyboard text for a screen's text input (the name entry): set while one has focus.
     std::function<void(const std::string &)> onTextInput;

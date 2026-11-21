@@ -634,3 +634,10 @@ showed: the second portal ring in the character select's level circle). The menu
 CREDITS section when it holds no button (the credits picture reaches the bottom of the stage). Checked: captures of
 the map (unchanged) and of the credits (whole picture). Not checked: the character select (needs a save with a level
 unlocked) and the map's black cloud seen on the phone.
+
+(60) Port option "Full level intro music" (settings `wait_intro_music`, on by default; options menu): the level intro
+(StageIntroScreen, 80 frames, 2.7 s) holds its last frame until "startofday.wav" (4.5 s) ends, at most 150 frames.
+The original held that frame while it drew the player's and the caged customers' sprites over several frames, which
+let the music play out; the port draws them at once, so the level started with the music cut. With the option off
+the intro ends as soon as the sprites are ready, as before. Not checked in the game (the intro needs a save with a
+level to start).

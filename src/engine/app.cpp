@@ -1072,6 +1072,7 @@ void App::tick()
                 SDL_StopTextInput(window_);
             }
         }
+        game_->waitIntroMusic = settings_.waitIntroMusic;
         game_->updateScreens(pointer_);
         game_->obf_7C->advanceTime(1000.0 / stage_.frameRate);
     }

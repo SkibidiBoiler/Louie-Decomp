@@ -3,6 +3,7 @@
 // in; it starts the level (§_-6V§) when the player's sprite sheets are ready.
 #include <memory>
 
+#include "engine/audio.h"
 #include "engine/movieclip.h"
 
 namespace obf_9G { class obf_4R; }
@@ -28,6 +29,11 @@ public:
     bool cagesReady = false;
     bool gameReady = true;
     engine::MovieClip *playerMC = nullptr; // owned by clip.inside
+    // Port: the intro's "startofday.wav", held so the intro can wait for it (option waitIntroMusic), and the frames
+    // waited on the last frame (capped at kMaxMusicWait).
+    std::shared_ptr<engine::SoundChannel> introSound;
+    int musicWait_ = 0;
+    static constexpr int kMaxMusicWait = 150;
 
 private:
     std::unique_ptr<engine::MovieClip> buildModel(double whichCharacter, double style);

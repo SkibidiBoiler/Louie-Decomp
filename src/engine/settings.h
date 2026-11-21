@@ -18,6 +18,8 @@ struct Settings {
     float touchSize = 1.0f;
     // The DEV line with FPS, room and camera at the top left.
     bool showOverlay = true;
+    // Port: the level intro waits for its music (the original waited while it drew the player's sprites).
+    bool waitIntroMusic = true;
 
     void load();
     void save() const;
