@@ -19,6 +19,7 @@ public:
     void keyCheckPlayer(models::characters::CustomerChar &p);
     void jumpPlayer(models::characters::CustomerChar &p);
     void resetKeys();
+    void jumpPlayerOnLadder(); // AS: GameControls.jumpPlayerOnLadder
     void pauseGame();
     void resumeGame(bool keysWereChanged = false);
     void travelThroughDoor(double roomID, double doorID, double xOffset, double yOffset, double dirX, double dirY);

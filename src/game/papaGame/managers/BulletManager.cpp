@@ -11,6 +11,8 @@
 #include "game/papaGame/models/bullets/SargePepper.h"
 #include "game/papaGame/models/bullets/Basketball.h"
 #include "game/papaGame/models/bullets/BlueberryShot.h"
+#include "game/papaGame/models/bullets/CheeseBullet.h"
+#include "game/papaGame/models/bullets/ShroomArrow.h"
 #include "game/papaGame/models/bullets/ChiliCan.h"
 #include "game/papaGame/models/bullets/DogToy.h"
 #include "game/papaGame/models/bullets/PepperBomb.h"
@@ -63,7 +65,13 @@ std::unique_ptr<models::Bullet> createBullet(obf_9G::obf_4R *gameObj, const std:
     if (type == "BlueberryShot") {
         return std::make_unique<BlueberryShot>(gameObj);
     }
-    return nullptr; // SKELETON: the enemies' bullets and the cheese cannon's are not ported yet
+    if (type == "ShroomArrow") {
+        return std::make_unique<ShroomArrow>(gameObj);
+    }
+    if (type == "CheeseBullet") {
+        return std::make_unique<CheeseBullet>(gameObj);
+    }
+    return nullptr; // SKELETON: the remaining enemies' bullets are not ported yet
 }
 
 } // namespace

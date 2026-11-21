@@ -18,6 +18,12 @@ void Effect::init(double x_, double y_, double id_, const std::string &subtype_,
     playerYoffset = playerYoffset_;
     placeEffect(x_, y_);
     savePrevious(); // port: nothing to interpolate from yet
+    if (followPlayer && gameObj->playerObj) {
+        // Port: the item pick-ups are added at (0, 0) and move onto the player in their first updateObject; the
+        // interpolated render must not start from (0, 0), or they flash in the screen's top-left corner.
+        prevX = gameObj->playerObj->x + playerXoffset;
+        prevY = gameObj->playerObj->y + playerYoffset;
+    }
 }
 
 // AS: Effect.placeEffect

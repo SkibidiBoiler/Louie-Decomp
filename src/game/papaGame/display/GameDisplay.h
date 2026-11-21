@@ -47,6 +47,7 @@ public:
     void reblitObjects(bool foreground = true);
     void reblitItems(bool background, bool foreground = false);
     void reblitEffects(bool foreground = true);
+    void blitTilingObject(const models::GameObject &o);
     void blitLadder(const models::GameObject &o);
     bool checkOnScreen(const models::Character &c) const;
     // AS: startTransition / blitTransition / finishTransition — the wipe between rooms. blitTransition's

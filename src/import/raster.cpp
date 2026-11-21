@@ -316,6 +316,278 @@ private:
     int version_ = 1;
 };
 
+// DefineMorphShape (46) / DefineMorphShape2 (84) at one ratio: the start and end shapes interpolated record by
+// record (t = ratio / 65535), turned into an ordinary Shape. Flash fills a closed outline whichever side of the
+// edges carries the fill, which the fill0/fill1 edge split below already does.
+class MorphParser {
+public:
+    MorphParser(const Tag &tag, uint16_t ratio) : t_(tag), k_(ratio / 65535.0) {}
+
+    bool parse(Shape &out)
+    {
+        const bool v2 = t_.code == 84;
+        size_t p = 2;
+        const Rect sb = readRect(t_.body, t_.size, p);
+        const Rect eb = readRect(t_.body, t_.size, p);
+        out.bounds = {lerpi(sb.xmin, eb.xmin), lerpi(sb.xmax, eb.xmax), lerpi(sb.ymin, eb.ymin), lerpi(sb.ymax, eb.ymax)};
+        if (v2) {
+            readRect(t_.body, t_.size, p); // start edge bounds
+            readRect(t_.body, t_.size, p); // end edge bounds
+            ++p;                           // flags
+        }
+        if (p + 4 > t_.size) {
+            return false;
+        }
+        const size_t endEdges = p + 4 + u32(t_.body + p);
+        p += 4;
+        out.layers.emplace_back();
+        Layer &layer = out.layers.back();
+        if (!readStyles(p, layer, v2)) {
+            return false;
+        }
+        std::vector<Record> start, end;
+        if (!readRecords(p, start) || endEdges >= t_.size || !readRecords(endEdges, end)) {
+            return false;
+        }
+        size_t ei = 0;
+        int32_t x = 0, y = 0;
+        uint32_t fill0 = 0, fill1 = 0, line = 0;
+        std::vector<Edge> *run = nullptr;
+        for (const Record &s : start) {
+            if (!s.edge) {
+                if (s.move) {
+                    // The end shape moves at the same place in its own records.
+                    while (ei < end.size() && end[ei].edge) {
+                        ++ei;
+                    }
+                    const Record *e = ei < end.size() ? &end[ei++] : &s;
+                    x = lerpi(s.x1, e->move ? e->x1 : s.x1);
+                    y = lerpi(s.y1, e->move ? e->y1 : s.y1);
+                    run = nullptr;
+                }
+                if (s.setFill0) {
+                    fill0 = s.fill0;
+                }
+                if (s.setFill1) {
+                    fill1 = s.fill1;
+                }
+                if (s.setLine) {
+                    line = s.line;
+                    run = nullptr;
+                }
+                continue;
+            }
+            while (ei < end.size() && !end[ei].edge) {
+                ++ei;
+            }
+            const Record &e = ei < end.size() ? end[ei++] : s;
+            Edge out1{};
+            out1.x0 = x;
+            out1.y0 = y;
+            out1.x1 = lerpi(s.x1, e.x1);
+            out1.y1 = lerpi(s.y1, e.y1);
+            out1.cx = lerpi(s.cx, e.cx);
+            out1.cy = lerpi(s.cy, e.cy);
+            out1.curve = s.curve || e.curve;
+            x = out1.x1;
+            y = out1.y1;
+            if (fill1 && fill1 <= layer.fills.size()) {
+                layer.fillEdges[fill1 - 1].push_back(out1);
+            }
+            if (fill0 && fill0 <= layer.fills.size()) {
+                layer.fillEdges[fill0 - 1].push_back(Edge{out1.x1, out1.y1, out1.cx, out1.cy, out1.x0, out1.y0, out1.curve});
+            }
+            if (line && line <= layer.lines.size()) {
+                if (!run) {
+                    layer.linePaths[line - 1].emplace_back();
+                    run = &layer.linePaths[line - 1].back();
+                }
+                run->push_back(out1);
+            }
+        }
+        return true;
+    }
+
+private:
+    // One shape record with absolute coordinates (twips); a straight edge's control point is its middle.
+    struct Record {
+        bool edge = false, curve = false, move = false;
+        bool setFill0 = false, setFill1 = false, setLine = false;
+        uint32_t fill0 = 0, fill1 = 0, line = 0;
+        int32_t cx = 0, cy = 0, x1 = 0, y1 = 0;
+    };
+
+    int32_t lerpi(int32_t a, int32_t b) const { return static_cast<int32_t>(std::lround(a + (b - a) * k_)); }
+    float lerpf(float a, float b) const { return static_cast<float>(a + (b - a) * k_); }
+    Color lerpc(const Color &a, const Color &b) const
+    {
+        return {lerpf(a.r, b.r), lerpf(a.g, b.g), lerpf(a.b, b.b), lerpf(a.a, b.a)};
+    }
+    Matrix lerpm(const Matrix &a, const Matrix &b) const
+    {
+        return {lerpf(a.a, b.a), lerpf(a.b, b.b), lerpf(a.c, b.c), lerpf(a.d, b.d), lerpf(a.tx, b.tx), lerpf(a.ty, b.ty)};
+    }
+
+    bool readRecords(size_t p, std::vector<Record> &out)
+    {
+        Bits b(t_.body, t_.size, p);
+        const int fillBits = static_cast<int>(b.ub(4));
+        const int lineBits = static_cast<int>(b.ub(4));
+        int32_t x = 0, y = 0;
+        while (b.pos() < t_.size) {
+            Record r;
+            if (b.ub(1) == 0) {
+                const uint32_t flags = b.ub(5);
+                if (flags == 0) {
+                    return true;
+                }
+                if (flags & 0x10) {
+                    return false; // new styles are not allowed in morph shapes
+                }
+                if (flags & 0x01) {
+                    const int n = static_cast<int>(b.ub(5));
+                    x = b.sb(n);
+                    y = b.sb(n);
+                    r.move = true;
+                    r.x1 = x;
+                    r.y1 = y;
+                }
+                if (flags & 0x02) {
+                    r.setFill0 = true;
+                    r.fill0 = b.ub(fillBits);
+                }
+                if (flags & 0x04) {
+                    r.setFill1 = true;
+                    r.fill1 = b.ub(fillBits);
+                }
+                if (flags & 0x08) {
+                    r.setLine = true;
+                    r.line = b.ub(lineBits);
+                }
+                out.push_back(r);
+                continue;
+            }
+            r.edge = true;
+            const bool straight = b.ub(1) != 0;
+            const int n = static_cast<int>(b.ub(4)) + 2;
+            if (straight) {
+                int32_t dx = 0, dy = 0;
+                if (b.ub(1)) {
+                    dx = b.sb(n);
+                    dy = b.sb(n);
+                } else if (b.ub(1)) {
+                    dy = b.sb(n);
+                } else {
+                    dx = b.sb(n);
+                }
+                r.x1 = x + dx;
+                r.y1 = y + dy;
+                r.cx = (x + r.x1) / 2;
+                r.cy = (y + r.y1) / 2;
+            } else {
+                const int32_t cdx = b.sb(n), cdy = b.sb(n), adx = b.sb(n), ady = b.sb(n);
+                r.curve = true;
+                r.cx = x + cdx;
+                r.cy = y + cdy;
+                r.x1 = r.cx + adx;
+                r.y1 = r.cy + ady;
+            }
+            x = r.x1;
+            y = r.y1;
+            out.push_back(r);
+        }
+        return false;
+    }
+
+    bool readFill(size_t &p, FillStyle &f)
+    {
+        const uint8_t *d = t_.body;
+        if (p >= t_.size) {
+            return false;
+        }
+        f.type = d[p++];
+        if (f.type == 0x00) {
+            f.color = lerpc(readRgb(d + p, true), readRgb(d + p + 4, true));
+            p += 8;
+        } else if (f.type == 0x10 || f.type == 0x12 || f.type == 0x13) {
+            const Matrix ms = readMatrix(d, t_.size, p);
+            const Matrix me = readMatrix(d, t_.size, p);
+            f.matrix = lerpm(ms, me);
+            const int count = d[p++] & 0x0F;
+            for (int i = 0; i < count; ++i) {
+                const float rs = d[p] / 255.0f;
+                const Color cs = readRgb(d + p + 1, true);
+                const float re = d[p + 5] / 255.0f;
+                const Color ce = readRgb(d + p + 6, true);
+                p += 10;
+                f.gradient.stops.emplace_back(lerpf(rs, re), lerpc(cs, ce));
+            }
+        } else if (f.type >= 0x40 && f.type <= 0x43) {
+            f.bitmapId = u16(d + p);
+            p += 2;
+            const Matrix ms = readMatrix(d, t_.size, p);
+            const Matrix me = readMatrix(d, t_.size, p);
+            f.matrix = lerpm(ms, me);
+        } else {
+            return false;
+        }
+        return p <= t_.size;
+    }
+
+    bool readStyles(size_t &p, Layer &layer, bool v2)
+    {
+        const uint8_t *d = t_.body;
+        size_t count = d[p++];
+        if (count == 0xFF) {
+            count = u16(d + p);
+            p += 2;
+        }
+        layer.fills.resize(count);
+        layer.fillEdges.resize(count);
+        for (size_t i = 0; i < count; ++i) {
+            if (!readFill(p, layer.fills[i])) {
+                return false;
+            }
+        }
+        count = d[p++];
+        if (count == 0xFF) {
+            count = u16(d + p);
+            p += 2;
+        }
+        layer.lines.resize(count);
+        layer.linePaths.resize(count);
+        for (size_t i = 0; i < count; ++i) {
+            LineStyle &l = layer.lines[i];
+            l.width = lerpf(static_cast<float>(u16(d + p) / 20.0), static_cast<float>(u16(d + p + 2) / 20.0));
+            p += 4;
+            if (v2) {
+                const uint8_t f1 = d[p], f2 = d[p + 1];
+                p += 2;
+                l.startCap = static_cast<uint8_t>(f1 >> 6);
+                l.join = static_cast<uint8_t>((f1 >> 4) & 3);
+                l.hasFill = (f1 & 0x08) != 0;
+                l.endCap = static_cast<uint8_t>(f2 & 3);
+                if (l.join == 2) {
+                    l.miter = static_cast<float>(u16(d + p) / 256.0);
+                    p += 2;
+                }
+                if (l.hasFill) {
+                    if (!readFill(p, l.fill)) {
+                        return false;
+                    }
+                    continue;
+                }
+            }
+            l.color = lerpc(readRgb(d + p, true), readRgb(d + p + 4, true));
+            p += 8;
+        }
+        return p <= t_.size;
+    }
+
+    const Tag &t_;
+    double k_ = 0;
+};
+
 // Joins the edges of one fill style into closed contours (fill1 edges as stored, fill0 edges reversed).
 std::vector<std::vector<Edge>> contours(const std::vector<Edge> &edges)
 {
@@ -368,6 +640,7 @@ struct Rasterizer::Impl {
     const SwfIndex &index;
     std::vector<uint8_t> jpegTables;
     std::unordered_map<uint16_t, Shape> shapes;
+    std::unordered_map<uint32_t, Shape> morphs; // (id << 16) | ratio
     std::unordered_map<uint16_t, plutovg_surface_t *> bitmaps;
     std::unordered_map<uint16_t, TimelineData> timelines;
 
@@ -403,6 +676,22 @@ struct Rasterizer::Impl {
             s.layers.clear();
         }
         return &shapes.emplace(id, std::move(s)).first->second;
+    }
+
+    const Shape *morph(uint16_t id, uint16_t ratio)
+    {
+        const uint32_t key = (static_cast<uint32_t>(id) << 16) | ratio;
+        auto it = morphs.find(key);
+        if (it != morphs.end()) {
+            return &it->second;
+        }
+        auto def = index.defs.find(id);
+        Shape s;
+        if (def == index.defs.end() || !MorphParser(def->second, ratio).parse(s)) {
+            SDL_Log("Import: morph shape %u could not be read", id);
+            s.layers.clear();
+        }
+        return &morphs.emplace(key, std::move(s)).first->second;
     }
 
     const TimelineData *timeline(uint16_t id)
@@ -702,14 +991,15 @@ struct Rasterizer::Impl {
     }
 
     // Adds the fill geometry of a character (shape, or sprite frame 0 recursively) to the current path.
-    void addMaskGeometry(plutovg_canvas_t *cv, uint16_t id, const Xform &m, int depth)
+    void addMaskGeometry(plutovg_canvas_t *cv, uint16_t id, const Xform &m, int depth, uint16_t ratio = 0)
     {
         auto kind = index.chars.find(id);
         if (kind == index.chars.end() || depth > 32) {
             return;
         }
-        if (kind->second == KindShape) {
-            for (const Layer &layer : shape(id)->layers) {
+        if (kind->second == KindShape || kind->second == KindMorph) {
+            const Shape *s = kind->second == KindShape ? shape(id) : morph(id, ratio);
+            for (const Layer &layer : s->layers) {
                 for (const auto &edges : layer.fillEdges) {
                     if (!edges.empty()) {
                         for (const auto &loop : contours(edges)) {
@@ -722,7 +1012,8 @@ struct Rasterizer::Impl {
             if (const TimelineData *tl = timeline(id)) {
                 for (const auto &t : tl->tracks) {
                     if (t->first <= 0 && t->last >= 0 && t->clipDepth == 0) {
-                        addMaskGeometry(cv, t->charId, m * fromMatrix(keyAt(*t, 0).matrix), depth + 1);
+                        const Key &key = keyAt(*t, 0);
+                        addMaskGeometry(cv, t->charId, m * fromMatrix(key.matrix), depth + 1, key.ratio.value_or(0));
                     }
                 }
             }
@@ -741,7 +1032,8 @@ struct Rasterizer::Impl {
     }
 
     // Draws frame `frame` of a sprite; nested sprites show their first frame (as freshly placed instances).
-    void drawCharacter(plutovg_canvas_t *cv, uint16_t id, int frame, const Xform &m, const ColorX &cx, int depth)
+    void drawCharacter(plutovg_canvas_t *cv, uint16_t id, int frame, const Xform &m, const ColorX &cx, int depth,
+                       uint16_t ratio = 0)
     {
         auto kind = index.chars.find(id);
         if (kind == index.chars.end() || depth > 32) {
@@ -749,6 +1041,10 @@ struct Rasterizer::Impl {
         }
         if (kind->second == KindShape) {
             drawShape(cv, *shape(id), m, cx);
+            return;
+        }
+        if (kind->second == KindMorph) {
+            drawShape(cv, *morph(id, ratio), m, cx);
             return;
         }
         if (kind->second == KindBitmap) {
@@ -770,7 +1066,7 @@ struct Rasterizer::Impl {
             return;
         }
         if (kind->second != KindSprite) {
-            return; // text, buttons and morphs are not part of the sheets
+            return; // text and buttons are not part of the sheets
         }
         const TimelineData *tl = timeline(id);
         if (!tl) {
@@ -795,7 +1091,7 @@ struct Rasterizer::Impl {
                 plutovg_canvas_save(cv);
                 plutovg_canvas_new_path(cv);
                 plutovg_canvas_set_fill_rule(cv, PLUTOVG_FILL_RULE_NON_ZERO);
-                addMaskGeometry(cv, t->charId, child, depth + 1);
+                addMaskGeometry(cv, t->charId, child, depth + 1, key.ratio.value_or(0));
                 plutovg_canvas_clip(cv);
                 plutovg_canvas_new_path(cv);
                 maskEnds.push_back(t->clipDepth);
@@ -805,7 +1101,7 @@ struct Rasterizer::Impl {
             if (childCx.mult[3] <= 0 && childCx.add[3] <= 0) {
                 continue;
             }
-            drawCharacter(cv, t->charId, 0, child, childCx, depth + 1);
+            drawCharacter(cv, t->charId, 0, child, childCx, depth + 1, key.ratio.value_or(0));
         }
         while (!maskEnds.empty()) {
             plutovg_canvas_restore(cv);
@@ -814,15 +1110,15 @@ struct Rasterizer::Impl {
     }
 
     // Bounds of a character in its own space (shape rects, as Flash's DisplayObject bounds; masks clip).
-    Bounds bounds(uint16_t id, int frame, const Xform &m, int depth)
+    Bounds bounds(uint16_t id, int frame, const Xform &m, int depth, uint16_t ratio = 0)
     {
         Bounds out;
         auto kind = index.chars.find(id);
         if (kind == index.chars.end() || depth > 32) {
             return out;
         }
-        if (kind->second == KindShape) {
-            const Rect &r = shape(id)->bounds;
+        if (kind->second == KindShape || kind->second == KindMorph) {
+            const Rect &r = kind->second == KindShape ? shape(id)->bounds : morph(id, ratio)->bounds;
             const float xs[2] = {static_cast<float>(r.xmin / 20.0), static_cast<float>(r.xmax / 20.0)};
             const float ys[2] = {static_cast<float>(r.ymin / 20.0), static_cast<float>(r.ymax / 20.0)};
             for (float x : xs) {
@@ -845,7 +1141,8 @@ struct Rasterizer::Impl {
             if (frame < t->first || frame > t->last || t->clipDepth > 0) {
                 continue;
             }
-            const Bounds b = bounds(t->charId, 0, m * fromMatrix(keyAt(*t, frame).matrix), depth + 1);
+            const Key &key = keyAt(*t, frame);
+            const Bounds b = bounds(t->charId, 0, m * fromMatrix(key.matrix), depth + 1, key.ratio.value_or(0));
             if (!b.empty()) {
                 out.add(b.x0, b.y0);
                 out.add(b.x1, b.y1);
@@ -972,22 +1269,26 @@ bool Rasterizer::exportSheets(const std::string &dir, const std::vector<std::str
             }
             const int lw = logical.empty() ? 0 : static_cast<int>(std::ceil(logical.x1 - logical.x0));
             const int lh = logical.empty() ? 0 : static_cast<int>(std::ceil(logical.y1 - logical.y0));
-            const int w = std::max(1, static_cast<int>(std::ceil((content.x1 - content.x0) * s)));
-            const int h = std::max(1, static_cast<int>(std::ceil((content.y1 - content.y0) * s)));
+            // The PNG starts at a whole stage pixel, so at every scale its origin falls on a texture pixel: the
+            // tilesheet parts are pasted (and every sheet blitted) without resampling, which smeared the cell
+            // edges of the tilesheets into faint seams.
+            const float ox = std::floor(content.x0), oy = std::floor(content.y0);
+            const int w = std::max(1, static_cast<int>(std::ceil((content.x1 - ox) * s)));
+            const int h = std::max(1, static_cast<int>(std::ceil((content.y1 - oy) * s)));
             if (w > 16384 || h > 16384) {
                 SDL_Log("Import: sheet %s too large (%dx%d), skipped", name.c_str(), w, h);
                 continue;
             }
             plutovg_surface_t *surface = plutovg_surface_create(w, h);
             plutovg_canvas_t *cv = plutovg_canvas_create(surface);
-            const Xform m{s, 0, 0, s, -content.x0 * s, -content.y0 * s};
+            const Xform m{s, 0, 0, s, -ox * s, -oy * s};
             impl_->drawCharacter(cv, id, 0, m, ColorX{}, 0);
             plutovg_canvas_destroy(cv);
             savePng(surface, vecDir + name + ".png");
             plutovg_surface_destroy(surface);
             char line[384];
-            SDL_snprintf(line, sizeof(line), "%s %g %g vector %d %d\n", name.c_str(), static_cast<double>(content.x0),
-                         static_cast<double>(content.y0), lw, lh);
+            SDL_snprintf(line, sizeof(line), "%s %g %g vector %d %d\n", name.c_str(), static_cast<double>(ox),
+                         static_cast<double>(oy), lw, lh);
             indexText += line;
         }
         if (tick && !tick(i + 1, names.size())) {

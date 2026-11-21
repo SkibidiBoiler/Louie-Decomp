@@ -7,6 +7,10 @@
 #include "game/papaGame/models/objects/GameObject1.h"
 #include "game/papaGame/models/objects/GameObject8.h"
 #include "game/papaGame/models/objects/GameObject9.h"
+#include "game/papaGame/models/objects/GameObject10.h"
+#include "game/papaGame/models/objects/GameObject11.h"
+#include "game/papaGame/models/objects/GameObject26.h"
+#include "game/papaGame/models/objects/GameObject27.h"
 #include "game/papaGame/models/objects/GameObject12.h"
 #include "game/papaGame/models/objects/GameObject13.h"
 #include "game/papaGame/models/objects/GameObject14.h"
@@ -48,6 +52,8 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 7: return std::make_unique<GameObject7>(gameObj);
     case 8: return std::make_unique<GameObject8>(gameObj);
     case 9: return std::make_unique<GameObject9>(gameObj);
+    case 10: return std::make_unique<GameObject10>(gameObj);
+    case 11: return std::make_unique<GameObject11>(gameObj);
     case 12: return std::make_unique<GameObject12>(gameObj);
     case 13: return std::make_unique<GameObject13>(gameObj);
     case 14: return std::make_unique<GameObject14>(gameObj);
@@ -60,6 +66,8 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 23: return std::make_unique<GameObject23>(gameObj);
     case 24: return std::make_unique<GameObject24>(gameObj);
     case 25: return std::make_unique<GameObject25>(gameObj);
+    case 26: return std::make_unique<GameObject26>(gameObj);
+    case 27: return std::make_unique<GameObject27>(gameObj);
     case 28: return std::make_unique<GameObject28>(gameObj);
     case 29: return std::make_unique<GameObject29>(gameObj);
     case 30: return std::make_unique<GameObject30>(gameObj);

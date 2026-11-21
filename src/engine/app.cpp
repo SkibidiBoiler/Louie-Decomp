@@ -45,6 +45,7 @@ SDL_AppResult App::init(int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
     settings_.load();
+    options_.applySettings();
     audio_.open();
     lang_.select(settings_.language);
     for (int i = 1; i < argc; ++i) {
@@ -53,6 +54,9 @@ SDL_AppResult App::init(int argc, char *argv[])
         }
         for (const char *dev : {"--level", "--room", "--at", "--input", "--trace", "--walk-test", "--customer"}) {
             devDirect_ = devDirect_ || std::strcmp(argv[i], dev) == 0;
+        }
+        if (std::strcmp(argv[i], "--options") == 0) { // DEV: start with the options menu open
+            options_.setOpen(true);
         }
         if (std::strcmp(argv[i], "--lang") == 0 && i + 1 < argc) { // DEV: interface language
             lang_.select(argv[i + 1]);
@@ -320,6 +324,11 @@ void App::tickLevel()
             }
         }
     }
+    // AS: keyDownListener — pressing left or right on a ladder hops off it. Port: on the press only (Flash also
+    // repeats it with the system's key repeat while the key is held).
+    if ((actions[Action::Left] && !controls.keyPressedLeft) || (actions[Action::Right] && !controls.keyPressedRight)) {
+        controls.jumpPlayerOnLadder();
+    }
     controls.keyPressedLeft = actions[Action::Left];
     controls.keyPressedRight = actions[Action::Right];
     controls.keyPressedUp = actions[Action::Up];
@@ -475,6 +484,9 @@ void App::showSymbol(int index)
 
 SDL_AppResult App::event(const SDL_Event &ev)
 {
+    if (mode_ == Mode::Level && optionsEvent(ev)) {
+        return SDL_APP_CONTINUE; // used by the options menu or its button
+    }
     input_.event(ev, window_);
     // The pointer in stage coordinates, for the menus (mouse, or the first finger).
     if (ev.type == SDL_EVENT_MOUSE_MOTION || ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
@@ -523,6 +535,13 @@ SDL_AppResult App::event(const SDL_Event &ev)
         }
     }
     switch (ev.type) {
+    case SDL_EVENT_DISPLAY_CURRENT_MODE_CHANGED:
+    case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+        // Android switches the panel (e.g. to 120 Hz) after the window opens: keep the shown rate current.
+        if (const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(window_))) {
+            displayHz_ = mode->refresh_rate;
+        }
+        break;
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
     case SDL_EVENT_KEY_DOWN:
@@ -605,6 +624,37 @@ SDL_AppResult App::event(const SDL_Event &ev)
     return SDL_APP_CONTINUE;
 }
 
+// The options menu and its gear button get the pointer and the keys first. Window coordinates are turned into
+// the renderer's output pixels, where the menu is drawn.
+bool App::optionsEvent(const SDL_Event &ev)
+{
+    int w = 0, h = 0, pw = 0, ph = 0;
+    SDL_GetWindowSize(window_, &w, &h);
+    SDL_GetRenderOutputSize(renderer_, &pw, &ph);
+    if (w <= 0 || h <= 0) {
+        return false;
+    }
+    const float kx = static_cast<float>(pw) / static_cast<float>(w), ky = static_cast<float>(ph) / static_cast<float>(h);
+    options_.setOriginalRate(static_cast<int>(std::lround(stage_.frameRate)));
+    switch (ev.type) {
+    case SDL_EVENT_KEY_DOWN:
+        return options_.key(ev.key.key);
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        return ev.button.button == SDL_BUTTON_LEFT && options_.pointerDown(ev.button.x * kx, ev.button.y * ky, pw, ph);
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        return ev.button.button == SDL_BUTTON_LEFT && options_.pointerUp(ev.button.x * kx, ev.button.y * ky, pw, ph);
+    case SDL_EVENT_FINGER_DOWN:
+        return options_.pointerDown(ev.tfinger.x * static_cast<float>(pw), ev.tfinger.y * static_cast<float>(ph), pw, ph);
+    case SDL_EVENT_FINGER_UP:
+        return options_.pointerUp(ev.tfinger.x * static_cast<float>(pw), ev.tfinger.y * static_cast<float>(ph), pw, ph);
+    case SDL_EVENT_MOUSE_MOTION:
+    case SDL_EVENT_FINGER_MOTION:
+        return options_.isOpen();
+    default:
+        return false;
+    }
+}
+
 void App::tap(float winX, float winY)
 {
     int w = 0, h = 0;
@@ -681,6 +731,9 @@ SDL_AppResult App::iterate()
 
 void App::tick()
 {
+    if (options_.isOpen()) {
+        return; // the options menu pauses the game
+    }
     ++frame_;
     if (game_) {
         game_->runPending(); // may end the level
@@ -780,9 +833,13 @@ void App::render(float alpha)
         int pw = 0, ph = 0;
         SDL_GetRenderOutputSize(renderer_, &pw, &ph);
         input_.touch.render(renderer_, pw, ph);
+        options_.setOriginalRate(static_cast<int>(std::lround(stage_.frameRate)));
+        options_.render(renderer_, text_, pw, ph);
         SDL_SetRenderLogicalPresentation(renderer_, lw, lh, lmode);
     }
-    renderOverlay();
+    if (settings_.showOverlay) {
+        renderOverlay();
+    }
     const bool captureNow = captureFrame_ > 0 ? frame_ >= captureFrame_ : SDL_GetTicksNS() - startNs_ > 3000000000ull;
     if (!capturePath_.empty() && captureNow) {
         captureFrame();
