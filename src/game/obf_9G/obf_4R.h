@@ -107,7 +107,8 @@ public:
     // Port: keyboard text for a screen's text input (the name entry): set while one has focus.
     std::function<void(const std::string &)> onTextInput;
     std::function<void(int key)> onKeyDown; // SDL keycode
-    void renderScreens(engine::RenderContext &ctx);
+    // `offsetX`: where the stage's x = 0 is drawn (the widescreen option centres the screens).
+    void renderScreens(engine::RenderContext &ctx, float offsetX = 0);
 
     SDL_Renderer *renderer = nullptr; // port
     const engine::SymbolLibrary *symbols = nullptr; // port

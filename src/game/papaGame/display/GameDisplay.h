@@ -37,6 +37,10 @@ public:
     // `alpha` interpolates the camera and animated offsets between the last two logic frames; with
     // `smooth` the camera is not snapped to whole stage pixels (port option, off = original look).
     void redrawScreen(float alpha, bool smooth);
+    // Port (widescreen option): stage pixels shown beyond each side of the 700-px screen. redrawScreen draws
+    // that much more of the room at the left and right, with the screen's x = 0 at viewExtraX; the bounds the
+    // game logic reads (currentXcoord, screenPxWidth, the tile bounds) stay the original ones. 0 = original.
+    double viewExtraX = 0;
 
     void reblitSky();
     void reblitBackdrop();
@@ -133,6 +137,7 @@ private:
     // Port: the visible tiles, drawn texel-exact before being placed on screen (stands in for tileBMP).
     SDL_Texture *tileLayer_ = nullptr;
     float tileLayerScale_ = 0.0f;
+    double tileLayerWidth_ = 0;
 };
 
 } // namespace papaGame::display

@@ -175,6 +175,9 @@ void OptionsMenu::change(int row, int dir)
     case Interpolation:
         settings_.interpolation = !settings_.interpolation;
         break;
+    case Widescreen:
+        settings_.widescreen = !settings_.widescreen;
+        break;
     case Language: {
         int i = 0;
         for (int j = 0; j < 3; ++j) {
@@ -210,6 +213,7 @@ const char *OptionsMenu::labelKey(int row) const
     switch (row) {
     case Fps: return "options.fps";
     case Interpolation: return "options.interpolation";
+    case Widescreen: return "options.widescreen";
     case Language: return "options.language";
     case TouchOpacity: return "options.touch_opacity";
     case TouchSize: return "options.touch_size";
@@ -230,9 +234,13 @@ std::string OptionsMenu::valueText(int row) const
         }
         return std::to_string(settings_.fpsCap);
     case Interpolation:
-    case Overlay:
-        return lang_.get((row == Interpolation ? settings_.interpolation : settings_.showOverlay) ? "options.on"
-                                                                                                    : "options.off");
+    case Widescreen:
+    case Overlay: {
+        const bool on = row == Interpolation ? settings_.interpolation
+                        : row == Widescreen  ? settings_.widescreen
+                                             : settings_.showOverlay;
+        return lang_.get(on ? "options.on" : "options.off");
+    }
     case Language:
         if (settings_.language.empty()) {
             return lang_.get("options.language_system");

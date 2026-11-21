@@ -193,24 +193,25 @@ bool MenuBar::update(const PointerState &pointer, const std::function<void(const
     return hit >= 0 || overTop || overBottom;
 }
 
-void MenuBar::render(const RenderContext &ctx) const
+void MenuBar::render(const RenderContext &ctx, float offsetX) const
 {
+    const Affine stage = Affine::translate(offsetX, 0);
     if (!active_) {
         return;
     }
     if (top_) {
-        top_->render(ctx, Affine::translate(0, topY_), ColorTransform{});
+        top_->render(ctx, Affine::translate(offsetX, topY_), ColorTransform{});
     }
     if (bottom_) {
-        bottom_->render(ctx, Affine::translate(0, bottomY_), ColorTransform{});
+        bottom_->render(ctx, Affine::translate(offsetX, bottomY_), ColorTransform{});
     }
     const bool tabs = std::any_of(buttons_.begin(), buttons_.end(),
                                   [](const Button &b) { return b.item.kind == Kind::Tab; });
     if (text_ && !title_.empty() && !tabs) {
-        text_->drawString(kFont, 24, title_, kStageWidth / 2, 32, rgb(0xAFAFAE), 2, Affine{});
+        text_->drawString(kFont, 24, title_, kStageWidth / 2, 32, rgb(0xAFAFAE), 2, stage);
     }
     for (const Button &b : buttons_) {
-        const Affine at = Affine::translate(b.x, b.y + (b.down ? 1.0f : 0.0f));
+        const Affine at = stage * Affine::translate(b.x, b.y + (b.down ? 1.0f : 0.0f));
         for (size_t i = 0; i < b.pieces.size(); ++i) {
             b.pieces[i]->render(ctx, at * Affine::translate(static_cast<float>(i) * b.piece, 0), ColorTransform{});
         }

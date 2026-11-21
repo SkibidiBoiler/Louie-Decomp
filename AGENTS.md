@@ -123,6 +123,8 @@ build\windows\louieattack.exe --data "C:/Users/alfre/Proyectos/datos-papas/build
 #   PL2 está en el escenario ~110,130 y tocarla seleccionada la abre); --game pl2 salta el selector. --lang es: idioma
 #   de la interfaz; --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por
 #   texto, también en el selector;
+#   --window WxH: tamaño de la ventana (1600x720 simula el móvil; con la opción "Pantalla ancha" el nivel ocupa
+#   todo el ancho);
 #   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. Partidas guardadas de Windows:
 #   %APPDATA%\SkibidiBoiler\LouieAttackDecomp\saves\PapaLouie2_<ranura>.json
 # Progreso de la traducción (funciones y líneas del AS con su `// AS:` en src/game; solo local, sin tokens):

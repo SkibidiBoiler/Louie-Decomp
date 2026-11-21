@@ -95,7 +95,13 @@ SDL_AppResult App::init(int argc, char *argv[])
 #if defined(SDL_PLATFORM_ANDROID)
     flags |= SDL_WINDOW_FULLSCREEN;
 #endif
-    if (!SDL_CreateWindowAndRenderer("Louie Attack Decomp", stage_.width * 2, stage_.height * 2, flags,
+    int winW = stage_.width * 2, winH = stage_.height * 2;
+    for (int i = 1; i + 1 < argc; ++i) {
+        if (std::strcmp(argv[i], "--window") == 0) { // DEV: window size, e.g. 1600x720 to look like a phone
+            std::sscanf(argv[i + 1], "%dx%d", &winW, &winH);
+        }
+    }
+    if (!SDL_CreateWindowAndRenderer("Louie Attack Decomp", winW, winH, flags,
                                      &window_, &renderer_)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window/renderer creation failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;
@@ -639,6 +645,7 @@ SDL_AppResult App::event(const SDL_Event &ev)
             pointer_.x = local.button.x;
             pointer_.y = local.button.y;
         }
+        pointer_.x -= viewExtra_; // widescreen: logical -> stage coordinates
         const bool isDown = ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN || ev.type == SDL_EVENT_FINGER_DOWN;
         const bool isUp = ev.type == SDL_EVENT_MOUSE_BUTTON_UP || ev.type == SDL_EVENT_FINGER_UP;
         if (isDown && (finger || ev.button.button == SDL_BUTTON_LEFT)) {
@@ -728,7 +735,7 @@ SDL_AppResult App::event(const SDL_Event &ev)
             // Window pixels -> stage pixels.
             int w = 0, h = 0;
             SDL_GetWindowSize(window_, &w, &h);
-            const float k = std::max(static_cast<float>(stage_.width) / static_cast<float>(w),
+            const float k = std::max((static_cast<float>(stage_.width) + 2 * viewExtra_) / static_cast<float>(w),
                                      static_cast<float>(stage_.height) / static_cast<float>(h));
             dragX_ += ev.motion.xrel * k;
             dragY_ += ev.motion.yrel * k;
@@ -896,7 +903,7 @@ void App::stageToPixels(float sx, float sy, float &px, float &py) const
     SDL_GetWindowSize(window_, &w, &h);
     SDL_GetRenderOutputSize(renderer_, &pw, &ph);
     float wx = 0, wy = 0;
-    SDL_RenderCoordinatesToWindow(renderer_, sx, sy, &wx, &wy);
+    SDL_RenderCoordinatesToWindow(renderer_, sx + viewExtra_, sy, &wx, &wy);
     px = w > 0 ? wx * static_cast<float>(pw) / static_cast<float>(w) : wx;
     py = h > 0 ? wy * static_cast<float>(ph) / static_cast<float>(h) : wy;
 }
@@ -1081,11 +1088,35 @@ void App::tick()
     sargeCycle_ = (sargeCycle_ + 1) % 16;
 }
 
+void App::updatePresentation()
+{
+    float extra = 0;
+    int pw = 0, ph = 0;
+    SDL_GetRenderOutputSize(renderer_, &pw, &ph);
+    // Menus over the level (pause, results) have no art past the stage: they keep the original framing.
+    if (settings_.widescreen && mode_ == Mode::Level && game_ && game_->obf_AQ->currentScreenData &&
+        !game_->screensActive() && ph > 0) {
+        // Whole logical pixels each side; at most 2.6:1 (wider windows get the rest as bars).
+        const float wide = static_cast<float>(stage_.height) * static_cast<float>(pw) / static_cast<float>(ph);
+        extra = std::clamp(std::floor((wide - static_cast<float>(stage_.width)) / 2), 0.0f, 190.0f);
+    }
+    if (game_) {
+        game_->obf_71->viewExtraX = extra;
+    }
+    if (extra == viewExtra_) {
+        return;
+    }
+    viewExtra_ = extra;
+    SDL_SetRenderLogicalPresentation(renderer_, stage_.width + 2 * static_cast<int>(extra), stage_.height,
+                                     SDL_LOGICAL_PRESENTATION_LETTERBOX);
+}
+
 void App::render(float alpha)
 {
     if (!settings_.interpolation) {
         alpha = 1.0f; // original look: always the latest logic state
     }
+    updatePresentation();
     if (!hasData_) {
         SDL_SetRenderDrawColor(renderer_, 110, 28, 28, 255); // red: data folder missing
     } else {
@@ -1102,7 +1133,7 @@ void App::render(float alpha)
         RenderContext ctx{renderer_, &symbols_, &textures_, &text_};
         ctx.interpolate = settings_.interpolation;
         ctx.alpha = alpha;
-        game_->renderScreens(ctx);
+        game_->renderScreens(ctx, viewExtra_);
     } else if (mode_ == Mode::BlitDemo && hasData_) {
         renderBlitDemo(alpha);
     } else if (mode_ == Mode::Viewer && viewerClip_) {
