@@ -53,6 +53,10 @@ private:
     void stageToPixels(float sx, float sy, float &px, float &py) const;
     void enterLauncher();
     void buildCovers();
+    // The covers are read back from the screen, so they are made on a frame drawn in the foreground (an app
+    // started with the phone's screen off has no real back buffer: the read-back was garbage).
+    bool coversPending_ = false;
+    bool background_ = false;
     void updateLauncherMusic(float dt);
     // The port's own screens (touch buttons, options, game picker), drawn in window pixels.
     void renderWindowLayer();

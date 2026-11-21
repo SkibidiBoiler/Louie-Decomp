@@ -228,7 +228,7 @@ void App::enterLauncher()
             }
         }
     }
-    buildCovers();
+    coversPending_ = true; // made by render(), in the foreground
 }
 
 // The picker's covers: each imported game's title screen (splashScreenMC, as SplashScreen.setupScreen shows it),
@@ -630,6 +630,11 @@ void App::showSymbol(int index)
 
 SDL_AppResult App::event(const SDL_Event &ev)
 {
+    if (ev.type == SDL_EVENT_WILL_ENTER_BACKGROUND || ev.type == SDL_EVENT_DID_ENTER_BACKGROUND) {
+        background_ = true;
+    } else if (ev.type == SDL_EVENT_DID_ENTER_FOREGROUND) {
+        background_ = false;
+    }
     if ((mode_ == Mode::Level || mode_ == Mode::Launcher) && optionsEvent(ev)) {
         return SDL_APP_CONTINUE; // used by the options menu or its button
     }
@@ -1151,12 +1156,26 @@ void App::render(float alpha)
         alpha = 1.0f; // original look: always the latest logic state
     }
     updatePresentation();
+    if (coversPending_ && !background_ && mode_ == Mode::Launcher &&
+        !(SDL_GetWindowFlags(window_) & (SDL_WINDOW_HIDDEN | SDL_WINDOW_MINIMIZED | SDL_WINDOW_OCCLUDED))) {
+        coversPending_ = false;
+        buildCovers();
+    }
     if (!hasData_) {
         SDL_SetRenderDrawColor(renderer_, 110, 28, 28, 255); // red: data folder missing
+    } else if (mode_ == Mode::Level) {
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255); // the bars beside a pillarboxed game screen
     } else {
         SDL_SetRenderDrawColor(renderer_, 200, 200, 210, 255);
     }
     SDL_RenderClear(renderer_);
+    if (hasData_ && mode_ == Mode::Level) {
+        // The stage itself keeps the light background under the game's screens.
+        SDL_SetRenderDrawColor(renderer_, 200, 200, 210, 255);
+        const SDL_FRect stage{0, 0, static_cast<float>(stage_.width) + 2 * viewExtra_,
+                              static_cast<float>(stage_.height)};
+        SDL_RenderFillRect(renderer_, &stage);
+    }
 
     if (mode_ == Mode::Import) {
         importScreen_->render(renderer_, static_cast<float>(stage_.width), static_cast<float>(stage_.height));
