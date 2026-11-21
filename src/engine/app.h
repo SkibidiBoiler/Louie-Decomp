@@ -8,6 +8,7 @@
 #include "engine/audio.h"
 #include "engine/import_screen.h"
 #include "engine/input.h"
+#include "engine/launcher.h"
 #include "engine/lang.h"
 #include "engine/movieclip.h"
 #include "engine/options_menu.h"
@@ -47,6 +48,14 @@ private:
     void parseInputScript(const char *script);
     void tap(float winX, float winY);
     bool optionsEvent(const SDL_Event &ev);
+    bool launcherEvent(const SDL_Event &ev);
+    SDL_Keycode gamepadKey(const SDL_Event &ev);
+    void stageToPixels(float sx, float sy, float &px, float &py) const;
+    void enterLauncher();
+    void buildCovers();
+    void updateLauncherMusic(float dt);
+    // The port's own screens (touch buttons, options, game picker), drawn in window pixels.
+    void renderWindowLayer();
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -88,13 +97,20 @@ private:
     };
     std::vector<ScriptedTap> taps_; // DEV: --tap "x,y@frame;..." (stage coordinates, app logic frames)
     bool devDirect_ = false;   // DEV: a level test flag was given: start in the level, no menus
+    std::string devGame_;      // DEV: --game <id> (or a level test flag): skip the game picker
     int customer_ = -1; // DEV: --customer N
 
-    // DEV: what the app shows until the menus are ported. Level = PL2 level 0 with a free camera.
-    enum class Mode { Level, BlitDemo, Viewer, Import };
-    Mode mode_ = Mode::Level;
+    // What the app shows. Launcher = the port's game picker; Level = a game (its menus and levels); the others
+    // are DEV views (Tab cycles through them).
+    enum class Mode { Launcher, Level, BlitDemo, Viewer, Import };
+    Mode mode_ = Mode::Launcher;
     std::unique_ptr<obf_9G::obf_4R> game_;
     std::unique_ptr<ImportScreen> importScreen_;
+    std::unique_ptr<Launcher> launcher_;
+    // The picker's music: the selected game's title track, cross-faded when the selection changes.
+    std::shared_ptr<SoundChannel> menuMusic_, menuMusicOld_;
+    std::string menuMusicGame_;
+    int gamepadAxisX_ = 0, gamepadAxisY_ = 0; // the left stick's last direction, for menu steps (-1, 0, 1)
     float dragX_ = 0.0f, dragY_ = 0.0f; // pending camera pan from mouse/touch drags, applied in tick
     bool dragging_ = false;
     bool freeCam_ = false; // DEV: the camera stays where --cam / a room switch put it until the player moves
