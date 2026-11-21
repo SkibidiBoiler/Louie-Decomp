@@ -111,7 +111,7 @@ public:
     double balloonFXID = -1, balloonsLastFloatedAway = 0;
     std::vector<double> foodiniGlideBalloonIDs;
     std::shared_ptr<engine::SoundChannel> slideSound, poundSound;
-    double climbDir = 1, climbSpeed = 5;
+    double climbSpeed = 5;
     bool waitToEnterDoor = false;
     double doorDirX = 0, doorDirY = 0, doorXtile = 0, doorYtile = 0;
     double skidSpeed = 0, useSkidSpeed = 0, maxSkidSpeed = 8, skidTimer = 0, skidTimerInterval = 2;

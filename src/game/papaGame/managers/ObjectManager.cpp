@@ -10,6 +10,7 @@
 #include "game/papaGame/models/objects/GameObject10.h"
 #include "game/papaGame/models/objects/GameObject11.h"
 #include "game/papaGame/models/objects/GameObject26.h"
+#include "game/papaGame/models/objects/GameObject27.h"
 #include "game/papaGame/models/objects/GameObject12.h"
 #include "game/papaGame/models/objects/GameObject13.h"
 #include "game/papaGame/models/objects/GameObject14.h"
@@ -66,6 +67,7 @@ std::unique_ptr<models::GameObject> createObject(obf_9G::obf_4R *gameObj, double
     case 24: return std::make_unique<GameObject24>(gameObj);
     case 25: return std::make_unique<GameObject25>(gameObj);
     case 26: return std::make_unique<GameObject26>(gameObj);
+    case 27: return std::make_unique<GameObject27>(gameObj);
     case 28: return std::make_unique<GameObject28>(gameObj);
     case 29: return std::make_unique<GameObject29>(gameObj);
     case 30: return std::make_unique<GameObject30>(gameObj);

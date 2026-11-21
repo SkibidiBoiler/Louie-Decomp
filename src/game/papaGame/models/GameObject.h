@@ -2,6 +2,7 @@
 // AS: papaGame.models.GameObject (extends Character) — the base of GameObject1..GameObject33: ladders, blocks,
 // checkpoints, cages, blimps, switches...
 // SKELETON: grabbing / throwing / riding, pushing, stepping on objects, triggers between objects and camera pans.
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -119,6 +120,17 @@ public:
     std::vector<std::string> brokenByObjects{"all"};
     bool canTravelBetweenRooms = true;
     bool isTilingObject = false;
+    // A tiling object repeats its frame over tilingWidth x tilingHeight tiles (GameDisplay.blitTilingObject): the
+    // top row from the cap band of the sheet, the others from the no-cap band, an optional bottom cap, and an
+    // optional colour fill below.
+    double tilingWidth = 7;
+    uint32_t tilingColorFill = 4294901760; // ARGB
+    bool tilingHasCap = false;
+    double tilingCapBlitOffsetY = 0;
+    double tilingNoCapBlitOffsetY = 0;
+    bool tilingUseColorFill = true;
+    bool tilingHasBottomCap = false;
+    double tilingBottomCapBlitOffsetY = 0;
     bool isLadder = false;
     double tilingHeight = 5;
     double topCapFrame = 0;

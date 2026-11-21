@@ -136,6 +136,7 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/BlueberrySplatEffect.cpp
     src/game/papaGame/models/effects/CheeseBitEffect.cpp
     src/game/papaGame/models/effects/CheeseSplatEffect.cpp
+    src/game/papaGame/models/effects/RadishDirtEffect.cpp
     src/game/papaGame/models/effects/StuckCheeseEffect.cpp
     src/game/papaGame/models/effects/ChiliBitEffect.cpp
     src/game/papaGame/models/effects/ChiliSplatEffect.cpp
@@ -206,6 +207,7 @@ set(PL_SOURCES
     src/game/papaGame/models/objects/GameObject24.cpp
     src/game/papaGame/models/objects/GameObject25.cpp
     src/game/papaGame/models/objects/GameObject26.cpp
+    src/game/papaGame/models/objects/GameObject27.cpp
     src/game/papaGame/models/objects/GameObject28.cpp
     src/game/papaGame/models/objects/GameObject2.cpp
     src/game/papaGame/models/enemies/Enemy1.cpp
@@ -227,10 +229,14 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy13.cpp
     src/game/papaGame/models/enemies/Enemy18.cpp
     src/game/papaGame/models/enemies/Enemy19.cpp
+    src/game/papaGame/models/enemies/Enemy20.cpp
     src/game/papaGame/models/enemies/Enemy21.cpp
+    src/game/papaGame/models/enemies/Enemy22.cpp
     src/game/papaGame/models/enemies/Enemy25.cpp
     src/game/papaGame/models/enemies/Enemy26.cpp
     src/game/papaGame/models/enemies/Enemy27.cpp
+    src/game/papaGame/models/enemies/Enemy28.cpp
+    src/game/papaGame/models/enemies/Enemy29.cpp
     src/game/papaGame/models/enemies/Enemy31.cpp
     src/game/papaGame/models/enemies/Enemy32.cpp
     src/game/papaGame/models/enemies/Enemy35.cpp

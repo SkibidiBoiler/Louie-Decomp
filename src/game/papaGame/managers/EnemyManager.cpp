@@ -20,9 +20,13 @@
 #include "game/papaGame/models/enemies/Enemy13.h"
 #include "game/papaGame/models/enemies/Enemy18.h"
 #include "game/papaGame/models/enemies/Enemy19.h"
+#include "game/papaGame/models/enemies/Enemy20.h"
 #include "game/papaGame/models/enemies/Enemy21.h"
+#include "game/papaGame/models/enemies/Enemy22.h"
 #include "game/papaGame/models/enemies/Enemy25.h"
 #include "game/papaGame/models/enemies/Enemy27.h"
+#include "game/papaGame/models/enemies/Enemy28.h"
+#include "game/papaGame/models/enemies/Enemy29.h"
 #include "game/papaGame/models/enemies/Enemy31.h"
 #include "game/papaGame/models/enemies/Enemy26.h"
 #include "game/papaGame/models/enemies/Enemy32.h"
@@ -60,10 +64,14 @@ std::unique_ptr<models::Enemy> createEnemy(obf_9G::obf_4R *gameObj, double type)
     case 13: return std::make_unique<Enemy13>(gameObj);
     case 18: return std::make_unique<Enemy18>(gameObj);
     case 19: return std::make_unique<Enemy19>(gameObj);
+    case 20: return std::make_unique<Enemy20>(gameObj);
     case 21: return std::make_unique<Enemy21>(gameObj);
+    case 22: return std::make_unique<Enemy22>(gameObj);
     case 25: return std::make_unique<Enemy25>(gameObj);
     case 26: return std::make_unique<Enemy26>(gameObj);
     case 27: return std::make_unique<Enemy27>(gameObj);
+    case 28: return std::make_unique<Enemy28>(gameObj);
+    case 29: return std::make_unique<Enemy29>(gameObj);
     case 31: return std::make_unique<Enemy31>(gameObj);
     case 32: return std::make_unique<Enemy32>(gameObj);
     case 35: return std::make_unique<Enemy35>(gameObj);

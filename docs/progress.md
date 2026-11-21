@@ -463,3 +463,16 @@ corner (or F1) opens a translucent panel, in the touch buttons' style, with the 
 language, button transparency and size, and the FPS line; saved to settings.ini at once; the game pauses while it is
 open (DEV `--options` starts with it open). The shown display rate follows Android's mode switch (the window asks
 for the panel's fastest mode, and the POCO does switch to 120 Hz with the app in front).
+
+(43) The Saucelands (`--level 6`): `Enemy20` Thorn Shroom (the Blue Shroom's duck cycle, cannot be stunned: its
+thorns hurt a stomping player), `Enemy22` Bacobar (a tall bacon wall walking between two columns: hits make it
+wobble and a player inside it is pushed out 16 px and hurt; stomped on its top it crunches to half height and runs
+faster, and only then can be beaten), `Enemy28` Radish (walks after the player; a planted one has no hit box until
+the player is near, then pops out throwing `RadishDirtEffect` clods), `Enemy29` Laddish (climbs up and down a
+ladder; knocked off, it climbs again once recovered); `GameObject27` BBQ quicksauce (a tiling pool: the player sinks
+1 px a frame and walks at the quicksand speed 5; enemies in it are swallowed) and `GameDisplay.blitTilingObject`
+(the tiling objects were drawn as plain sprites). `climbDir` moves from CustomerChar to Character, as in the original.
+Checked by trace: room 0 the pool (`--at 123,17`, capture), room 2 a Bacobar pushes and hurts the player
+(`--at 124,35`, capture), the planted radishes pop out (`--at 118,5`), room 3 the Laddish climbs and turns at the
+ladder's end (`--at 15,15`) and the Thorn Shrooms turn and duck (`--at 22,66`). Not checked: crunching a Bacobar,
+knocking a Laddish off its ladder.

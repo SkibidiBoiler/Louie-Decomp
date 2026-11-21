@@ -157,6 +157,7 @@ public:
 
     // getMyCorners results
     double downY = 0, upY = 0, standupY = 0, standupmidY = 0, leftX = 0, rightX = 0;
+    double climbDir = 1;
     double midY = 0, downmidY = 0, upmidY = 0;
     bool HitUpLeft = false, HitDownLeft = false, HitUpRight = false, HitDownRight = false;
     bool HitMidLeft = false, HitMidRight = false, HitUpMidLeft = false, HitUpMidRight = false;
