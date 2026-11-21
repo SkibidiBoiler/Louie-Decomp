@@ -558,3 +558,92 @@ port). Engine: `MovieClip::addChildAtBottom` (addChildAt 0, under the timeline c
 `PlayerStunSparkleEffect` translated and registered (PL2 never adds it; build checked only). Checked: capture of
 the intro at frame 70 (`--level 8`) and the trace of the level starting after it. Progress: 79.9 % of functions,
 87.1 % of lines.
+
+(50) `ParadeScreen` and `GameOutroScreen`: after the last boss (StageOutroScreen of level 8) every unlocked customer
+marches across in roster order (running puppets with weapons; the next one starts when the newest is 200 px in, or
+80 px when they share a skill), then an iris opens the ending: the unlocked customers posed in three rows around Papa
+Louie under "The End"; after 250 frames the EndOfDay tally. obf_4R obf_14 (the SKELETON that showed the tally is
+gone), obf_3q, obf_49, obf_2r. QUIRK kept: releaseNextGroup's group size is an unset local, so marchers are never
+staggered. DEV `--parade N` shows it at app frame N. Checked: captures of the parade (Marty and Rita) and of the
+ending. Not checked: the walking/waving parade (showWeapons false, only from the API menu), the hand-over to the
+tally. Progress: 80.9 % of functions, 88.9 % of lines.
+
+(51) Challenge drop-down: ChallengeManager checkForDisplayingDropdown, animateBadgeDropdown, clickBadgeDropdown
+(the queued treasure, challenge or badge eases down from the top, stays 150 frames or until clicked, goes up, and the
+next follows; QUIRK kept: a treasure's panel gets neither part set up), getChallengeTitle / Description /
+RewardAmount, getBadgeTally / TallyString, shouldLockBadge (Challenge gets requiredCustomers / requiredLevel and
+getRewardAmount). The original adds the drop-down to the game object itself: the port's `obf_4R::rootClips` holds it
+above the screens and takes the pointer when it is under it. Checked: rescuing Prudence in Leaf Landing shows
+"Challenge Complete! Rescued Prudence!" (capture) with getstar.wav. Not checked: a badge's panel. Progress: 81.4 % of
+functions, 89.3 % of lines.
+
+(52) `tools/progress.py` leaves out what the port drops or replaces on purpose (EXCLUDED: online services, sponsor
+and loading screens, Flash bitmap drawing and asset loading, the never-created RocketBBQ / RocketMustard): 126
+functions, 1423 lines; `--excluded` lists them with the reason. Progress over the ported scope: 86.1 % of functions,
+92.8 % of lines.
+
+(53) Menu BADGES tab: MainMenuScreen setupMedals, populateMedals, clickNextMedals, clickPrevMedals,
+animateMedalsTransition, clickMedals; the tab is on the main and pause menu bars ("clickMedals"). Eight badges a
+page with title, description and tally, reward, points, picture and earned mark; locked ones show "Hidden Badge"
+(port texts badge.* in lang/). Not drawn: the grey (ColorMatrixFilter) on unearned badges. The drop-down's reward and
+points texts use the same keys. Checked: captures of pages 1 and 2 from the pause menu. Progress: 86.4 % of functions,
+93.1 % of lines.
+
+(54) Menu BADDIES tab: MainMenuScreen setupBaddies, clickEnemyThumb, selectEnemy, clickBaddies, the roll-over /
+roll-out of the thumbnails; DataManager enemyKey (from datamanager.json), getEnemyName, getEnemyClipName,
+getEnemyIDFromIndex. The thumbnails are the enemythumb_<clip> clips themselves (the original draws them into one
+bitmap with a drop shadow: generateEnemyBitmap / getEnemyBitmap, now in progress.py's EXCLUDED). Port texts
+baddies.* in lang/. The tab is on the main and pause menu bars. Checked: after killing three Red Tomatoes in Leaf
+Landing the tab shows 1/33, the tomato's thumbnail, picture and "Derrotados: 3" (capture). Progress: 86.8 % of
+functions, 93.6 % of lines.
+
+(55) Menu CONTROLS tab: MainMenuScreen setupControls, clickControlsButton, cancelSettingControls (also when leaving
+the section), controlsKeyListener, the buttons' roll-over / roll-out, clickControls; the tab is on the main and pause
+menu bars. The keyboard now follows the player's keys: engine `Input::keyBindings` (Flash key codes, set from UserData
+every frame) with `flashKeyToScancode` / `scancodeToFlashKey`; the port's extra keys (W A S D, Z, X) work while no game
+key uses them. While the tab waits for a key, the app sends the next key to `obf_4R::keyDown` (the original's stage
+KEY_DOWN listener). Checked: capture of the tab with the six keys. Not checked: changing a key (no scripted raw keys).
+The key labels' missing letters are fixed (see 57). Progress: 87.1 % of functions, 93.9 % of lines.
+
+(56) Menu HELP tab: MainMenuScreen setupHelp, setupHelpKeys (also when the section opens), showHelp, clickHelpTab,
+the tabs' roll-over / roll-out, the two scroll bars (click / hold / release of the arrows, click / drag / release of
+the dragger, for the tab list and the page), clickHelp. The 18 topic names are port texts (help.topic1..18 in lang/).
+Port: drags keep the grab offset (startDrag), the stage MOUSE_UP is the pointer going up, `obf_4R::pointer` holds the
+frame's pointer; moving a timeline child vertically keeps its timeline x (setChildY). QUIRK kept:
+releaseHelpMainArrow clears helpTabScrollDir. Not ported: the `useSection: "help"` parameter (never sent). Checked:
+captures of topics 1 and 2 (Attacking shows the player's Space key). Not checked: the scroll bars. The pause bar's six tabs fit (see 57). Progress: 88.0 % of functions, 94.5 % of lines.
+
+(57) Text and menu bar fixes: a character missing from a field's embedded font is drawn from the embedding of the
+same font with the most glyphs (Flash embeds only the characters a field was made with; the CONTROLS labels showed
+"Sace", "Let"). The menu bar's tab row starts after the back button when it would go under it, with narrower buttons
+(no side padding) when it would run off the right edge (the pause menu's six tabs). Checked: captures of the CONTROLS
+tab (Space, Up, Left, Right) and of the pause bar.
+
+(58) Fix: the sky and backdrop of a level played after another kept the first level's. The original makes a new
+BitmapManager for each level (its bgsheet / mgsheet start null); the port keeps one, and getTilesheetBitmap sets
+whichTileset before getBackgroundBitmap / getMiddlegroundBitmap ask, so they returned the old sheets. obf_6V now drops
+them. Note: worlds share backdrops in the original (bgNames / mgNames): Leaf Landing and Lettuce Lane use tilesheet1,
+Fort Onion and Sarge's Lair tilesheet2, Mount Monterey and Cheddar Hills tilesheet3, The Saucelands, BBQ Bog and
+Radley's Hideout tilesheet4, X Zone tilesheet5. The room order per world is levels.xml's roomArray (Radley's Hideout
+starts in room 2, "9-A"; Sarge's Lair's 4-F is its fourth room), as in the original. Checked by reading the code
+path; not checked by playing two levels in a row.
+
+(59) Engine fixes from the owner's phone captures: nested masks now clip (MaskLayers keeps one texture pair per
+nesting depth and composites onto the outer one; before, a mask inside masked content was skipped and its hidden art
+showed: the second portal ring in the character select's level circle). The menu bar's bottom panel hides on the
+CREDITS section when it holds no button (the credits picture reaches the bottom of the stage). Checked: captures of
+the map (unchanged) and of the credits (whole picture). Not checked: the character select (needs a save with a level
+unlocked) and the map's black cloud seen on the phone.
+
+(60) Port option "Full level intro music" (settings `wait_intro_music`, on by default; options menu): the level intro
+(StageIntroScreen, 80 frames, 2.7 s) holds its last frame until "startofday.wav" (4.5 s) ends, at most 150 frames.
+The original held that frame while it drew the player's and the caged customers' sprites over several frames, which
+let the music play out; the port draws them at once, so the level started with the music cut. With the option off
+the intro ends as soon as the sprites are ready, as before. Not checked in the game (the intro needs a save with a
+level to start).
+
+(61) `FliplineLogoScreen` (the owner asked to keep it): the Flipline Studios logo animation plays before the title
+screen at 24 fps, as in the original; at its "stopframe" label the game goes back to 30 fps and the title screen
+opens (obf_4R obf_7X / obf_4E; `obf_4R::stageFrameRate` is the original's stage.frameRate, which the app's fixed step
+follows). Its button's link to flipline.com (§_-36§) stays out (progress.py EXCLUDED), as do the analytics events.
+Checked: captures at frames 50 and 120 (the logo, "logic 24/s") and the log showing the title screen after it.

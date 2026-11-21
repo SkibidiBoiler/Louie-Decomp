@@ -2,7 +2,10 @@
 
 #include <SDL3/SDL.h>
 
+#include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <iterator>
 
 #include "game/as3.h"
 #include "game/obf_9G/obf_4R.h"
@@ -32,6 +35,10 @@ void MainMenuScreen::setupScreen()
     isOnCharSelect = params.isCharSelect;
     clip = &container->addChild(engine::MovieClip::create(*gameObj->symbols, "mainMenuMC"), "");
     gameObj->addContainerListener("clickCredits", [this] { clickCredits(); });
+    gameObj->addContainerListener("clickMedals", [this] { clickMedals(); });
+    gameObj->addContainerListener("clickBaddies", [this] { clickBaddies(); });
+    gameObj->addContainerListener("clickControls", [this] { clickControls(); });
+    gameObj->addContainerListener("clickHelp", [this] { clickHelp(); });
     gameObj->addContainerListener("clickExit", [this] { clickExit(); });
     gameObj->addContainerListener("clickCreditsRedirect", [this] { setSection("credits"); });
     gameObj->addContainerListener("clickCreditsRedirectBack", [this] { setSection("map"); });
@@ -49,8 +56,11 @@ void MainMenuScreen::setupScreen()
     if (!isOnCharSelect) {
         setupInfo();
     }
-    // SKELETON: setupBaddies, setupControls, setupHelp, setupMedals.
+    setupBaddies();
+    setupControls();
     setupCredits();
+    setupHelp();
+    setupMedals();
     setupConfirmQuit();
     if (gameObj->obf_AQ->currentScreenData == nullptr && gameObj->obf_7C->currentTrack != "otherscreens.wav") {
         gameObj->obf_7C->playTrack("AlternateTrack", 1, 0, "outin");
@@ -720,6 +730,12 @@ void MainMenuScreen::setSection(const std::string &name)
             c->setY(480);
         }
     }
+    if (currentSection == "controls") {
+        cancelSettingControls();
+    }
+    if (newSection == "help") {
+        setupHelpKeys();
+    }
     if (newSection == "map" && willRevealMap) {
         gameObj->obf_7C->playSound("checkpoint.wav");
     }
@@ -755,6 +771,7 @@ void MainMenuScreen::tweenSections()
             isTransitioning = false;
             tweening_ = false;
             gameObj->menuBar.setTitle(gameObj->lang, getSectionTitle());
+            gameObj->menuBar.setBottomHidden(currentSection == "credits"); // port: the credits fill the stage
         }
     } else if (std::abs(oldDistance) <= 1) {
         isTransitioning = false;
@@ -1103,6 +1120,732 @@ void MainMenuScreen::enterFrame()
     }
     if (updatingChar_ && clip) {
         updateCharacter();
+    }
+    if (animatingMedals_ && clip) {
+        animateMedalsTransition();
+    }
+    if (clip) {
+        updateHelp();
+    }
+}
+
+// AS: MainMenuScreen.setupBaddies — the 35 enemy thumbnails: the ones met so far are shown (met / total), the
+// first met one of Onion, Brown Onion or Kaiser Onion is selected. The original draws each thumbnail
+// (enemythumb_<clip>, with a drop shadow) into one bitmap (DataManager.generateEnemyBitmap / getEnemyBitmap); the port
+// adds the clip itself, without the shadow. (Removing the listeners, setup false, is left to the clip going away.)
+void MainMenuScreen::setupBaddies(bool setup)
+{
+    const data::UserData &user = *gameObj->obf_51;
+    const data::DataManager &dm = *gameObj->obf_AQ;
+    engine::MovieClip *baddies = section("baddies");
+    if (!setup || !baddies || dm.enemyKey.empty()) {
+        return;
+    }
+    double met = 0;
+    double total = 0;
+    for (int i = 0; i < 35; ++i) {
+        engine::MovieClip *thumb = baddies->findChild("thumb" + std::to_string(i));
+        if (!thumb) {
+            continue;
+        }
+        if (i < static_cast<int>(dm.enemyKey.size())) {
+            ++total;
+            const data::DataManager::EnemyKeyEntry &key = dm.enemyKey[static_cast<size_t>(i)];
+            for (const char *part : {"hilite", "roll", "newbanner"}) {
+                if (engine::MovieClip *c = thumb->findChild(part)) {
+                    c->setVisible(false);
+                }
+            }
+            thumb->onMouseDown = [this, i] { clickEnemyThumb(i); };
+            thumb->onRollOver = [thumb] {
+                if (engine::MovieClip *roll = thumb->findChild("roll")) {
+                    roll->setVisible(true);
+                }
+            };
+            thumb->onRollOut = [thumb] {
+                if (engine::MovieClip *roll = thumb->findChild("roll")) {
+                    roll->setVisible(false);
+                }
+            };
+            thumb->gotoAndStop(6);
+            if (key.id == 35 || key.id == 37) {
+                thumb->gotoAndStop(2);
+            }
+            if (engine::MovieClip *holder = thumb->findChild("holder")) {
+                if (auto pic = engine::MovieClip::create(*gameObj->symbols, "enemythumb_" + key.clip)) {
+                    pic->mouseEnabled = false;
+                    holder->addChild(std::move(pic), "");
+                }
+            }
+            if (user.getEnemyKills(key.id) <= 0) {
+                thumb->setVisible(false);
+            } else {
+                ++met;
+            }
+        } else {
+            thumb->setVisible(false);
+        }
+    }
+    baddies->setText("tally_txt", as3::String(met) + "/" + as3::String(total));
+    if (user.getEnemyKills(dm.enemyKey[0].id) > 0) {
+        selectEnemy(0);
+    } else if (dm.enemyKey.size() > 1 && user.getEnemyKills(dm.enemyKey[1].id) > 0) {
+        selectEnemy(1);
+    } else if (dm.enemyKey.size() > 4 && user.getEnemyKills(dm.enemyKey[4].id) > 0) {
+        selectEnemy(4);
+    } else {
+        selectEnemy(0);
+    }
+}
+
+// AS: MainMenuScreen.clickEnemyThumb (MOUSE_DOWN; the thumbnail's number comes from its instance name)
+void MainMenuScreen::clickEnemyThumb(int index)
+{
+    gameObj->obf_7C->playSound("buttonclick.wav");
+    selectEnemy(index);
+}
+
+// AS: MainMenuScreen.selectEnemy — its thumbnail lit, its name and count (encounters for Swiss Zack, bounces for
+// Jellyback), and its picture.
+void MainMenuScreen::selectEnemy(double index)
+{
+    const data::DataManager &dm = *gameObj->obf_AQ;
+    const engine::Lang &lang = *gameObj->lang;
+    engine::MovieClip *baddies = section("baddies");
+    if (!baddies) {
+        return;
+    }
+    for (int i = 0; i < 35; ++i) {
+        if (engine::MovieClip *thumb = baddies->findChild("thumb" + std::to_string(i))) {
+            if (engine::MovieClip *hilite = thumb->findChild("hilite")) {
+                hilite->setVisible(i == index);
+            }
+        }
+    }
+    baddies->setText("name_txt", dm.getEnemyName(index));
+    const double id = dm.getEnemyIDFromIndex(index);
+    const std::string kills = as3::String(gameObj->obf_51->getEnemyKills(id));
+    if (id == 25) {
+        baddies->setText("defeated_txt", lang.get("baddies.encounters", kills));
+    } else if (id == 32) {
+        baddies->setText("defeated_txt", lang.get("baddies.bounced", kills));
+    } else {
+        baddies->setText("defeated_txt", lang.get("baddies.defeated", kills));
+    }
+    if (enemyDetail != nullptr) {
+        baddies->removeChild(enemyDetail);
+        enemyDetail = nullptr;
+    }
+    if (auto detail = engine::MovieClip::create(*gameObj->symbols, "enemydetail_" + dm.getEnemyClipName(index))) {
+        detail->mouseEnabled = false;
+        detail->mouseChildren = false;
+        detail->setPosition(10, 101);
+        enemyDetail = &baddies->addChild(std::move(detail), "");
+    }
+}
+
+namespace {
+const char *const kControlKeys[][2] = {{"attack", papaGame::data::DataManager::KEY_ATTACK},
+                                       {"jump", papaGame::data::DataManager::KEY_JUMP},
+                                       {"down", papaGame::data::DataManager::KEY_DOWN},
+                                       {"up", papaGame::data::DataManager::KEY_UP},
+                                       {"left", papaGame::data::DataManager::KEY_LEFT},
+                                       {"right", papaGame::data::DataManager::KEY_RIGHT}};
+} // namespace
+
+// AS: MainMenuScreen.setupControls — each key's label and its button (click to change it; roll-over lights it).
+// (Removing the listeners, setup false, is left to the clip going away.)
+void MainMenuScreen::setupControls(bool setup)
+{
+    const data::DataManager &dm = *gameObj->obf_AQ;
+    engine::MovieClip *controls = section("controls");
+    if (!setup || !controls) {
+        return;
+    }
+    for (const auto &k : kControlKeys) {
+        const std::string which = k[0];
+        controls->setText(which + "_txt", dm.getKeyLabel(k[1]));
+        engine::MovieClip *btn = controls->findChild(which + "_btn");
+        if (!btn) {
+            continue;
+        }
+        btn->onClick = [this, which] { clickControlsButton(which); };
+        // AS: MainMenuScreen.rolloverControlsButton / rolloutControlsButton
+        btn->onRollOver = [this, btn] {
+            if (settingWhichKey == "none") {
+                btn->gotoLabel("rollover", false);
+            }
+        };
+        btn->onRollOut = [this, btn] {
+            if (settingWhichKey == "none") {
+                btn->gotoLabel("click", false);
+            }
+        };
+        btn->gotoLabel("click", false);
+    }
+}
+
+// AS: MainMenuScreen.clickControlsButton — the button asks for a key (the button's name gives the action).
+void MainMenuScreen::clickControlsButton(const std::string &which)
+{
+    if (settingWhichKey == "none") {
+        if (engine::MovieClip *btn = section("controls")->findChild(which + "_btn")) {
+            btn->gotoLabel("presskey", false);
+        }
+        settingWhichKey = which;
+    }
+}
+
+// AS: MainMenuScreen.cancelSettingControls
+void MainMenuScreen::cancelSettingControls()
+{
+    if (settingWhichKey != "none") {
+        if (engine::MovieClip *controls = section("controls")) {
+            for (const auto &k : kControlKeys) {
+                if (engine::MovieClip *btn = controls->findChild(std::string(k[0]) + "_btn")) {
+                    btn->gotoLabel("click", false);
+                }
+            }
+        }
+        settingWhichKey = "none";
+    }
+}
+
+// AS: MainMenuScreen.controlsKeyListener (KEY_DOWN) — the key is taken unless another action uses it; the labels
+// are refreshed. The "ChangedControls" analytics event is dropped.
+void MainMenuScreen::controlsKeyListener(double keyCode)
+{
+    const data::DataManager &dm = *gameObj->obf_AQ;
+    engine::MovieClip *controls = section("controls");
+    const bool ok = gameObj->obf_51->setKey(keyCode, settingWhichKey);
+    engine::MovieClip *btn = controls ? controls->findChild(settingWhichKey + "_btn") : nullptr;
+    if (ok) {
+        if (btn) {
+            btn->gotoLabel("click", false);
+        }
+        for (const auto &k : kControlKeys) {
+            controls->setText(std::string(k[0]) + "_txt", dm.getKeyLabel(k[1]));
+        }
+        keysWereChanged = true;
+    } else if (btn) {
+        btn->gotoLabel("alreadyused", false);
+    }
+    settingWhichKey = "none";
+}
+
+namespace {
+// Port: DisplayObject.height of a clip (its shapes and children, in its parent's units).
+double clipHeight(const engine::MovieClip &c)
+{
+    float minX = 1e9f, minY = 1e9f, maxX = -1e9f, maxY = -1e9f;
+    c.accumulateBounds(engine::Affine{}, minX, minY, maxX, maxY);
+    return maxY > minY ? maxY - minY : 0.0;
+}
+
+// Port: `<child>.y = y` on a timeline child: its x stays where the timeline put it.
+void setChildY(engine::MovieClip &parent, engine::MovieClip *child, const char *name, double y)
+{
+    if (!child) {
+        return;
+    }
+    if (!child->hasPosition()) {
+        engine::Affine m;
+        child->setPosition(parent.childMatrix(name, m) ? m.tx : 0.0f, static_cast<float>(y));
+    } else {
+        child->setY(static_cast<float>(y));
+    }
+}
+
+// Port: `<child>.y` of a timeline child (its position on the current frame, or the one code set).
+double childY(engine::MovieClip &parent, engine::MovieClip *child, const char *name)
+{
+    if (child && child->hasPosition()) {
+        return child->y();
+    }
+    engine::Affine m;
+    return parent.childMatrix(name, m) ? m.ty : 0.0;
+}
+} // namespace
+
+// AS: MainMenuScreen.setupHelp — the 18 topic tabs (names in the port's text tables), the key pictures, the two
+// masked, scrolled panels and their scroll bars; topic 1 shown. (The original's `useSection: "help"` parameter, which
+// opens topic 15, is never sent in the port. Removing the listeners, setup false, is left to the clip going away.)
+void MainMenuScreen::setupHelp(bool setup)
+{
+    engine::MovieClip *help = section("help");
+    engine::MovieClip *tabholder = help ? help->findChild("tabholder") : nullptr;
+    if (!setup || !tabholder) {
+        return;
+    }
+    for (int i = 1; i <= 18; ++i) {
+        engine::MovieClip *tab = tabholder->findChild("tab" + std::to_string(i));
+        if (!tab) {
+            continue;
+        }
+        tab->onMouseDown = [this, i] { clickHelpTab(i); };
+        // AS: MainMenuScreen.rolloverHelpTab / rolloutHelpTab
+        tab->onRollOver = [tab] {
+            if (engine::MovieClip *h = tab->findChild("hilite")) {
+                h->setVisible(true);
+            }
+        };
+        tab->onRollOut = [this, tab, i] {
+            if (helpIndex != i) {
+                if (engine::MovieClip *h = tab->findChild("hilite")) {
+                    h->setVisible(false);
+                }
+            }
+        };
+        tab->mouseChildren = false;
+        tab->setText("name_txt", "<b>" + gameObj->lang->get("help.topic" + std::to_string(i)) + "</b>");
+        for (const char *part : {"hilite", "arrow"}) {
+            if (engine::MovieClip *c = tab->findChild(part)) {
+                c->setVisible(false);
+            }
+        }
+    }
+    setupHelpKeys();
+    tabholder->setMask(help->findChild("tabmasker"));
+    if (engine::MovieClip *panel = help->findChild("side_scrollpanel")) {
+        if (engine::MovieClip *btn = panel->findChild("scroll_btn")) {
+            btn->onMouseDown = [this] { clickHelpTabDragger(); };
+            setChildY(*panel, btn, "scroll_btn", helpScrollStart);
+        }
+        if (engine::MovieClip *up = panel->findChild("up_btn")) {
+            up->onMouseDown = [this] { clickHelpTabArrow(-1); };
+        }
+        if (engine::MovieClip *down = panel->findChild("down_btn")) {
+            down->onMouseDown = [this] { clickHelpTabArrow(1); };
+        }
+    }
+    if (engine::MovieClip *mainpanel = help->findChild("mainpanel")) {
+        mainpanel->setMask(help->findChild("mainmasker"));
+    }
+    if (engine::MovieClip *panel = help->findChild("main_scrollpanel")) {
+        if (engine::MovieClip *btn = panel->findChild("scroll_btn")) {
+            btn->onMouseDown = [this] { clickHelpMainDragger(); };
+            setChildY(*panel, btn, "scroll_btn", helpScrollStart);
+        }
+        if (engine::MovieClip *up = panel->findChild("up_btn")) {
+            up->onMouseDown = [this] { clickHelpMainArrow(-1); };
+        }
+        if (engine::MovieClip *down = panel->findChild("down_btn")) {
+            down->onMouseDown = [this] { clickHelpMainArrow(1); };
+        }
+    }
+    showHelp(1);
+}
+
+// AS: MainMenuScreen.setupHelpKeys — the help pictures show the player's keys: an arrow, a wide key with the name,
+// or a letter key; none when the key has no label.
+void MainMenuScreen::setupHelpKeys()
+{
+    using data::DataManager;
+    static const char *const names[] = {"left", "right", "up", "down", "down2", "down3", "jump", "jump2", "attack"};
+    static const char *const keys[] = {DataManager::KEY_LEFT, DataManager::KEY_RIGHT, DataManager::KEY_UP,
+                                       DataManager::KEY_DOWN, DataManager::KEY_DOWN,  DataManager::KEY_DOWN,
+                                       DataManager::KEY_JUMP, DataManager::KEY_JUMP,  DataManager::KEY_ATTACK};
+    engine::MovieClip *help = section("help");
+    engine::MovieClip *mainpanel = help ? help->findChild("mainpanel") : nullptr;
+    if (!mainpanel) {
+        return;
+    }
+    for (size_t i = 0; i < std::size(names); ++i) {
+        engine::MovieClip *key = mainpanel->findChild(std::string("key_") + names[i]);
+        if (!key) {
+            continue;
+        }
+        const std::string label = gameObj->obf_AQ->getKeyLabel(keys[i]);
+        if (!label.empty()) {
+            key->setVisible(true);
+            if (label == "Left" || label == "Right" || label == "Up" || label == "Down") {
+                std::string lower = label;
+                for (char &c : lower) {
+                    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+                }
+                key->gotoLabel(lower, false);
+                key->setChildAlpha("letter_txt", 0);
+                key->setChildAlpha("word_txt", 0);
+            } else if (label.size() > 1) {
+                key->gotoLabel("wide", false);
+                key->setChildAlpha("letter_txt", 0);
+                key->setChildAlpha("word_txt", 1);
+                key->setText("word_txt", label);
+            } else {
+                key->gotoLabel("other", false);
+                key->setChildAlpha("letter_txt", 1);
+                key->setText("letter_txt", label);
+                key->setChildAlpha("word_txt", 0);
+            }
+        } else {
+            key->setVisible(false);
+        }
+    }
+}
+
+// AS: MainMenuScreen.showHelp — the topic's tab lit, its page at the top.
+void MainMenuScreen::showHelp(double index)
+{
+    engine::MovieClip *help = section("help");
+    if (!help) {
+        return;
+    }
+    helpIndex = index;
+    if (engine::MovieClip *tabholder = help->findChild("tabholder")) {
+        for (int i = 1; i <= 18; ++i) {
+            if (engine::MovieClip *tab = tabholder->findChild("tab" + std::to_string(i))) {
+                for (const char *part : {"hilite", "arrow"}) {
+                    if (engine::MovieClip *c = tab->findChild(part)) {
+                        c->setVisible(i == index);
+                    }
+                }
+            }
+        }
+    }
+    if (engine::MovieClip *mainpanel = help->findChild("mainpanel")) {
+        mainpanel->gotoAndStop(static_cast<int>(helpIndex));
+        setChildY(*help, mainpanel, "mainpanel", childY(*help, help->findChild("mainmasker"), "mainmasker"));
+    }
+    if (engine::MovieClip *panel = help->findChild("main_scrollpanel")) {
+        if (engine::MovieClip *btn = panel->findChild("scroll_btn")) {
+            setChildY(*panel, btn, "scroll_btn", helpScrollStart);
+        }
+    }
+}
+
+// AS: MainMenuScreen.clickHelpTab (MOUSE_DOWN; the tab's number comes from its instance name)
+void MainMenuScreen::clickHelpTab(int index)
+{
+    gameObj->obf_7C->playSound("buttonclick.wav");
+    showHelp(index);
+}
+
+// AS: MainMenuScreen.clickHelpTabArrow — the tab list scrolls while the arrow is held.
+void MainMenuScreen::clickHelpTabArrow(int dir)
+{
+    gameObj->obf_7C->playSound("buttonclick.wav");
+    helpTabScrollDir = dir;
+    holdingTabArrow_ = true;
+}
+
+// AS: MainMenuScreen.holdHelpTabArrow (ENTER_FRAME) — 8 px a frame within the mask; the scroll button follows.
+void MainMenuScreen::holdHelpTabArrow()
+{
+    engine::MovieClip *help = section("help");
+    engine::MovieClip *holder = help ? help->findChild("tabholder") : nullptr;
+    engine::MovieClip *masker = help ? help->findChild("tabmasker") : nullptr;
+    if (!holder || !masker) {
+        return;
+    }
+    const double top = childY(*help, masker, "tabmasker");
+    const double bottom = top - (clipHeight(*holder) - clipHeight(*masker));
+    double y = childY(*help, holder, "tabholder");
+    if (helpTabScrollDir == 1) {
+        y -= 8;
+    } else if (helpTabScrollDir == -1) {
+        y += 8;
+    }
+    if (y < bottom) {
+        y = bottom;
+        helpTabScrollDir = 0;
+    } else if (y > top) {
+        y = top;
+        helpTabScrollDir = 0;
+    }
+    setChildY(*help, holder, "tabholder", y);
+    const double ratio = bottom != top ? std::abs((y - top) / (bottom - top)) : 0;
+    if (engine::MovieClip *panel = help->findChild("side_scrollpanel")) {
+        if (engine::MovieClip *btn = panel->findChild("scroll_btn")) {
+            setChildY(*panel, btn, "scroll_btn", helpScrollStart + ratio * helpScrollRange);
+        }
+    }
+}
+
+// AS: MainMenuScreen.releaseHelpTabArrow (stage MOUSE_UP)
+void MainMenuScreen::releaseHelpTabArrow()
+{
+    helpTabScrollDir = 0;
+    holdingTabArrow_ = false;
+}
+
+// AS: MainMenuScreen.clickHelpTabDragger — the scroll button is dragged along its 158 px track.
+void MainMenuScreen::clickHelpTabDragger()
+{
+    gameObj->obf_7C->playSound("buttonclick.wav");
+    engine::MovieClip *btn = section("help")->findChild("side_scrollpanel")->findChild("scroll_btn");
+    dragStartPointerY_ = gameObj->pointer.y;
+    dragStartButtonY_ = btn->y();
+    draggingTab_ = true;
+}
+
+// AS: MainMenuScreen.dragHelpTabDragger (ENTER_FRAME) — the tab list follows the button.
+void MainMenuScreen::dragHelpTabDragger()
+{
+    engine::MovieClip *help = section("help");
+    engine::MovieClip *btn_parent = help->findChild("side_scrollpanel");
+    engine::MovieClip *btn = btn_parent->findChild("scroll_btn");
+    engine::MovieClip *holder = help->findChild("tabholder");
+    engine::MovieClip *masker = help->findChild("tabmasker");
+    // startDrag: the button keeps its offset to the pointer, inside Rectangle(0, 30, 0, helpScrollRange).
+    const double by = std::clamp(dragStartButtonY_ + (gameObj->pointer.y - dragStartPointerY_), 30.0,
+                                 30.0 + helpScrollRange);
+    setChildY(*btn_parent, btn, "scroll_btn", by);
+    const double ratio = (by - helpScrollStart) / helpScrollRange;
+    if (holder && masker) {
+        setChildY(*help, holder, "tabholder",
+                  childY(*help, masker, "tabmasker") - (clipHeight(*holder) - clipHeight(*masker)) * ratio);
+    }
+}
+
+// AS: MainMenuScreen.releaseHelpTabDragger (stage MOUSE_UP)
+void MainMenuScreen::releaseHelpTabDragger()
+{
+    draggingTab_ = false;
+}
+
+// AS: MainMenuScreen.clickHelpMainArrow
+void MainMenuScreen::clickHelpMainArrow(int dir)
+{
+    gameObj->obf_7C->playSound("buttonclick.wav");
+    helpMainScrollDir = dir;
+    holdingMainArrow_ = true;
+}
+
+// AS: MainMenuScreen.holdHelpMainArrow (ENTER_FRAME)
+void MainMenuScreen::holdHelpMainArrow()
+{
+    engine::MovieClip *help = section("help");
+    engine::MovieClip *panel = help ? help->findChild("mainpanel") : nullptr;
+    engine::MovieClip *masker = help ? help->findChild("mainmasker") : nullptr;
+    if (!panel || !masker) {
+        return;
+    }
+    const double top = childY(*help, masker, "mainmasker");
+    const double bottom = top - (clipHeight(*panel) - clipHeight(*masker));
+    double y = childY(*help, panel, "mainpanel");
+    if (helpMainScrollDir == 1) {
+        y -= 8;
+    } else if (helpMainScrollDir == -1) {
+        y += 8;
+    }
+    if (y < bottom) {
+        y = bottom;
+        helpMainScrollDir = 0;
+    } else if (y > top) {
+        y = top;
+        helpMainScrollDir = 0;
+    }
+    setChildY(*help, panel, "mainpanel", y);
+    const double ratio = bottom != top ? std::abs((y - top) / (bottom - top)) : 0;
+    if (engine::MovieClip *bar = help->findChild("main_scrollpanel")) {
+        if (engine::MovieClip *btn = bar->findChild("scroll_btn")) {
+            setChildY(*bar, btn, "scroll_btn", helpScrollStart + ratio * helpScrollRange);
+        }
+    }
+}
+
+// AS: MainMenuScreen.releaseHelpMainArrow (stage MOUSE_UP) — QUIRK: it clears helpTabScrollDir, not
+// helpMainScrollDir (the listener going away stops the scroll anyway).
+void MainMenuScreen::releaseHelpMainArrow()
+{
+    helpTabScrollDir = 0;
+    holdingMainArrow_ = false;
+}
+
+// AS: MainMenuScreen.clickHelpMainDragger
+void MainMenuScreen::clickHelpMainDragger()
+{
+    gameObj->obf_7C->playSound("buttonclick.wav");
+    engine::MovieClip *btn = section("help")->findChild("main_scrollpanel")->findChild("scroll_btn");
+    dragStartPointerY_ = gameObj->pointer.y;
+    dragStartButtonY_ = btn->y();
+    draggingMain_ = true;
+}
+
+// AS: MainMenuScreen.dragHelpMainDragger (ENTER_FRAME)
+void MainMenuScreen::dragHelpMainDragger()
+{
+    engine::MovieClip *help = section("help");
+    engine::MovieClip *btn_parent = help->findChild("main_scrollpanel");
+    engine::MovieClip *btn = btn_parent->findChild("scroll_btn");
+    engine::MovieClip *panel = help->findChild("mainpanel");
+    engine::MovieClip *masker = help->findChild("mainmasker");
+    const double by = std::clamp(dragStartButtonY_ + (gameObj->pointer.y - dragStartPointerY_), 30.0,
+                                 30.0 + helpScrollRange);
+    setChildY(*btn_parent, btn, "scroll_btn", by);
+    const double ratio = (by - helpScrollStart) / helpScrollRange;
+    if (panel && masker) {
+        setChildY(*help, panel, "mainpanel",
+                  childY(*help, masker, "mainmasker") - (clipHeight(*panel) - clipHeight(*masker)) * ratio);
+    }
+}
+
+// AS: MainMenuScreen.releaseHelpMainDragger (stage MOUSE_UP)
+void MainMenuScreen::releaseHelpMainDragger()
+{
+    draggingMain_ = false;
+}
+
+void MainMenuScreen::updateHelp()
+{
+    const bool up = !gameObj->pointer.down;
+    if (holdingTabArrow_) {
+        holdHelpTabArrow();
+        if (up) {
+            releaseHelpTabArrow();
+        }
+    }
+    if (holdingMainArrow_) {
+        holdHelpMainArrow();
+        if (up) {
+            releaseHelpMainArrow();
+        }
+    }
+    if (draggingTab_) {
+        dragHelpTabDragger();
+        if (up) {
+            releaseHelpTabDragger();
+        }
+    }
+    if (draggingMain_) {
+        dragHelpMainDragger();
+        if (up) {
+            releaseHelpMainDragger();
+        }
+    }
+}
+
+// AS: MainMenuScreen.setupMedals — the badge pages: earned / total, the first page, its slide-in. (Removing the
+// listeners, setup false, is left to the clip going away.)
+void MainMenuScreen::setupMedals(bool setup)
+{
+    const data::UserData &user = *gameObj->obf_51;
+    const managers::ChallengeManager &challenges = *gameObj->obf_94;
+    medalsPage = 0;
+    medalsDirection = "next";
+    medalsTransitioning = true;
+    engine::MovieClip *medals = section("medals");
+    if (!setup || !medals) {
+        animatingMedals_ = false;
+        return;
+    }
+    if (engine::MovieClip *next = medals->findChild("next_btn")) {
+        next->onClick = [this] { clickNextMedals(); };
+    }
+    if (engine::MovieClip *prev = medals->findChild("prev_btn")) {
+        prev->onClick = [this] { clickPrevMedals(); };
+        prev->setVisible(false);
+    }
+    medals->setText("total_txt",
+                    as3::String(user.getTotalBadgesEarned()) + "/" + as3::String(challenges.getNumberOfBadges()));
+    populateMedals();
+    animatingMedals_ = true;
+}
+
+// AS: MainMenuScreen.populateMedals — this page's eight badges: title, description and tally, reward, picture and
+// earned mark (an unearned one is greyed in the original: a ColorMatrixFilter, getDesaturatedFilter, which the
+// port does not draw); a locked one is the "Hidden Badge". Then the page arrows and number, and the slide-in.
+void MainMenuScreen::populateMedals()
+{
+    const data::UserData &user = *gameObj->obf_51;
+    const managers::ChallengeManager &challenges = *gameObj->obf_94;
+    const engine::Lang &lang = *gameObj->lang;
+    engine::MovieClip *medals = section("medals");
+    engine::MovieClip *panel = medals ? medals->findChild("panel") : nullptr;
+    if (!panel) {
+        return;
+    }
+    const double first = 0 + medalsPage * medalsPerPage;
+    const double last = std::min(challenges.getNumberOfBadges() - 1, first + (medalsPerPage - 1));
+    const double count = last - first + 1;
+    for (int i = 0; i < static_cast<int>(medalsPerPage); ++i) {
+        engine::MovieClip *p = panel->findChild("panel" + std::to_string(i + 1));
+        if (!p) {
+            continue;
+        }
+        const double which = i + first;
+        if (i < count) {
+            p->setVisible(true);
+            const double reward = challenges.getChallengeRewardAmount(-1, -1, which);
+            p->setText("title_txt", challenges.getChallengeTitle(-1, -1, which));
+            p->setText("description_txt",
+                       challenges.getChallengeDescription(-1, -1, which) + " " + challenges.getBadgeTallyString(which));
+            p->setText("reward_txt", lang.get("badge.reward", obf_AF::obf_81::obf_7w(reward)));
+            p->setText("points_txt", lang.get("badge.points", as3::String(reward)));
+            engine::MovieClip *thumb = p->findChild("thumb");
+            if (thumb) {
+                thumb->gotoAndStop(static_cast<int>(which) + 1);
+            }
+            if (engine::MovieClip *earned = p->findChild("earned")) {
+                earned->setVisible(user.hasBadge(which));
+            }
+            if (challenges.shouldLockBadge(which)) {
+                if (thumb) {
+                    thumb->gotoAndStop(49);
+                }
+                p->setText("title_txt", lang.get("badge.hidden_title"));
+                p->setText("description_txt", lang.get("badge.hidden_text"));
+                p->setText("reward_txt", "");
+                p->setText("points_txt", "");
+            }
+        } else {
+            p->setVisible(false);
+        }
+    }
+    const double pages = std::ceil(challenges.getNumberOfBadges() / medalsPerPage);
+    if (engine::MovieClip *prev = medals->findChild("prev_btn")) {
+        prev->setVisible(medalsPage > 0);
+    }
+    if (engine::MovieClip *next = medals->findChild("next_btn")) {
+        next->setVisible(medalsPage < pages - 1);
+    }
+    medals->setText("page_txt", as3::String(medalsPage + 1) + " / " + as3::String(pages));
+    panel->gotoLabel(medalsDirection == "next" ? "innext" : "inprev", true);
+}
+
+// AS: MainMenuScreen.clickNextMedals
+void MainMenuScreen::clickNextMedals()
+{
+    if (!medalsTransitioning) {
+        ++medalsPage;
+        medalsDirection = "next";
+        medalsTransitioning = true;
+        if (engine::MovieClip *panel = section("medals")->findChild("panel")) {
+            panel->gotoLabel("outnext", true);
+        }
+        animatingMedals_ = true;
+    }
+}
+
+// AS: MainMenuScreen.clickPrevMedals
+void MainMenuScreen::clickPrevMedals()
+{
+    if (!medalsTransitioning) {
+        --medalsPage;
+        medalsDirection = "prev";
+        medalsTransitioning = true;
+        if (engine::MovieClip *panel = section("medals")->findChild("panel")) {
+            panel->gotoLabel("outprev", true);
+        }
+        animatingMedals_ = true;
+    }
+}
+
+// AS: MainMenuScreen.animateMedalsTransition — when the old page is out the new one is filled; when it is in, done.
+void MainMenuScreen::animateMedalsTransition()
+{
+    engine::MovieClip *medals = section("medals");
+    engine::MovieClip *panel = medals ? medals->findChild("panel") : nullptr;
+    if (!panel) {
+        animatingMedals_ = false;
+        return;
+    }
+    const std::string label = panel->currentFrameLabel();
+    if (label == "outnextframe" || label == "outprevframe") {
+        populateMedals();
+    } else if (label == "innextframe" || label == "inprevframe") {
+        animatingMedals_ = false;
+        medalsTransitioning = false;
     }
 }
 

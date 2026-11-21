@@ -40,11 +40,19 @@ private:
     std::unordered_map<SDL_FingerID, int> fingers_; // finger -> button index
 };
 
+// Flash keyboard key codes (KeyboardEvent.keyCode, what the game saves) <-> SDL scancodes; 0 / UNKNOWN when none.
+SDL_Scancode flashKeyToScancode(int keyCode);
+int scancodeToFlashKey(SDL_Scancode sc);
+
 class Input {
 public:
     void event(const SDL_Event &ev, SDL_Window *window);
     // Current actions from every source.
     ActionState poll() const;
+
+    // The game's keys (Flash key codes) for Left, Right, Up, Down, Jump, Attack: the original's defaults until the
+    // game sets the player's own (its CONTROLS tab).
+    std::array<int, 6> keyBindings{37, 39, 38, 40, 38, 32};
 
     TouchControls touch;
 

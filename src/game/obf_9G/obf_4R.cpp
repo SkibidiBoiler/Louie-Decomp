@@ -27,6 +27,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_5h = engine::MovieClip::createEmpty(*symbols);
     obf_9X = engine::MovieClip::createEmpty(*symbols);
     obf_9X->mouseEnabled = false;
+    rootClips = engine::MovieClip::createEmpty(*symbols);
 }
 
 bool obf_4R::loadLevelData(const std::string &gameDir_)
@@ -54,6 +55,11 @@ void obf_4R::obf_6V(double whichLevel)
     obf_51->clearTallies();
     // SKELETON: BitmapManager.clearExtraSprites.
     bitmapManager->whichTileset = -1;
+    // Port: the original's BitmapManager is new for each level (its sky and backdrop start null); the port keeps one,
+    // so they are dropped here. Without this the tile sheet's getter sets whichTileset first and the old level's sky
+    // and backdrop were kept.
+    bitmapManager->bgsheet = nullptr;
+    bitmapManager->mgsheet = nullptr;
     obf_AQ->setupLevelScreens(whichLevel);
     if (obf_AQ->currentScreenData == nullptr) {
         return; // port: no level data
@@ -184,6 +190,21 @@ void obf_4R::obf_6s()
     }
 }
 
+// AS: §_-4R§.§_-7X§
+void obf_4R::obf_7X()
+{
+    obf_t = std::make_unique<papaGame::screens::FliplineLogoScreen>(this);
+}
+
+// AS: §_-4R§.§_-4E§
+void obf_4R::obf_4E()
+{
+    if (obf_t) {
+        obf_t->destroy();
+        pendingDestroyLogo_ = std::move(obf_t); // port: it may be running; freed on the next frame
+    }
+}
+
 // AS: §_-4R§.§_-6I§
 void obf_4R::obf_6I()
 {
@@ -199,10 +220,36 @@ void obf_4R::obf_28()
     }
 }
 
-// AS: §_-4R§.§_-14§ — SKELETON: ParadeScreen is not ported; the level-complete tally shows instead.
-void obf_4R::obf_14(bool /*fromLevel*/)
+// AS: §_-4R§.§_-14§ — the parade (with weapons unless false), once.
+void obf_4R::obf_14(bool showWeapons)
 {
-    showApiScreen("EndOfDay");
+    if (!obf_5s) {
+        obf_5s = std::make_unique<papaGame::screens::ParadeScreen>(this, showWeapons);
+    }
+}
+
+// AS: §_-4R§.§_-3q§
+void obf_4R::obf_3q()
+{
+    if (obf_5s) {
+        obf_5s->destroy();
+        pendingDestroyParade_ = std::move(obf_5s); // port: it may be running; freed on the next frame
+    }
+}
+
+// AS: §_-4R§.§_-49§
+void obf_4R::obf_49()
+{
+    obf_7K = std::make_unique<papaGame::screens::GameOutroScreen>(this);
+}
+
+// AS: §_-4R§.§_-2r§ — GameControls.resetKeyFocus is a Flash matter.
+void obf_4R::obf_2r()
+{
+    if (obf_7K) {
+        obf_7K->destroy();
+        pendingDestroyGameOutro_ = std::move(obf_7K); // port: it may be running; freed on the next frame
+    }
 }
 
 // AS: §_-4R§.§_-Ap§ — the port keeps bitmapManager: it holds the textures of the imported sheets, which the
@@ -373,11 +420,16 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, "title.choose_slot", {{Kind::Back, "menu.back", "clickBack"}}, layout);
     } else if (name == "MainMenu") {
-        // SKELETON: the BADDIES, BADGES, CONTROLS and HELP tabs (their sections are not ported yet).
         mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
-                      {{Kind::Tab, "menu.credits", "clickCredits"}, {Kind::Back, "menu.quit", "clickExit"}}, layout);
+                      {{Kind::Tab, "menu.baddies", "clickBaddies"},
+                       {Kind::Tab, "menu.badges", "clickMedals"},
+                       {Kind::Tab, "menu.controls", "clickControls"},
+                       {Kind::Tab, "menu.help", "clickHelp"},
+                       {Kind::Tab, "menu.credits", "clickCredits"},
+                       {Kind::Back, "menu.quit", "clickExit"}},
+                      layout);
     } else if (name == "MapSelectMenu") {
         mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
         engine::MenuBar::Layout layout;
@@ -386,12 +438,15 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
                        {Kind::Tab, "menu.back_to_map", "clickBackToMap"}},
                       layout);
     } else if (name == "PauseMenu") {
-        // SKELETON: the BADDIES, BADGES, CONTROLS and HELP tabs (their sections are not ported yet).
         mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
                       {{Kind::Action, "menu.back_to_game", "clickBackToGame"},
                        {Kind::Tab, "menu.info", "clickInfo"},
+                       {Kind::Tab, "menu.baddies", "clickBaddies"},
+                       {Kind::Tab, "menu.badges", "clickMedals"},
+                       {Kind::Tab, "menu.controls", "clickControls"},
+                       {Kind::Tab, "menu.help", "clickHelp"},
                        {Kind::Tab, "menu.credits", "clickCredits"},
                        {Kind::Back, "menu.quit_level", "clickQuit"}},
                       layout);
@@ -449,11 +504,13 @@ void obf_4R::obf_64(bool tween)
 
 bool obf_4R::screensActive() const
 {
-    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr || obf_59 != nullptr;
+    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr || obf_59 != nullptr || obf_t != nullptr || obf_5s != nullptr ||
+           obf_7K != nullptr;
 }
 
-bool obf_4R::updateScreens(const engine::PointerState &pointer)
+bool obf_4R::updateScreens(const engine::PointerState &pointer_)
 {
+    pointer = pointer_;
     pendingDestroySplash_.reset();
     pendingDestroyIntro_.reset();
     pendingDestroySlots_.reset();
@@ -463,6 +520,9 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     pendingDestroyTally_.reset();
     pendingDestroyNewCustomer_.reset();
     pendingDestroyBossIntro_.reset();
+    pendingDestroyLogo_.reset();
+    pendingDestroyParade_.reset();
+    pendingDestroyGameOutro_.reset();
     engine::MovieClip::collectGarbage();
     const bool onBar = menuBar.update(pointer, [this](const std::string &event) { dispatchContainerEvent(event); });
     // Port: the HUD sits in the original's display list above the game; here it is drawn by the display, so it
@@ -470,7 +530,9 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     // press and roll-over targets are shared).
     const bool hudTakesPointer = apiScreen.empty() && !screensActive() && obf_AQ->currentScreenData && obf_6Z &&
                                  obf_6Z->interfaceClip && obf_6Z->interfaceClip->visible();
-    if (hudTakesPointer) {
+    if (rootClips->hitTest(engine::Affine{}, pointer.x, pointer.y) != nullptr) {
+        engine::MovieClip::dispatchPointer(*rootClips, engine::Affine{}, pointer);
+    } else if (hudTakesPointer) {
         engine::MovieClip::dispatchPointer(*obf_6Z->interfaceClip, engine::Affine{}, pointer);
     } else if (!onBar) {
         engine::MovieClip::dispatchPointer(*obf_5h, engine::Affine{}, pointer);
@@ -503,11 +565,34 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     if (obf_59) {
         obf_59->updateScreen();
     }
+    if (obf_t) {
+        obf_t->updateScreen();
+    }
+    if (obf_5s) {
+        obf_5s->updateScreen();
+    }
+    if (obf_7K) {
+        obf_7K->updateScreen();
+    }
     obf_9X->advance();
+    rootClips->advance();
+    obf_94->animateBadgeDropdown();
     if (obf_a) {
         obf_a->updatePopup();
     }
     return screensActive();
+}
+
+bool obf_4R::wantsKey() const
+{
+    return mainMenuScreen && mainMenuScreen->settingWhichKey != "none";
+}
+
+void obf_4R::keyDown(int keyCode)
+{
+    if (wantsKey()) {
+        mainMenuScreen->controlsKeyListener(keyCode);
+    }
 }
 
 void obf_4R::renderScreens(engine::RenderContext &ctx)
@@ -515,6 +600,7 @@ void obf_4R::renderScreens(engine::RenderContext &ctx)
     ctx.masks = masks;
     obf_5h->render(ctx, engine::Affine{}, engine::ColorTransform{});
     obf_9X->render(ctx, engine::Affine{}, engine::ColorTransform{});
+    rootClips->render(ctx, engine::Affine{}, engine::ColorTransform{});
     menuBar.render(ctx);
 }
 

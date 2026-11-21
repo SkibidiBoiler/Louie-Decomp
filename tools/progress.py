@@ -1,11 +1,12 @@
 """How much of a game's ActionScript has a C++ translation, by functions and by lines.
 
-usage: python -I tools/progress.py [<deob scripts dir>] [--by-class] [--missing <Class>]
+usage: python -I tools/progress.py [<deob scripts dir>] [--by-class] [--missing <Class>] [--excluded]
 
 A function counts as translated when some file under src/game carries `// AS: <Class>.<function>` for it
 (the tag every translated function has). Lines are the function's own lines in the decompiled code, without
 blank or brace-only lines. Functions whose C++ is still marked SKELETON count as translated: the figure is an
-upper bound. Reads the owner's local decompiled code (outside the repo); prints to the terminal only.
+upper bound. Functions in EXCLUDED are left out of the totals (the port drops or replaces them on purpose);
+--excluded lists them. Reads the owner's local decompiled code (outside the repo); prints to the terminal only.
 """
 import os
 import re
@@ -16,6 +17,47 @@ DEFAULT_DEOB = "C:/Users/alfre/Proyectos/datos-papas/extracted/pl2-deob/scripts"
 # The game's own code: papaGame.* and the obfuscated packages that belong to it. The rest of the SWF
 # (Flipline API, ads, Mochi, Playtomic, timeline scripts) is not ported (AGENTS.md).
 GAME_DIRS = ["papaGame", "§_-9G§", "§_-4B§"]
+
+# What the port leaves out on purpose (AGENTS.md: online services, ads and sponsors are not ported; Flash's own
+# loading and bitmap drawing are replaced by the importer and the port's renderer). Class -> "*" (the whole class)
+# or a set of its functions, with the reason.
+_ONLINE = "Flipline / sponsor / leaderboard / store / social links (online services, not ported)"
+_PRELOAD = "Flash preloader, sponsor logos and loading screens (the port's own start-up replaces them)"
+_BLIT = "Flash bitmap drawing (the port's renderer draws the level, sprites and effects)"
+_LOAD = "Flash asset loading (the importer converts the assets ahead of time)"
+_UNUSED = "never created by the game"
+EXCLUDED = {
+    "§_-5y§": ("*", _ONLINE),
+    "§_-r§": ("*", _ONLINE),
+    "§_-5d§": ("*", _PRELOAD),
+    "§_-88§": ("*", _PRELOAD),
+    "LoadingLevelsScreen": ("*", _PRELOAD),
+    "FliplineLogoScreen": ({"§_-36§"}, _ONLINE),
+    "LicenseLogoScreen": ("*", _PRELOAD),
+    "SponsorLogoScreen": ("*", _PRELOAD),
+    "RocketBBQ": ("*", _UNUSED),
+    "RocketMustard": ("*", _UNUSED),
+    "MainMenuScreen": ({"setupMapUpsell", "clickUpsellAppstore", "clickUpsellGooglePlay", "clickUpsellAmazon",
+                        "clickUpsellKindle", "clickUpsellMoreInfo", "clickUpsellImage", "clickCreditsFlipline",
+                        "clickCreditsPapaLouie", "clickFacebook", "clickTwitter", "clickBonusFacebook",
+                        "clickBonusTwitter"}, _ONLINE),
+    "GameHUD": ({"clickSponsorLogo", "clickLicenseLogo"}, _ONLINE),
+    "SplashScreen": ({"clickHighScores", "closedHighScores", "errorHighScores", "clickPromo", "clickPromoTwo",
+                      "clickPromoThree"}, _ONLINE),
+    "ScoreTallyScreen": ({"clickSubmit", "leaderboardClosed"}, _ONLINE),
+    "GameDisplay": ({"setupBitmapDraw", "switchRoomPreBlit", "reblitRectangle", "reblitAnimatedTile",
+                     "blitLevelTiles", "blitTrimTiles", "blitOverlay", "blitEffectsOverlay", "reblitClouds",
+                     "reblitLayer", "reblitCursor", "reblitSprite", "reblitMultispriteEnemy",
+                     "blitCollisionArea"}, _BLIT),
+    "BitmapManager": ({"loadBitmap", "loadMovieClip", "loadBitmapFromMovieClip"}, _LOAD),
+    "DataManager": ({"getLeaderBoardID", "getMainLoaderInfo", "generateEnemyBitmap", "getEnemyBitmap"},
+                    _ONLINE + "; " + _BLIT),
+}
+
+
+def is_excluded(cls, name):
+    e = EXCLUDED.get(cls)
+    return e is not None and (e[0] == "*" or name in e[0])
 
 HEAD = re.compile(r"\s*(override\s+)?(public|private|protected|internal)?\s*(static\s+)?"
                   r"function\s+(?:(get|set)\s+)?([^\s(]+)\s*\(")
@@ -52,7 +94,9 @@ def main():
     deob = args.pop(0) if args and not args[0].startswith("--") else DEFAULT_DEOB
     by_class = "--by-class" in args
     missing = args[args.index("--missing") + 1] if "--missing" in args else None
+    list_excluded = "--excluded" in args
     tags = cpp_tags()
+    ex_f = ex_l = 0
 
     rows = []  # (class, done functions, functions, done lines, lines)
     for g in GAME_DIRS:
@@ -61,12 +105,21 @@ def main():
                 if not f.endswith(".as"):
                     continue
                 cls = f[:-3]
-                fn = list(as_functions(os.path.join(d, f)))
+                allfn = list(as_functions(os.path.join(d, f)))
+                fn = [(name, n) for name, n in allfn if not is_excluded(cls, name)]
+                for name, n in allfn:
+                    if is_excluded(cls, name):
+                        ex_f += 1
+                        ex_l += n
+                        if list_excluded:
+                            print(f"  {cls}.{name}  ({n} lines): {EXCLUDED[cls][1]}")
                 if missing == cls:
                     for name, n in fn:
                         if (cls, name) not in tags:
                             print(f"  {name}  ({n} lines)")
                     return
+                if not fn:
+                    continue
                 done = [(name, n) for name, n in fn if (cls, name) in tags]
                 rows.append((cls, len(done), len(fn), sum(n for _, n in done), sum(n for _, n in fn)))
 
@@ -81,6 +134,7 @@ def main():
     print(f"classes:   {started} of {len(rows)} started")
     print(f"functions: {df} of {f} translated ({100 * df / f:.1f} %)")
     print(f"lines:     {dl} of {l} ({100 * dl / l:.1f} %)")
+    print(f"excluded:  {ex_f} functions, {ex_l} lines (dropped or replaced on purpose; --excluded lists them)")
 
 
 if __name__ == "__main__":

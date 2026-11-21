@@ -2,7 +2,7 @@
 // AS: papaGame.screens.MainMenuScreen — the map of areas and, before a level, the customer and outfit choice,
 // with the credits, badges, baddies, controls and help sections the bar's tabs open.
 // The store, social and "first game" links went to web sites and are not shown.
-// SKELETON: the baddies, medals (badges), controls and help sections, and the tutorial pop-ups (§_-6n§ / §_-c§).
+// SKELETON: and the tutorial pop-ups (§_-6n§ / §_-c§).
 #include <memory>
 #include <string>
 #include <vector>
@@ -37,6 +37,45 @@ public:
     void clickPlayMap(int world);
     void clickStartLevel();
     void setupCredits();
+    void setupMedals(bool setup = true);
+    void setupBaddies(bool setup = true);
+    void setupControls(bool setup = true);
+    void setupHelp(bool setup = true);
+    void setupHelpKeys();
+    void showHelp(double index);
+    void clickHelpTab(int index);
+    void clickHelpTabArrow(int dir);
+    void holdHelpTabArrow();
+    void releaseHelpTabArrow();
+    void clickHelpTabDragger();
+    void dragHelpTabDragger();
+    void releaseHelpTabDragger();
+    void clickHelpMainArrow(int dir);
+    void holdHelpMainArrow();
+    void releaseHelpMainArrow();
+    void clickHelpMainDragger();
+    void dragHelpMainDragger();
+    void releaseHelpMainDragger();
+    void clickHelp() { setSection("help"); } // AS: MainMenuScreen.clickHelp (the analytics event is dropped)
+    void updateHelp(); // port: the help section's ENTER_FRAME and stage MOUSE_UP listeners
+    double helpIndex = -1;
+    double helpScrollStart = 30;
+    double helpScrollRange = 158;
+    double helpTabScrollDir = 0;
+    double helpMainScrollDir = 0;
+    void clickControlsButton(const std::string &which);
+    void cancelSettingControls();
+    void controlsKeyListener(double keyCode);
+    void clickControls() { setSection("controls"); } // AS: MainMenuScreen.clickControls
+    std::string settingWhichKey = "none";
+    void clickEnemyThumb(int index);
+    void selectEnemy(double index);
+    void clickBaddies() { setSection("baddies"); } // AS: MainMenuScreen.clickBaddies
+    void populateMedals();
+    void clickNextMedals();
+    void clickPrevMedals();
+    void animateMedalsTransition(); // the medals panel's ENTER_FRAME (port: from enterFrame)
+    void clickMedals() { setSection("medals"); } // AS: MainMenuScreen.clickMedals
     void setupInfo(bool setup = true);
     void setupConfirmQuit(bool setup = true);
     void clickInfo() { setSection("info"); }
@@ -88,6 +127,15 @@ private:
     engine::MovieClip *section(const std::string &name) { return clip->findChild(name); }
     bool tweening_ = false;     // port: the tweenSections ENTER_FRAME listener is on
     bool updatingChar_ = false; // port: the updateCharacter ENTER_FRAME listener is on
+    double medalsPage = 0;
+    engine::MovieClip *enemyDetail = nullptr; // owned by the baddies section
+    double medalsPerPage = 8;
+    std::string medalsDirection = "next";
+    bool medalsTransitioning = true;
+    bool animatingMedals_ = false; // port: the animateMedalsTransition ENTER_FRAME listener is on
+    // Port: the help section's listeners that are on, and the drag start (startDrag keeps the grab offset).
+    bool holdingTabArrow_ = false, holdingMainArrow_ = false, draggingTab_ = false, draggingMain_ = false;
+    double dragStartPointerY_ = 0, dragStartButtonY_ = 0;
 };
 
 } // namespace papaGame::screens
