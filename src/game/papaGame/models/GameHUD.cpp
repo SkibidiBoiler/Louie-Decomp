@@ -159,11 +159,61 @@ void GameHUD::updatePlayerHealth(double health)
     }
 }
 
-void GameHUD::render(const engine::RenderContext &ctx) const
+namespace {
+// Port (widescreen): where hudMC is split, a plain column of the bar between the hearts and the timer, and the
+// top of the bar (the part that is extended between the two halves).
+constexpr float kHudSplitX = 222;
+constexpr float kHudBarTop = 368;
+} // namespace
+
+void GameHUD::render(const engine::RenderContext &ctx, double viewExtraX) const
 {
-    if (interfaceClip && interfaceClip->visible()) {
-        interfaceClip->render(ctx, engine::Affine{}, engine::ColorTransform{});
+    if (!interfaceClip || !interfaceClip->visible()) {
+        return;
     }
+    if (viewExtraX <= 0) {
+        interfaceClip->render(ctx, engine::Affine{}, engine::ColorTransform{});
+        return;
+    }
+    const float shift = 2 * static_cast<float>(viewExtraX);
+    const float right = 700 + shift;
+    SDL_Rect previous;
+    const bool hadClip = SDL_RenderClipEnabled(ctx.renderer);
+    SDL_GetRenderClipRect(ctx.renderer, &previous);
+    const auto clip = [&](float x0, float y0, float x1) {
+        const SDL_Rect r{static_cast<int>(x0), static_cast<int>(y0), static_cast<int>(x1 - x0),
+                         static_cast<int>(416 - y0)};
+        SDL_SetRenderClipRect(ctx.renderer, &r);
+    };
+    clip(0, 0, kHudSplitX);
+    interfaceClip->render(ctx, engine::Affine{}, engine::ColorTransform{});
+    clip(kHudSplitX + shift, 0, right);
+    interfaceClip->render(ctx, engine::Affine::translate(shift, 0), engine::ColorTransform{});
+    // The bar between the halves: its one-pixel column at the split, widened (the bar is plain there).
+    clip(kHudSplitX, kHudBarTop, kHudSplitX + shift);
+    engine::Affine widen;
+    widen.a = shift + 1;
+    widen.tx = kHudSplitX - kHudSplitX * widen.a;
+    interfaceClip->render(ctx, widen, engine::ColorTransform{});
+    SDL_SetRenderClipRect(ctx.renderer, hadClip ? &previous : nullptr);
+}
+
+engine::PointerState GameHUD::hudPointer(const engine::PointerState &pointer, double viewExtraX) const
+{
+    if (viewExtraX <= 0 || pointer.x < -static_cast<float>(viewExtraX)) {
+        return pointer;
+    }
+    engine::PointerState p = pointer;
+    const float shift = 2 * static_cast<float>(viewExtraX);
+    const float screenX = pointer.x + static_cast<float>(viewExtraX);
+    if (screenX < kHudSplitX) {
+        p.x = screenX;
+    } else if (screenX >= kHudSplitX + shift) {
+        p.x = screenX - shift;
+    } else {
+        p.x = kHudSplitX; // the plain bar
+    }
+    return p;
 }
 
 } // namespace papaGame::models

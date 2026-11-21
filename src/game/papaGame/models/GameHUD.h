@@ -25,7 +25,12 @@ public:
     void clickUnmute();
     void updateMuteButton();
     // Port: the HUD is drawn over the game in stage pixels (the original's display list does it).
-    void render(const engine::RenderContext &ctx) const;
+    // With `viewExtraX` > 0 (widescreen) the screen is 700 + 2 * viewExtraX wide and starts viewExtraX left of the
+    // stage: the bar's left part (MENU, hearts) keeps to the left edge, the rest (time ... sound) to the right
+    // edge, and the plain bar between them is extended.
+    void render(const engine::RenderContext &ctx, double viewExtraX = 0) const;
+    // Port: the pointer (stage coordinates) in the HUD's own coordinates for that layout.
+    engine::PointerState hudPointer(const engine::PointerState &pointer, double viewExtraX) const;
 
     obf_9G::obf_4R *gameObj = nullptr;
     std::unique_ptr<engine::MovieClip> interfaceClip; // AS: new hudMC()

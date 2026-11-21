@@ -533,7 +533,8 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer_)
     if (rootClips->hitTest(engine::Affine{}, pointer.x, pointer.y) != nullptr) {
         engine::MovieClip::dispatchPointer(*rootClips, engine::Affine{}, pointer);
     } else if (hudTakesPointer) {
-        engine::MovieClip::dispatchPointer(*obf_6Z->interfaceClip, engine::Affine{}, pointer);
+        engine::MovieClip::dispatchPointer(*obf_6Z->interfaceClip, engine::Affine{},
+                                           obf_6Z->hudPointer(pointer, obf_71->viewExtraX));
     } else if (!onBar) {
         engine::MovieClip::dispatchPointer(*obf_5h, engine::Affine{}, pointer);
     }
@@ -595,13 +596,14 @@ void obf_4R::keyDown(int keyCode)
     }
 }
 
-void obf_4R::renderScreens(engine::RenderContext &ctx)
+void obf_4R::renderScreens(engine::RenderContext &ctx, float offsetX)
 {
     ctx.masks = masks;
-    obf_5h->render(ctx, engine::Affine{}, engine::ColorTransform{});
-    obf_9X->render(ctx, engine::Affine{}, engine::ColorTransform{});
-    rootClips->render(ctx, engine::Affine{}, engine::ColorTransform{});
-    menuBar.render(ctx);
+    const engine::Affine at = engine::Affine::translate(offsetX, 0);
+    obf_5h->render(ctx, at, engine::ColorTransform{});
+    obf_9X->render(ctx, at, engine::ColorTransform{});
+    rootClips->render(ctx, at, engine::ColorTransform{});
+    menuBar.render(ctx, offsetX);
 }
 
 } // namespace obf_9G

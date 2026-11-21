@@ -45,7 +45,8 @@ public:
     // The pointer for one logic frame: calls `onEvent(event)` when a button is clicked. True when the pointer
     // is over the bars (the screen below should not get it).
     bool update(const PointerState &pointer, const std::function<void(const std::string &)> &onEvent);
-    void render(const RenderContext &ctx) const;
+    // `offsetX`: where the stage's x = 0 is drawn (widescreen centres the bar with the screens it belongs to).
+    void render(const RenderContext &ctx, float offsetX = 0) const;
 
 private:
     struct Button {

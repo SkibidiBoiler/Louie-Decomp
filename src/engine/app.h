@@ -56,6 +56,9 @@ private:
     void updateLauncherMusic(float dt);
     // The port's own screens (touch buttons, options, game picker), drawn in window pixels.
     void renderWindowLayer();
+    // Port (widescreen): picks the logical size for this frame: wider than the stage in a level when the option
+    // is on and the window is wider than 700:416, the stage (pillarboxed) otherwise.
+    void updatePresentation();
 
     SDL_Window *window_ = nullptr;
     SDL_Renderer *renderer_ = nullptr;
@@ -93,6 +96,7 @@ private:
     Lang lang_;
     MaskLayers masks_;
     PointerState pointer_;     // the pointer for the next logic frame (stage coordinates)
+    float viewExtra_ = 0;      // widescreen: logical pixels shown left of the stage (and right of it)
     struct ScriptedTap {
         float x = 0, y = 0;
         uint64_t frame = 0;
