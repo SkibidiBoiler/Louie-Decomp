@@ -65,17 +65,55 @@ void ImportScreen::tap(float x, float y)
     for (int i = 0; i < count; ++i) {
         const float top = kRowTop + static_cast<float>(i) * kRowHeight;
         if (x >= kRowMargin && y >= top && y < top + kRowHeight - 8.0f) {
-            chosenGame_ = i;
-#if defined(SDL_PLATFORM_ANDROID)
-            // The Android picker filters by MIME type, and .swf often has none registered: show every file.
-            SDL_ShowOpenFileDialog(&ImportScreen::onFileChosen, this, window_, nullptr, 0, nullptr, false);
-#else
-            static const SDL_DialogFileFilter filters[] = {{"Flash games (*.swf)", "swf"}};
-            SDL_ShowOpenFileDialog(&ImportScreen::onFileChosen, this, window_, filters, 1, nullptr, false);
-#endif
+            openPicker(i);
             return;
         }
     }
+}
+
+void ImportScreen::pick(const std::string &id)
+{
+    if (busy()) {
+        return;
+    }
+    int count = 0;
+    const swfimport::GameInfo *games = swfimport::knownGames(count);
+    for (int i = 0; i < count; ++i) {
+        if (id == games[i].id) {
+            openPicker(i);
+        }
+    }
+}
+
+void ImportScreen::openPicker(int game)
+{
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        chosenGame_ = game;
+        failed_ = false;
+        error_.clear();
+    }
+#if defined(SDL_PLATFORM_ANDROID)
+    // The Android picker filters by MIME type, and .swf often has none registered: show every file.
+    SDL_ShowOpenFileDialog(&ImportScreen::onFileChosen, this, window_, nullptr, 0, nullptr, false);
+#else
+    static const SDL_DialogFileFilter filters[] = {{"Flash games (*.swf)", "swf"}};
+    SDL_ShowOpenFileDialog(&ImportScreen::onFileChosen, this, window_, filters, 1, nullptr, false);
+#endif
+}
+
+ImportScreen::Status ImportScreen::status() const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    Status s;
+    s.running = running_;
+    s.fraction = progress_.fraction;
+    int count = 0;
+    const swfimport::GameInfo *games = swfimport::knownGames(count);
+    s.gameId = chosenGame_ >= 0 && chosenGame_ < count ? games[chosenGame_].id : "";
+    s.failed = failed_;
+    s.error = error_;
+    return s;
 }
 
 void SDLCALL ImportScreen::onFileChosen(void *userdata, const char *const *files, int)
@@ -84,6 +122,8 @@ void SDLCALL ImportScreen::onFileChosen(void *userdata, const char *const *files
     if (!files) {
         std::lock_guard<std::mutex> lock(self->mutex_);
         self->message_ = std::string("File picker error: ") + SDL_GetError();
+        self->failed_ = true;
+        self->error_ = SDL_GetError();
         return;
     }
     if (!files[0]) {
@@ -105,12 +145,16 @@ void ImportScreen::start(const std::string &path)
     path_ = path;
     running_ = true;
     message_.clear();
+    failed_ = false;
+    error_.clear();
     progress_ = {};
     importer_.cancel = false;
     thread_ = SDL_CreateThread(&ImportScreen::worker, "import", this);
     if (!thread_) {
         running_ = false;
         message_ = std::string("Cannot start the import: ") + SDL_GetError();
+        failed_ = true;
+        error_ = SDL_GetError();
     }
 }
 
@@ -137,6 +181,8 @@ int SDLCALL ImportScreen::worker(void *userdata)
         self->message_ = "Imported";
     } else {
         self->message_ = "Import failed: " + self->importer_.error();
+        self->failed_ = true;
+        self->error_ = self->importer_.error();
     }
     SDL_Log("Import %s: %s", ok ? "done" : "failed", self->message_.c_str());
     return ok ? 0 : 1;
