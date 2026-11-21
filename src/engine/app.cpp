@@ -218,6 +218,108 @@ void App::enterLauncher()
             }
         }
     }
+    buildCovers();
+}
+
+// The picker's covers: each imported game's title screen (splashScreenMC, as SplashScreen.setupScreen shows it),
+// drawn once on the back buffer (so its masks work), read back and kept as a texture. Nothing is saved.
+void App::buildCovers()
+{
+    for (const char *id : {"pl2", "pl3", "pl1"}) {
+        if (!launcher_->imported(id) || launcher_->hasCover(id)) {
+            continue;
+        }
+        const std::string dir = dataDir_ + "/" + id;
+        SymbolLibrary symbols;
+        if (!symbols.load(dir + "/symbols.bin")) {
+            continue;
+        }
+        symbols.loadFrameScripts(dir + "/framescripts.txt");
+        std::unique_ptr<MovieClip> clip = MovieClip::create(symbols, "splashScreenMC");
+        if (!clip) {
+            continue; // not a papaGame title screen (PL1): its box keeps the game's colours
+        }
+        ShapeTextures textures;
+        TextLibrary text;
+        textures.init(renderer_, dir, 2);
+        text.init(renderer_, dir);
+        if (MovieClip *iris = clip->findChild("iris")) {
+            iris->gotoAndStop(1);
+        }
+        if (MovieClip *credits = clip->findChild("credits")) {
+            credits->setY(416);
+        }
+        for (const char *promo : {"promo_holder", "promo2_holder", "promo3_holder"}) {
+            if (MovieClip *holder = clip->findChild(promo)) {
+                holder->setVisible(false);
+            }
+        }
+        for (int i = 0; i < 60; ++i) {
+            clip->advance(); // let the title's intro settle
+        }
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
+        SDL_RenderClear(renderer_);
+        RenderContext ctx{renderer_, &symbols, &textures, &text};
+        ctx.masks = &masks_;
+        clip->render(ctx, Affine{}, ColorTransform{});
+        SDL_FRect area{};
+        SDL_GetRenderLogicalPresentationRect(renderer_, &area);
+        int lw = 0, lh = 0;
+        SDL_RendererLogicalPresentation lmode;
+        SDL_GetRenderLogicalPresentation(renderer_, &lw, &lh, &lmode);
+        SDL_SetRenderLogicalPresentation(renderer_, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+        SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
+        SDL_SetRenderLogicalPresentation(renderer_, lw, lh, lmode);
+        SDL_RenderClear(renderer_);
+        clip.reset();
+        MovieClip::collectGarbage();
+        if (!shot) {
+            continue;
+        }
+        // The art strip between the title screen's black bars: stage y 72..296.
+        const float sy = area.h / static_cast<float>(stage_.height);
+        SDL_Rect strip{static_cast<int>(area.x), static_cast<int>(area.y + 72 * sy), static_cast<int>(area.w),
+                       static_cast<int>(224 * sy)};
+        SDL_Surface *banner = SDL_CreateSurface(strip.w, strip.h, shot->format);
+        if (banner && SDL_BlitSurface(shot, &strip, banner, nullptr)) {
+            SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer_, banner);
+            SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_LINEAR);
+            launcher_->setCover(id, tex);
+            SDL_Log("Cover %s: %dx%d", id, strip.w, strip.h);
+        }
+        SDL_DestroySurface(banner);
+        SDL_DestroySurface(shot);
+    }
+}
+
+// The selected game's title track while the picker is shown (it needs the game's data).
+void App::updateLauncherMusic(float dt)
+{
+    const std::string game = mode_ == Mode::Launcher ? launcher_->selectedGame() : "";
+    if (game != menuMusicGame_) {
+        menuMusicGame_ = game;
+        if (menuMusicOld_) {
+            menuMusicOld_->stop();
+        }
+        menuMusicOld_ = std::move(menuMusic_);
+        menuMusic_.reset();
+        if (!game.empty() && launcher_->imported(game)) {
+            audio_.setSoundDir(dataDir_ + "/" + game + "/sounds");
+            menuMusic_ = audio_.play("TitleTrack", 1 << 30, 0, 0);
+        }
+    }
+    if (menuMusic_) {
+        menuMusic_->setTransform(std::min(1.0, menuMusic_->volume() + dt / 0.8), 0);
+    }
+    if (menuMusicOld_) {
+        const double v = menuMusicOld_->volume() - dt / 0.4;
+        if (v <= 0) {
+            menuMusicOld_->stop();
+            menuMusicOld_.reset();
+        } else {
+            menuMusicOld_->setTransform(v, 0);
+        }
+    }
 }
 
 void App::loadGame(const std::string &game)
@@ -756,7 +858,7 @@ bool App::launcherEvent(const SDL_Event &ev)
     case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
     case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
         const SDL_Keycode k = gamepadKey(ev);
-        if (k == SDLK_RETURN || k == SDLK_UP || k == SDLK_DOWN) {
+        if (k == SDLK_RETURN || k == SDLK_UP || k == SDLK_DOWN || k == SDLK_LEFT || k == SDLK_RIGHT) {
             launcher_->key(k); // B does not quit the app from here
         }
         return true;
@@ -830,6 +932,7 @@ void App::tap(float winX, float winY)
 SDL_AppResult App::iterate()
 {
     const uint64_t now = SDL_GetTicksNS();
+    const float dt = std::min(0.1f, static_cast<float>(now - lastNs_) / 1e9f);
     accumulatorNs_ += now - lastNs_;
     lastNs_ = now;
     if (accumulatorNs_ > kMaxCatchUpFrames * stepNs_) {
@@ -865,8 +968,20 @@ SDL_AppResult App::iterate()
             }
         }
     }
+    if (launcher_) {
+        updateLauncherMusic(dt);
+        if (mode_ == Mode::Launcher) {
+            launcher_->update(dt);
+        }
+    }
     if (mode_ == Mode::Launcher) {
         if (const std::string chosen = launcher_->takeChosen(); !chosen.empty()) {
+            for (auto *music : {&menuMusic_, &menuMusicOld_}) {
+                if (*music) {
+                    (*music)->stop(); // the game's title screen starts the same track itself
+                    music->reset();
+                }
+            }
             loadGame(chosen); // its title screen
         }
         if (launcher_->quitRequested()) {

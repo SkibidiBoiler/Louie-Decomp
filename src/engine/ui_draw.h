@@ -18,6 +18,8 @@ void fillRect(SDL_Renderer *r, float x, float y, float w, float h, SDL_FColor c)
 void frameRect(SDL_Renderer *r, float x, float y, float w, float h, float t, SDL_FColor c);
 void disc(SDL_Renderer *r, float cx, float cy, float radius, SDL_FColor c);
 void ring(SDL_Renderer *r, float cx, float cy, float radius, float thickness, SDL_FColor c);
+// A button with round ends, in one piece (no overlaps darken a translucent colour).
+void pill(SDL_Renderer *r, const SDL_FRect &rc, SDL_FColor c);
 // The panel: fill and border (border thickness from the row height).
 void panel(SDL_Renderer *r, float x, float y, float w, float h, float rowH);
 

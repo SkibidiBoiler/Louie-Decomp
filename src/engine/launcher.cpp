@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstring>
 
 #include "engine/import_screen.h"
 #include "engine/lang.h"
@@ -14,6 +13,13 @@
 namespace engine {
 
 namespace {
+
+// The cover banner is the title screen's strip y 72..296 (700 x 224); a box shows its middle, x 200..500.
+constexpr float kBoxAspect = 300.0f / 224.0f;
+constexpr float kBoxU0 = 200.0f / 700.0f, kBoxU1 = 500.0f / 700.0f;
+constexpr float kSmallBox = 0.78f; // the boxes that are not selected
+constexpr float kFadeSeconds = 0.35f;
+constexpr SDL_FColor kInk{0.05f, 0.07f, 0.12f, 1}; // text on a bright button
 
 // Interface text in the embedded font; before any game is imported there is none, so SDL's debug font
 // (ASCII only) stands in.
@@ -35,18 +41,36 @@ float label(SDL_Renderer *r, TextLibrary &text, float size, const std::string &s
     return w;
 }
 
-// A vertical gradient over the whole window, behind the panel.
-void background(SDL_Renderer *r, int w, int h)
+// One line, shrunk to fit `maxW`.
+void labelFit(SDL_Renderer *r, TextLibrary &text, float size, const std::string &s, float x, float baseline,
+              SDL_FColor color, int align, float maxW)
 {
-    const SDL_FColor top{0.11f, 0.15f, 0.25f, 1}, bottom{0.03f, 0.04f, 0.08f, 1};
-    const float fw = static_cast<float>(w), fh = static_cast<float>(h);
-    const SDL_Vertex v[4] = {{{0, 0}, top, {0, 0}}, {{fw, 0}, top, {0, 0}}, {{fw, fh}, bottom, {0, 0}},
-                             {{0, fh}, bottom, {0, 0}}};
+    const float w = label(r, text, size, s, 0, 0, color, 0, false);
+    if (w > maxW && w > 0) {
+        size *= maxW / w;
+    }
+    label(r, text, size, s, x, baseline, color, align);
+}
+
+void gradient(SDL_Renderer *r, const SDL_FRect &rc, SDL_FColor top, SDL_FColor bottom)
+{
+    const SDL_Vertex v[4] = {{{rc.x, rc.y}, top, {0, 0}},
+                             {{rc.x + rc.w, rc.y}, top, {0, 0}},
+                             {{rc.x + rc.w, rc.y + rc.h}, bottom, {0, 0}},
+                             {{rc.x, rc.y + rc.h}, bottom, {0, 0}}};
     const int idx[6] = {0, 1, 2, 0, 2, 3};
     SDL_RenderGeometry(r, nullptr, v, 4, idx, 6);
 }
 
-int wrap(int i, int n) { return ((i % n) + n) % n; }
+SDL_FColor shade(SDL_FColor c, float k, float a = 1)
+{
+    return {std::min(1.0f, c.r * k), std::min(1.0f, c.g * k), std::min(1.0f, c.b * k), a};
+}
+
+bool inside(const SDL_FRect &rc, float x, float y)
+{
+    return x >= rc.x && x < rc.x + rc.w && y >= rc.y && y < rc.y + rc.h;
+}
 
 } // namespace
 
@@ -56,6 +80,11 @@ Launcher::Launcher(Lang &lang, ImportScreen &import, std::string dataDir)
     refresh();
 }
 
+Launcher::~Launcher()
+{
+    clearCovers();
+}
+
 void Launcher::refresh()
 {
     for (Game &g : games_) {
@@ -63,11 +92,55 @@ void Launcher::refresh()
     }
 }
 
+bool Launcher::imported(const std::string &gameId) const
+{
+    for (const Game &g : games_) {
+        if (gameId == g.id) {
+            return g.imported;
+        }
+    }
+    return false;
+}
+
 void Launcher::select(const std::string &gameId)
 {
     for (int i = 0; i < GameCount; ++i) {
         if (gameId == games_[i].id) {
-            selected_ = i;
+            move(i - selected_);
+        }
+    }
+}
+
+void Launcher::setCover(const std::string &gameId, SDL_Texture *banner)
+{
+    for (Game &g : games_) {
+        if (gameId == g.id) {
+            if (g.cover) {
+                SDL_DestroyTexture(g.cover);
+            }
+            g.cover = banner;
+            return;
+        }
+    }
+    SDL_DestroyTexture(banner);
+}
+
+bool Launcher::hasCover(const std::string &gameId) const
+{
+    for (const Game &g : games_) {
+        if (gameId == g.id) {
+            return g.cover != nullptr;
+        }
+    }
+    return false;
+}
+
+void Launcher::clearCovers()
+{
+    for (Game &g : games_) {
+        if (g.cover) {
+            SDL_DestroyTexture(g.cover);
+            g.cover = nullptr;
         }
     }
 }
@@ -79,87 +152,148 @@ std::string Launcher::takeChosen()
     return id;
 }
 
+void Launcher::update(float dt)
+{
+    fade_ = std::min(1.0f, fade_ + dt / kFadeSeconds);
+    const float k = std::min(1.0f, dt * 14);
+    for (int i = 0; i < GameCount; ++i) {
+        const float target = i == selected_ ? 1.0f : kSmallBox;
+        scale_[i] += (target - scale_[i]) * k;
+    }
+}
+
+void Launcher::move(int delta)
+{
+    focus_ = Focus::Games;
+    const int next = std::clamp(selected_ + delta, 0, GameCount - 1);
+    if (next == selected_) {
+        return;
+    }
+    // A fade that is still running restarts from the game shown most.
+    previous_ = fade_ < 0.5f ? previous_ : selected_;
+    selected_ = next;
+    fade_ = 0;
+}
+
 Launcher::Layout Launcher::layout(int w, int h) const
 {
     Layout l;
-    const float unit = static_cast<float>(std::min(w, h));
-    l.rowH = unit * 0.135f;
-    l.titleH = unit * 0.2f;
-    l.quitH = l.rowH * 0.7f;
-    l.statusH = l.rowH * 0.6f;
-    l.panelW = std::min(static_cast<float>(w) * 0.88f, unit * 1.6f);
-    l.panelH = l.titleH + l.rowH * static_cast<float>(GameCount) + l.quitH + l.statusH;
-    l.panelX = (static_cast<float>(w) - l.panelW) / 2;
-    l.panelY = (static_cast<float>(h) - l.panelH) / 2;
+    const float fw = static_cast<float>(w), fh = static_cast<float>(h);
+    l.pad = fh * 0.06f;
+    const float boxTop = fh * 0.16f, boxH = fh * 0.32f, boxW = boxH * kBoxAspect, gap = fh * 0.035f;
+    float total = gap * (GameCount - 1);
+    for (float s : scale_) {
+        total += boxW * s;
+    }
+    const float f = std::min(1.0f, (fw - 2 * l.pad) / total);
+    float x = l.pad;
+    for (int i = 0; i < GameCount; ++i) {
+        l.boxes[i] = {x, boxTop, boxW * scale_[i] * f, boxH * scale_[i] * f};
+        x += l.boxes[i].w + gap * f;
+    }
+    l.titleSize = fh * 0.058f;
+    l.infoY = boxTop + boxH * f + fh * 0.1f;
+    l.action = {l.pad, l.infoY + fh * 0.1f, fh * 0.44f, fh * 0.09f};
+    l.quit = {l.pad, fh - l.pad - fh * 0.075f, fh * 0.26f, fh * 0.075f};
     return l;
 }
 
-int Launcher::rowAt(float x, float y, const Layout &l) const
+Launcher::Target Launcher::hit(float x, float y, int w, int h, int &box) const
 {
-    if (x < l.panelX || x > l.panelX + l.panelW) {
-        return -1;
+    const Layout l = layout(w, h);
+    box = -1;
+    for (int i = 0; i < GameCount; ++i) {
+        if (inside(l.boxes[i], x, y)) {
+            box = i;
+            return Target::Box;
+        }
     }
-    const float top = l.panelY + l.titleH;
-    if (y >= top && y < top + l.rowH * static_cast<float>(GameCount)) {
-        return static_cast<int>((y - top) / l.rowH);
+    if (inside(l.action, x, y) && !actionText(games_[selected_]).empty()) {
+        return Target::Action;
     }
-    const float quitTop = top + l.rowH * static_cast<float>(GameCount);
-    return y >= quitTop && y < quitTop + l.quitH ? QuitRow : -1;
+    return inside(l.quit, x, y) ? Target::Quit : Target::None;
 }
 
 void Launcher::pointerMove(float x, float y, int w, int h)
 {
-    const int row = rowAt(x, y, layout(w, h));
-    if (row >= 0) {
-        selected_ = row;
+    int box = -1;
+    switch (hit(x, y, w, h, box)) {
+    case Target::Action: focus_ = Focus::Games; break;
+    case Target::Quit: focus_ = Focus::Quit; break;
+    default: break;
     }
 }
 
 void Launcher::pointerDown(float x, float y, int w, int h)
 {
-    pressed_ = rowAt(x, y, layout(w, h));
-    if (pressed_ >= 0) {
-        selected_ = pressed_;
-    }
+    pressed_ = hit(x, y, w, h, pressedBox_);
 }
 
 void Launcher::pointerUp(float x, float y, int w, int h)
 {
-    const int row = rowAt(x, y, layout(w, h));
-    if (row >= 0 && row == pressed_) {
-        activate(row);
+    int box = -1;
+    const Target t = hit(x, y, w, h, box);
+    if (t != Target::None && t == pressed_ && box == pressedBox_) {
+        switch (t) {
+        case Target::Box:
+            if (box == selected_) {
+                focus_ = Focus::Games;
+                activate(); // a second tap on the selected box starts it
+            } else {
+                move(box - selected_);
+            }
+            break;
+        case Target::Action:
+            focus_ = Focus::Games;
+            activate();
+            break;
+        case Target::Quit:
+            quit_ = true;
+            break;
+        default:
+            break;
+        }
     }
-    pressed_ = -1;
+    pressed_ = Target::None;
+    pressedBox_ = -1;
 }
 
 bool Launcher::key(SDL_Keycode k)
 {
     switch (k) {
-    case SDLK_UP:
-    case SDLK_W:
-        selected_ = wrap(selected_ - 1, RowCount);
+    case SDLK_LEFT:
+    case SDLK_A:
+        move(-1);
+        return true;
+    case SDLK_RIGHT:
+    case SDLK_D:
+        move(1);
         return true;
     case SDLK_DOWN:
     case SDLK_S:
-        selected_ = wrap(selected_ + 1, RowCount);
+        focus_ = Focus::Quit;
+        return true;
+    case SDLK_UP:
+    case SDLK_W:
+        focus_ = Focus::Games;
         return true;
     case SDLK_RETURN:
     case SDLK_KP_ENTER:
     case SDLK_SPACE:
-        activate(selected_);
+        activate();
         return true;
     default:
         return false;
     }
 }
 
-void Launcher::activate(int row)
+void Launcher::activate()
 {
-    if (row == QuitRow) {
+    if (focus_ == Focus::Quit) {
         quit_ = true;
         return;
     }
-    const Game &g = games_[row];
+    const Game &g = games_[selected_];
     if (!g.imported) {
         import_.pick(g.id); // ignored while another import runs
     } else if (g.ported) {
@@ -181,83 +315,135 @@ std::string Launcher::statusText(const Game &g) const
 
 std::string Launcher::actionText(const Game &g) const
 {
-    const ImportScreen::Status st = import_.status();
-    if (st.running && st.gameId == g.id) {
-        return std::to_string(static_cast<int>(st.fraction * 100)) + " %";
-    }
     if (!g.imported) {
         return lang_.get("launcher.import");
     }
     return g.ported ? lang_.get("launcher.play") : std::string();
 }
 
+void Launcher::renderBackground(SDL_Renderer *r, int w, int h) const
+{
+    const float fw = static_cast<float>(w), fh = static_cast<float>(h);
+    const SDL_FRect all{0, 0, fw, fh};
+    auto draw = [&](const Game &g, float alpha) {
+        if (alpha <= 0) {
+            return;
+        }
+        if (g.cover) {
+            // The title art filling the screen (cropped to the window's shape).
+            float tw = 0, th = 0;
+            SDL_GetTextureSize(g.cover, &tw, &th);
+            SDL_FRect src{0, 0, tw, th};
+            if (tw / th > fw / fh) {
+                src.w = th * fw / fh;
+                src.x = (tw - src.w) / 2;
+            } else {
+                src.h = tw * fh / fw;
+                src.y = (th - src.h) / 2;
+            }
+            SDL_SetTextureAlphaModFloat(g.cover, alpha);
+            SDL_RenderTexture(r, g.cover, &src, &all);
+            SDL_SetTextureAlphaModFloat(g.cover, 1);
+        } else {
+            gradient(r, all, shade(g.theme, 0.9f, alpha), shade(g.theme, 0.3f, alpha));
+        }
+    };
+    draw(games_[previous_], 1);
+    draw(games_[selected_], fade_);
+    // Darker towards the bottom and the left, where the text is; a touch of the game's colour.
+    gradient(r, all, SDL_FColor{0, 0, 0, 0.42f}, SDL_FColor{0, 0, 0, 0.85f});
+    const SDL_Vertex v[4] = {{{0, 0}, SDL_FColor{0, 0, 0, 0.45f}, {0, 0}},
+                             {{fw * 0.6f, 0}, SDL_FColor{0, 0, 0, 0}, {0, 0}},
+                             {{fw * 0.6f, fh}, SDL_FColor{0, 0, 0, 0}, {0, 0}},
+                             {{0, fh}, SDL_FColor{0, 0, 0, 0.45f}, {0, 0}}};
+    const int idx[6] = {0, 1, 2, 0, 2, 3};
+    SDL_RenderGeometry(r, nullptr, v, 4, idx, 6);
+    ui::fillRect(r, 0, 0, fw, fh, shade(games_[selected_].theme, 1, 0.12f));
+}
+
+void Launcher::renderBox(SDL_Renderer *r, TextLibrary &text, int i, const SDL_FRect &box) const
+{
+    const Game &g = games_[i];
+    const bool selected = i == selected_;
+    if (selected) {
+        // A soft glow around the selected box.
+        for (int k = 3; k >= 1; --k) {
+            const float e = box.h * 0.018f * static_cast<float>(k);
+            ui::fillRect(r, box.x - e, box.y - e, box.w + 2 * e, box.h + 2 * e, SDL_FColor{1, 1, 1, 0.06f});
+        }
+    } else {
+        ui::fillRect(r, box.x + box.h * 0.02f, box.y + box.h * 0.03f, box.w, box.h, SDL_FColor{0, 0, 0, 0.35f});
+    }
+    if (g.cover) {
+        float tw = 0, th = 0;
+        SDL_GetTextureSize(g.cover, &tw, &th);
+        const SDL_FRect src{tw * kBoxU0, 0, tw * (kBoxU1 - kBoxU0), th};
+        SDL_RenderTexture(r, g.cover, &src, &box);
+    } else {
+        // No art without the game's data: its colours and its name.
+        gradient(r, box, shade(g.theme, 1.25f), shade(g.theme, 0.55f));
+        const std::string id = g.id;
+        labelFit(r, text, box.h * 0.17f, lang_.get("launcher.short_" + id), box.x + box.w / 2, box.y + box.h * 0.5f,
+                 ui::kTextBright, 2, box.w * 0.86f);
+        labelFit(r, text, box.h * 0.08f, lang_.get("launcher.sub_" + id), box.x + box.w / 2, box.y + box.h * 0.66f,
+                 ui::kTextDim, 2, box.w * 0.86f);
+    }
+    if (!selected) {
+        ui::fillRect(r, box.x, box.y, box.w, box.h, SDL_FColor{0, 0, 0, 0.35f});
+    }
+    ui::frameRect(r, box.x, box.y, box.w, box.h, std::max(2.0f, box.h * (selected ? 0.014f : 0.006f)),
+                  SDL_FColor{1, 1, 1, selected ? 0.95f : 0.35f});
+}
+
 void Launcher::render(SDL_Renderer *r, TextLibrary &text, int w, int h) const
 {
     const Layout l = layout(w, h);
+    const float fw = static_cast<float>(w), fh = static_cast<float>(h);
     SDL_SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-    background(r, w, h);
-    ui::panel(r, l.panelX, l.panelY, l.panelW, l.panelH, l.rowH);
-    const float pad = l.rowH * 0.3f;
-    const float cx = l.panelX + l.panelW / 2;
+    renderBackground(r, w, h);
 
-    label(r, text, l.titleH * 0.3f, lang_.get("launcher.title"), cx, l.panelY + l.titleH * 0.47f, ui::kTextBright, 2);
-    label(r, text, l.titleH * 0.16f, lang_.get("launcher.subtitle"), cx, l.panelY + l.titleH * 0.8f, ui::kTextDim, 2);
+    label(r, text, fh * 0.034f, lang_.get("launcher.title"), l.pad, l.pad + fh * 0.02f, ui::kTextDim, 0);
+    // The selected box last, so its glow is on top.
+    for (int i = 0; i < GameCount; ++i) {
+        if (i != selected_) {
+            renderBox(r, text, i, l.boxes[i]);
+        }
+    }
+    renderBox(r, text, selected_, l.boxes[selected_]);
 
+    const Game &g = games_[selected_];
+    const float maxW = fw - 2 * l.pad;
+    labelFit(r, text, l.titleSize, lang_.get(std::string("launcher.game_") + g.id), l.pad, l.infoY, ui::kTextBright, 0,
+             maxW);
+    label(r, text, fh * 0.03f, statusText(g), l.pad, l.infoY + fh * 0.05f, ui::kTextDim, 0);
+
+    // The action button, or the import's progress in its place.
     const ImportScreen::Status st = import_.status();
-    for (int i = 0; i < RowCount; ++i) {
-        const bool quit = i == QuitRow;
-        const float y = l.panelY + l.titleH + l.rowH * static_cast<float>(i);
-        const float rowH = quit ? l.quitH : l.rowH;
-        if (i == selected_) {
-            ui::fillRect(r, l.panelX + 4, y + 2, l.panelW - 8, rowH - 4, ui::kRowHighlight);
-        } else {
-            ui::fillRect(r, l.panelX + pad, y, l.panelW - 2 * pad, 1, ui::kRowSeparator);
-        }
-        if (quit) {
-            label(r, text, l.rowH * 0.27f, lang_.get("launcher.quit"), cx, y + rowH * 0.66f, ui::kTextBright, 2);
-            continue;
-        }
-        const Game &g = games_[i];
-        const bool playable = g.ported && g.imported;
-        // The action on the right; the title on the left, shrunk if it would run into it.
-        const std::string action = actionText(g);
-        const float actionSize = l.rowH * 0.25f;
-        const float actionW = action.empty() ? 0 : label(r, text, actionSize, action, 0, 0, ui::kTextBright, 0, false);
-        if (!action.empty()) {
-            label(r, text, actionSize, action, l.panelX + l.panelW - pad, y + l.rowH * 0.6f, ui::kTextBright, 1);
-        }
-        const std::string title = lang_.get(std::string("launcher.game_") + g.id);
-        float titleSize = l.rowH * 0.3f;
-        const float room = l.panelW - 3 * pad - actionW;
-        const float titleW = label(r, text, titleSize, title, 0, 0, ui::kTextBright, 0, false);
-        if (titleW > room && titleW > 0) {
-            titleSize *= room / titleW;
-        }
-        label(r, text, titleSize, title, l.panelX + pad, y + l.rowH * 0.48f, playable ? ui::kTextBright : ui::kTextDim, 0);
-        label(r, text, l.rowH * 0.19f, statusText(g), l.panelX + pad, y + l.rowH * 0.8f, ui::kTextDim, 0);
+    const float btnText = l.action.h * 0.36f;
+    if (st.running && st.gameId == g.id) {
+        ui::pill(r, l.action, SDL_FColor{1, 1, 1, 0.16f});
+        SDL_FRect fill = l.action;
+        fill.w = std::max(fill.h, fill.w * std::clamp(st.fraction, 0.0f, 1.0f));
+        ui::pill(r, fill, SDL_FColor{1, 1, 1, 0.5f});
+        label(r, text, btnText, lang_.get("launcher.importing_short", std::to_string(static_cast<int>(st.fraction * 100))),
+              l.action.x + l.action.w / 2, l.action.y + l.action.h * 0.63f, ui::kTextBright, 2);
+    } else if (const std::string action = actionText(g); !action.empty()) {
+        const bool focused = focus_ == Focus::Games;
+        ui::pill(r, l.action, focused ? SDL_FColor{1, 1, 1, 0.95f} : SDL_FColor{1, 1, 1, 0.16f});
+        label(r, text, btnText, action, l.action.x + l.action.w / 2, l.action.y + l.action.h * 0.63f,
+              focused ? kInk : ui::kTextBright, 2);
+    }
+    if (st.failed && st.gameId == g.id) {
+        labelFit(r, text, fh * 0.026f, lang_.get("launcher.import_failed") + " " + st.error, l.pad,
+                 l.action.y + l.action.h + fh * 0.045f, SDL_FColor{1, 0.6f, 0.5f, 0.95f}, 0, maxW);
     }
 
-    // The status line: the import's progress, its error, or the project's note.
-    const float sy = l.panelY + l.panelH - l.statusH;
-    const float size = l.statusH * 0.3f;
-    if (st.running) {
-        const float barW = l.panelW * 0.5f, barH = l.statusH * 0.16f;
-        const float bx = cx - barW / 2, by = sy + l.statusH * 0.62f;
-        ui::fillRect(r, bx, by, barW, barH, SDL_FColor{1, 1, 1, 0.18f});
-        ui::fillRect(r, bx, by, barW * std::clamp(st.fraction, 0.0f, 1.0f), barH, ui::kTextBright);
-        label(r, text, size, lang_.get("launcher.importing", lang_.get("launcher.game_" + st.gameId)), cx,
-              sy + l.statusH * 0.45f, ui::kTextDim, 2);
-    } else if (st.failed) {
-        std::string msg = lang_.get("launcher.import_failed") + " " + st.error;
-        float s = size;
-        const float wMsg = label(r, text, s, msg, 0, 0, ui::kTextBright, 0, false);
-        if (wMsg > l.panelW - 2 * pad && wMsg > 0) {
-            s *= (l.panelW - 2 * pad) / wMsg;
-        }
-        label(r, text, s, msg, cx, sy + l.statusH * 0.6f, SDL_FColor{1, 0.6f, 0.5f, 0.95f}, 2);
-    } else {
-        label(r, text, size * 0.85f, lang_.get("launcher.note"), cx, sy + l.statusH * 0.6f, SDL_FColor{1, 1, 1, 0.5f}, 2);
-    }
+    const bool quitFocused = focus_ == Focus::Quit;
+    ui::pill(r, l.quit, quitFocused ? SDL_FColor{1, 1, 1, 0.95f} : SDL_FColor{1, 1, 1, 0.12f});
+    label(r, text, l.quit.h * 0.38f, lang_.get("launcher.quit"), l.quit.x + l.quit.w / 2, l.quit.y + l.quit.h * 0.64f,
+          quitFocused ? kInk : ui::kTextBright, 2);
+    labelFit(r, text, fh * 0.022f, lang_.get("launcher.note"), fw - l.pad, l.quit.y + l.quit.h * 0.64f,
+             SDL_FColor{1, 1, 1, 0.5f}, 1, fw - 3 * l.pad - l.quit.w);
 }
 
 } // namespace engine

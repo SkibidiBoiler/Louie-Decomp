@@ -52,6 +52,8 @@ private:
     SDL_Keycode gamepadKey(const SDL_Event &ev);
     void stageToPixels(float sx, float sy, float &px, float &py) const;
     void enterLauncher();
+    void buildCovers();
+    void updateLauncherMusic(float dt);
     // The port's own screens (touch buttons, options, game picker), drawn in window pixels.
     void renderWindowLayer();
 
@@ -105,6 +107,9 @@ private:
     std::unique_ptr<obf_9G::obf_4R> game_;
     std::unique_ptr<ImportScreen> importScreen_;
     std::unique_ptr<Launcher> launcher_;
+    // The picker's music: the selected game's title track, cross-faded when the selection changes.
+    std::shared_ptr<SoundChannel> menuMusic_, menuMusicOld_;
+    std::string menuMusicGame_;
     int gamepadAxisX_ = 0, gamepadAxisY_ = 0; // the left stick's last direction, for menu steps (-1, 0, 1)
     float dragX_ = 0.0f, dragY_ = 0.0f; // pending camera pan from mouse/touch drags, applied in tick
     bool dragging_ = false;

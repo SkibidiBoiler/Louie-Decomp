@@ -51,7 +51,6 @@
   "options.off": "Off",
   "options.close": "CLOSE",
   "launcher.title": "LOUIE ATTACK RECOMP",
-  "launcher.subtitle": "Choose a game",
   "launcher.game_pl2": "Papa Louie 2: When Burgers Attack!",
   "launcher.game_pl3": "Papa Louie 3: When Sundaes Attack!",
   "launcher.game_pl1": "Papa Louie: When Pizzas Attack!",
@@ -60,8 +59,14 @@
   "launcher.ready": "Ready to play",
   "launcher.not_imported": "Not imported",
   "launcher.coming_soon": "Coming soon",
-  "launcher.importing": "Importing {0}...",
   "launcher.import_failed": "Import failed:",
   "launcher.note": "Unofficial project. Plays your own copies of the games.",
-  "launcher.quit": "QUIT"
+  "launcher.quit": "QUIT",
+  "launcher.short_pl2": "PAPA LOUIE 2",
+  "launcher.short_pl3": "PAPA LOUIE 3",
+  "launcher.short_pl1": "PAPA LOUIE",
+  "launcher.sub_pl2": "When Burgers Attack!",
+  "launcher.sub_pl3": "When Sundaes Attack!",
+  "launcher.sub_pl1": "When Pizzas Attack!",
+  "launcher.importing_short": "Importing... {0} %"
 }

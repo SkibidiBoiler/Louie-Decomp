@@ -54,7 +54,14 @@ class Audio {
 public:
     ~Audio();
     bool open();
-    void setSoundDir(const std::string &dir) { dir_ = dir; }
+    // Sounds are cached by name, so another game's folder drops the cache.
+    void setSoundDir(const std::string &dir)
+    {
+        if (dir != dir_) {
+            cache_.clear();
+        }
+        dir_ = dir;
+    }
     // Sound.play(0, loops, transform). Null when the sound does not exist (getDefinitionByName fails).
     std::shared_ptr<SoundChannel> play(const std::string &name, int loops, double volume, double pan);
     // SoundMixer.soundTransform.volume
