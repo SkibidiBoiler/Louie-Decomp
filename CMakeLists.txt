@@ -158,6 +158,7 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/SmokeRingEffect.cpp
     src/game/papaGame/models/effects/CrackerBreakEffect.cpp
     src/game/papaGame/models/effects/DizzyEffect.cpp
+    src/game/papaGame/models/effects/PlayerStunSparkleEffect.cpp
     src/game/papaGame/models/effects/DoorFrontEffect.cpp
     src/game/papaGame/models/effects/DustEffect.cpp
     src/game/papaGame/models/effects/BossEscapeEffect.cpp
@@ -269,6 +270,7 @@ set(PL_SOURCES
     src/game/papaGame/models/characters/CustomerChar.cpp
     src/game/papaGame/screens/GameIntroScreen.cpp
     src/game/papaGame/screens/MainMenuScreen.cpp
+    src/game/papaGame/screens/BossIntroScreen.cpp
     src/game/papaGame/screens/NewCustomerScreen.cpp
     src/game/papaGame/screens/ScoreTallyScreen.cpp
     src/game/papaGame/screens/StageOutroScreen.cpp

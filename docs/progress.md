@@ -549,3 +549,12 @@ are filled: the balloon at startupPlayer, hidden on attack, reset at the attack'
 original, which leaves the list uncleared). Checked with `--customer 25` (Foodini): the balloon follows him (capture)
 and the glide balloons appear and rise away. Not checked: the warp key effect (end of a level), the strings'
 look. Progress: 79.2 % of functions, 86.3 % of lines.
+
+(49) `BossIntroScreen`: on the first play of Radley's Hideout (level 8, high score 0) the level start shows Papa
+Louie trapped (customerTrappedMC) facing the radish boss over the tilesheet 4 backdrop, with MidBossTrack; after 120
+frames the iris closes and the level starts (obf_4R obf_6I / obf_28; the SKELETON before obf_52 is gone). QUIRK kept:
+the puppet holds the selected character's weapon. The GlowFilter on the puppets is not drawn (no filters in the
+port). Engine: `MovieClip::addChildAtBottom` (addChildAt 0, under the timeline children). `CustomerData.getCustomerIndex`.
+`PlayerStunSparkleEffect` translated and registered (PL2 never adds it; build checked only). Checked: capture of
+the intro at frame 70 (`--level 8`) and the trace of the level starting after it. Progress: 79.9 % of functions,
+87.1 % of lines.

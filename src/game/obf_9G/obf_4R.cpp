@@ -75,8 +75,11 @@ void obf_4R::obf_6V(double whichLevel)
     if (start.size() >= 3) {
         playerObj->startupPlayer(start[1], start[2], true);
     }
-    // SKELETON: challenges and the level intro; the original reaches §_-52§ after the intro transition.
-    obf_52();
+    if (whichLevel == 8 && obf_51->getLevelHighScore(whichLevel) == 0) {
+        obf_6I();
+    } else {
+        obf_52();
+    }
 }
 
 // AS: §_-4R§.§_-52§ (start level)
@@ -178,6 +181,21 @@ void obf_4R::obf_6s()
     if (obf_6p) {
         obf_6p->destroy();
         pendingDestroyNewCustomer_ = std::move(obf_6p); // port: it may be running; freed on the next frame
+    }
+}
+
+// AS: §_-4R§.§_-6I§
+void obf_4R::obf_6I()
+{
+    obf_59 = std::make_unique<papaGame::screens::BossIntroScreen>(this);
+}
+
+// AS: §_-4R§.§_-28§
+void obf_4R::obf_28()
+{
+    if (obf_59) {
+        obf_59->destroy();
+        pendingDestroyBossIntro_ = std::move(obf_59); // port: it may be running; freed on the next frame
     }
 }
 
@@ -431,7 +449,7 @@ void obf_4R::obf_64(bool tween)
 
 bool obf_4R::screensActive() const
 {
-    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr;
+    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr || obf_59 != nullptr;
 }
 
 bool obf_4R::updateScreens(const engine::PointerState &pointer)
@@ -444,6 +462,7 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     pendingDestroyOutro_.reset();
     pendingDestroyTally_.reset();
     pendingDestroyNewCustomer_.reset();
+    pendingDestroyBossIntro_.reset();
     engine::MovieClip::collectGarbage();
     const bool onBar = menuBar.update(pointer, [this](const std::string &event) { dispatchContainerEvent(event); });
     // Port: the HUD sits in the original's display list above the game; here it is drawn by the display, so it
@@ -480,6 +499,9 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     }
     if (obf_6p) {
         obf_6p->updateScreen();
+    }
+    if (obf_59) {
+        obf_59->updateScreen();
     }
     obf_9X->advance();
     if (obf_a) {
