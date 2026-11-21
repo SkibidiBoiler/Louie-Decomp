@@ -603,8 +603,7 @@ menu bars. The keyboard now follows the player's keys: engine `Input::keyBinding
 every frame) with `flashKeyToScancode` / `scancodeToFlashKey`; the port's extra keys (W A S D, Z, X) work while no game
 key uses them. While the tab waits for a key, the app sends the next key to `obf_4R::keyDown` (the original's stage
 KEY_DOWN listener). Checked: capture of the tab with the six keys. Not checked: changing a key (no scripted raw keys).
-Known: the key labels miss letters ("Sace", "Let"): the label field's font lacks those glyphs in the port's text
-renderer. Progress: 87.1 % of functions, 93.9 % of lines.
+The key labels' missing letters are fixed (see 57). Progress: 87.1 % of functions, 93.9 % of lines.
 
 (56) Menu HELP tab: MainMenuScreen setupHelp, setupHelpKeys (also when the section opens), showHelp, clickHelpTab,
 the tabs' roll-over / roll-out, the two scroll bars (click / hold / release of the arrows, click / drag / release of
@@ -612,5 +611,10 @@ the dragger, for the tab list and the page), clickHelp. The 18 topic names are p
 Port: drags keep the grab offset (startDrag), the stage MOUSE_UP is the pointer going up, `obf_4R::pointer` holds the
 frame's pointer; moving a timeline child vertically keeps its timeline x (setChildY). QUIRK kept:
 releaseHelpMainArrow clears helpTabScrollDir. Not ported: the `useSection: "help"` parameter (never sent). Checked:
-captures of topics 1 and 2 (Attacking shows the player's Space key). Not checked: the scroll bars. The pause bar now
-has six tabs: INFO may sit under the QUIT LEVEL button (to check). Progress: 88.0 % of functions, 94.5 % of lines.
+captures of topics 1 and 2 (Attacking shows the player's Space key). Not checked: the scroll bars. The pause bar's six tabs fit (see 57). Progress: 88.0 % of functions, 94.5 % of lines.
+
+(57) Text and menu bar fixes: a character missing from a field's embedded font is drawn from the embedding of the
+same font with the most glyphs (Flash embeds only the characters a field was made with; the CONTROLS labels showed
+"Sace", "Let"). The menu bar's tab row starts after the back button when it would go under it, with narrower buttons
+(no side padding) when it would run off the right edge (the pause menu's six tabs). Checked: captures of the CONTROLS
+tab (Space, Up, Left, Right) and of the pause bar.

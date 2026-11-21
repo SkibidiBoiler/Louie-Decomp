@@ -460,6 +460,11 @@ float TextLibrary::drawCodePoint(const Font &f, uint32_t code, float pen, float 
         }
         return g->advance * k;
     }
+    // Flash embeds only the characters a field was made with; another embedding of the same font (the one with the
+    // most glyphs) usually has the rest, as the original's labels show ("Space" in a field made with "Down").
+    if (Font *other = fontByName(f.name); other && other != &f && other->byCode.count(code)) {
+        return drawCodePoint(*other, code, pen, baseline, size, m, color, draw);
+    }
     const Compose *cp = nullptr;
     for (const Compose &item : kCompose) {
         if (item.code == code) {

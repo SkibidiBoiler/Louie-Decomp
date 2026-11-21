@@ -99,7 +99,7 @@ void MenuBar::buildButton(Button &b)
     const float textWidth = text_ ? text_->drawString(kFont, b.large ? kLargeSize : kSmallSize, b.label, 0, 0,
                                                       SDL_FColor{}, 0, Affine{}, false)
                                   : 0;
-    const float wanted = textWidth + 4 + kPadding * 2;
+    const float wanted = textWidth + 4 + (b.tight ? 0 : kPadding * 2);
     b.w = std::ceil(wanted / b.piece) * b.piece;
     const int middles = std::max(0, static_cast<int>(b.w / b.piece) - 2);
     for (int i = 0; i < middles + 2; ++i) {
@@ -148,6 +148,28 @@ void MenuBar::setup(const SymbolLibrary &symbols, TextLibrary *text, const Lang 
         }
     }
     float tabX = std::floor((kStageWidth - (tabsWidth - 4)) / 2);
+    // A long row (the pause menu's six tabs) starts after the back button instead of going under it, with
+    // narrower buttons when it would run off the right edge.
+    float rowStart = 0;
+    for (const Button &b : buttons_) {
+        if (b.item.kind == Kind::Back) {
+            rowStart = 12 + b.w + 6;
+        }
+    }
+    if (tabX < rowStart && rowStart + tabsWidth - 4 > kStageWidth - 4) {
+        tabsWidth = 0;
+        for (Button &b : buttons_) {
+            if (b.item.kind == Kind::Tab) {
+                b.pieces.clear();
+                b.overlays.clear();
+                b.tight = true;
+                buildButton(b);
+                tabsWidth += b.w + 4;
+            }
+        }
+        tabX = std::floor((kStageWidth - (tabsWidth - 4)) / 2);
+    }
+    tabX = std::max(tabX, rowStart);
     for (Button &b : buttons_) {
         if (b.item.kind == Kind::Back) {
             b.x = 12;

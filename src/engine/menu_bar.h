@@ -51,6 +51,7 @@ private:
         std::string label;
         float x = 0, y = 0, w = 0, h = 0, piece = 16;
         bool large = false, red = false, over = false, down = false;
+        bool tight = false; // no side padding (a row of tabs too long for the bar)
         std::vector<std::unique_ptr<MovieClip>> pieces, overlays;
     };
     void buildButton(Button &b);
