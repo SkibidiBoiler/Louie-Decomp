@@ -21,7 +21,7 @@ from collections import Counter, OrderedDict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.environ.get('PL_DATA', 'C:/Users/alfre/Proyectos/datos-papas/build-cur')
-EXE = os.path.join(ROOT, 'build', 'windows', 'papalouie.exe')
+EXE = os.path.join(ROOT, 'build', 'windows', 'louieattack.exe')
 ITEM = re.compile(r' (\d+):(\w+) (-?\d+),(-?\d+) ?(\S*)')
 
 

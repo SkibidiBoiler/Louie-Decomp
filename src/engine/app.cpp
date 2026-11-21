@@ -19,6 +19,7 @@ constexpr uint64_t kMaxCatchUpFrames = 5;
 
 App::~App()
 {
+    launcher_.reset();
     importScreen_.reset();
     game_.reset();
     viewerClip_.reset();
@@ -35,7 +36,7 @@ App::~App()
 
 SDL_AppResult App::init(int argc, char *argv[])
 {
-    SDL_SetAppMetadata("Papa's Louie Recomp", "0.1.0", "io.github.skibidiboiler.papalouie");
+    SDL_SetAppMetadata("Louie Attack Decomp", "0.1.0", "io.github.skibidiboiler.louieattack");
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 
     // Touches are handled as fingers (on-screen buttons, taps); no synthetic mouse events from them.
@@ -54,6 +55,14 @@ SDL_AppResult App::init(int argc, char *argv[])
         }
         for (const char *dev : {"--level", "--room", "--at", "--input", "--trace", "--walk-test", "--customer"}) {
             devDirect_ = devDirect_ || std::strcmp(argv[i], dev) == 0;
+        }
+        if (std::strcmp(argv[i], "--game") == 0 && i + 1 < argc) { // DEV: skip the game picker ("pl2")
+            devGame_ = argv[i + 1];
+        }
+        for (const char *dev : {"--view", "--player-sheet", "--cam"}) { // DEV views that need a loaded game
+            if (std::strcmp(argv[i], dev) == 0 && devGame_.empty()) {
+                devGame_ = "pl2";
+            }
         }
         if (std::strcmp(argv[i], "--options") == 0) { // DEV: start with the options menu open
             options_.setOpen(true);
@@ -86,7 +95,7 @@ SDL_AppResult App::init(int argc, char *argv[])
 #if defined(SDL_PLATFORM_ANDROID)
     flags |= SDL_WINDOW_FULLSCREEN;
 #endif
-    if (!SDL_CreateWindowAndRenderer("Papa's Louie Recomp", stage_.width * 2, stage_.height * 2, flags,
+    if (!SDL_CreateWindowAndRenderer("Louie Attack Decomp", stage_.width * 2, stage_.height * 2, flags,
                                      &window_, &renderer_)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Window/renderer creation failed: %s", SDL_GetError());
         return SDL_APP_FAILURE;
@@ -103,10 +112,14 @@ SDL_AppResult App::init(int argc, char *argv[])
             static_cast<double>(displayHz_), settings_.fpsCap, settings_.interpolation ? "on" : "off");
     SDL_Log("Data dir: %s (%s)", dataDir_.c_str(), hasData_ ? "found" : "missing");
     importScreen_ = std::make_unique<ImportScreen>(window_, dataDir_);
-    if (hasData_ && fileExists(dataDir_ + "/pl2/symbols.bin")) {
-        loadGame("pl2");
+    launcher_ = std::make_unique<Launcher>(lang_, *importScreen_, dataDir_);
+    if (devDirect_ && devGame_.empty()) {
+        devGame_ = "pl2"; // SKELETON: only PL2 is playable so far
+    }
+    if (!devGame_.empty() && hasData_ && fileExists(dataDir_ + "/" + devGame_ + "/symbols.bin")) {
+        loadGame(devGame_);
     } else {
-        mode_ = Mode::Import; // nothing imported yet
+        enterLauncher(); // the port's first screen
     }
     for (int i = 1; i + 1 < argc; ++i) {
         if (std::strcmp(argv[i], "--walk-test") == 0) { // DEV: walk right, jump and attack (--capture checks)
@@ -195,6 +208,122 @@ bool App::captureFrame()
     return ok;
 }
 
+void App::enterLauncher()
+{
+    mode_ = Mode::Launcher;
+    launcher_->refresh();
+    if (!game_) {
+        // The picker's text uses an embedded font of the first imported game (PL2 and PL3 share it).
+        for (const char *id : {"pl2", "pl3", "pl1"}) {
+            if (fileExists(dataDir_ + "/" + id + "/text.json") && text_.init(renderer_, dataDir_ + "/" + id)) {
+                break;
+            }
+        }
+    }
+    buildCovers();
+}
+
+// The picker's covers: each imported game's title screen (splashScreenMC, as SplashScreen.setupScreen shows it),
+// drawn once on the back buffer (so its masks work), read back and kept as a texture. Nothing is saved.
+void App::buildCovers()
+{
+    for (const char *id : {"pl2", "pl3", "pl1"}) {
+        if (!launcher_->imported(id) || launcher_->hasCover(id)) {
+            continue;
+        }
+        const std::string dir = dataDir_ + "/" + id;
+        SymbolLibrary symbols;
+        if (!symbols.load(dir + "/symbols.bin")) {
+            continue;
+        }
+        symbols.loadFrameScripts(dir + "/framescripts.txt");
+        std::unique_ptr<MovieClip> clip = MovieClip::create(symbols, "splashScreenMC");
+        if (!clip) {
+            continue; // not a papaGame title screen (PL1): its box keeps the game's colours
+        }
+        ShapeTextures textures;
+        TextLibrary text;
+        textures.init(renderer_, dir, 2);
+        text.init(renderer_, dir);
+        if (MovieClip *iris = clip->findChild("iris")) {
+            iris->gotoAndStop(1);
+        }
+        if (MovieClip *credits = clip->findChild("credits")) {
+            credits->setY(416);
+        }
+        for (const char *promo : {"promo_holder", "promo2_holder", "promo3_holder"}) {
+            if (MovieClip *holder = clip->findChild(promo)) {
+                holder->setVisible(false);
+            }
+        }
+        for (int i = 0; i < 60; ++i) {
+            clip->advance(); // let the title's intro settle
+        }
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
+        SDL_RenderClear(renderer_);
+        RenderContext ctx{renderer_, &symbols, &textures, &text};
+        ctx.masks = &masks_;
+        clip->render(ctx, Affine{}, ColorTransform{});
+        SDL_FRect area{};
+        SDL_GetRenderLogicalPresentationRect(renderer_, &area);
+        int lw = 0, lh = 0;
+        SDL_RendererLogicalPresentation lmode;
+        SDL_GetRenderLogicalPresentation(renderer_, &lw, &lh, &lmode);
+        SDL_SetRenderLogicalPresentation(renderer_, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+        SDL_Surface *shot = SDL_RenderReadPixels(renderer_, nullptr);
+        SDL_SetRenderLogicalPresentation(renderer_, lw, lh, lmode);
+        SDL_RenderClear(renderer_);
+        clip.reset();
+        MovieClip::collectGarbage();
+        if (!shot) {
+            continue;
+        }
+        // The art strip between the title screen's black bars: stage y 72..296.
+        const float sy = area.h / static_cast<float>(stage_.height);
+        SDL_Rect strip{static_cast<int>(area.x), static_cast<int>(area.y + 72 * sy), static_cast<int>(area.w),
+                       static_cast<int>(224 * sy)};
+        SDL_Surface *banner = SDL_CreateSurface(strip.w, strip.h, shot->format);
+        if (banner && SDL_BlitSurface(shot, &strip, banner, nullptr)) {
+            SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer_, banner);
+            SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_LINEAR);
+            launcher_->setCover(id, tex);
+            SDL_Log("Cover %s: %dx%d", id, strip.w, strip.h);
+        }
+        SDL_DestroySurface(banner);
+        SDL_DestroySurface(shot);
+    }
+}
+
+// The selected game's title track while the picker is shown (it needs the game's data).
+void App::updateLauncherMusic(float dt)
+{
+    const std::string game = mode_ == Mode::Launcher ? launcher_->selectedGame() : "";
+    if (game != menuMusicGame_) {
+        menuMusicGame_ = game;
+        if (menuMusicOld_) {
+            menuMusicOld_->stop();
+        }
+        menuMusicOld_ = std::move(menuMusic_);
+        menuMusic_.reset();
+        if (!game.empty() && launcher_->imported(game)) {
+            audio_.setSoundDir(dataDir_ + "/" + game + "/sounds");
+            menuMusic_ = audio_.play("TitleTrack", 1 << 30, 0, 0);
+        }
+    }
+    if (menuMusic_) {
+        menuMusic_->setTransform(std::min(1.0, menuMusic_->volume() + dt / 0.8), 0);
+    }
+    if (menuMusicOld_) {
+        const double v = menuMusicOld_->volume() - dt / 0.4;
+        if (v <= 0) {
+            menuMusicOld_->stop();
+            menuMusicOld_.reset();
+        } else {
+            menuMusicOld_->setTransform(v, 0);
+        }
+    }
+}
+
 void App::loadGame(const std::string &game)
 {
     const std::string dir = dataDir_ + "/" + game;
@@ -262,7 +391,8 @@ void App::nextMode()
     case Mode::Level: mode_ = Mode::BlitDemo; break;
     case Mode::BlitDemo: mode_ = Mode::Viewer; break;
     case Mode::Viewer: mode_ = Mode::Import; break;
-    case Mode::Import: mode_ = game_ ? Mode::Level : (hasData_ ? Mode::BlitDemo : Mode::Import); break;
+    case Mode::Import: enterLauncher(); break;
+    case Mode::Launcher: mode_ = game_ ? Mode::Level : Mode::Import; break;
     }
 }
 
@@ -486,10 +616,13 @@ void App::showSymbol(int index)
 
 SDL_AppResult App::event(const SDL_Event &ev)
 {
-    if (mode_ == Mode::Level && optionsEvent(ev)) {
+    if ((mode_ == Mode::Level || mode_ == Mode::Launcher) && optionsEvent(ev)) {
         return SDL_APP_CONTINUE; // used by the options menu or its button
     }
     input_.event(ev, window_);
+    if (mode_ == Mode::Launcher && launcherEvent(ev)) {
+        return SDL_APP_CONTINUE;
+    }
     // The pointer in stage coordinates, for the menus (mouse, or the first finger).
     if (ev.type == SDL_EVENT_MOUSE_MOTION || ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
         ev.type == SDL_EVENT_MOUSE_BUTTON_UP || ev.type == SDL_EVENT_FINGER_DOWN || ev.type == SDL_EVENT_FINGER_UP ||
@@ -641,6 +774,18 @@ bool App::optionsEvent(const SDL_Event &ev)
     switch (ev.type) {
     case SDL_EVENT_KEY_DOWN:
         return options_.key(ev.key.key);
+    case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+    case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
+        // Start opens and closes the menu; while it is open the gamepad steers it.
+        const bool start = ev.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN && ev.gbutton.button == SDL_GAMEPAD_BUTTON_START;
+        if (!start && !options_.isOpen()) {
+            return false;
+        }
+        if (const SDL_Keycode k = gamepadKey(ev)) {
+            options_.key(k);
+        }
+        return true;
+    }
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
         return ev.button.button == SDL_BUTTON_LEFT && options_.pointerDown(ev.button.x * kx, ev.button.y * ky, pw, ph);
     case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -655,6 +800,107 @@ bool App::optionsEvent(const SDL_Event &ev)
     default:
         return false;
     }
+}
+
+// The gamepad as menu keys: the d-pad and the left stick move, A (south) chooses, B (east) goes back, Start is
+// the options menu's key (F1). 0 when the event is not one of those.
+SDL_Keycode App::gamepadKey(const SDL_Event &ev)
+{
+    if (ev.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
+        switch (ev.gbutton.button) {
+        case SDL_GAMEPAD_BUTTON_DPAD_UP: return SDLK_UP;
+        case SDL_GAMEPAD_BUTTON_DPAD_DOWN: return SDLK_DOWN;
+        case SDL_GAMEPAD_BUTTON_DPAD_LEFT: return SDLK_LEFT;
+        case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: return SDLK_RIGHT;
+        case SDL_GAMEPAD_BUTTON_SOUTH: return SDLK_RETURN;
+        case SDL_GAMEPAD_BUTTON_EAST: return SDLK_ESCAPE;
+        case SDL_GAMEPAD_BUTTON_START: return SDLK_F1;
+        default: return 0;
+        }
+    }
+    if (ev.type == SDL_EVENT_GAMEPAD_AXIS_MOTION &&
+        (ev.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTX || ev.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTY)) {
+        // One step per push: the stick must come back near the centre before it steps again.
+        const bool vertical = ev.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTY;
+        int &last = vertical ? gamepadAxisY_ : gamepadAxisX_;
+        const int v = ev.gaxis.value;
+        const int dir = v < -20000 ? -1 : (v > 20000 ? 1 : 0);
+        if (dir == 0) {
+            if (v > -8000 && v < 8000) {
+                last = 0;
+            }
+            return 0;
+        }
+        if (dir == last) {
+            return 0;
+        }
+        last = dir;
+        if (vertical) {
+            return dir < 0 ? SDLK_UP : SDLK_DOWN;
+        }
+        return dir < 0 ? SDLK_LEFT : SDLK_RIGHT;
+    }
+    return 0;
+}
+
+// The game picker owns the pointer, its keys and the gamepad. Window coordinates become output pixels, as for
+// the options menu.
+bool App::launcherEvent(const SDL_Event &ev)
+{
+    int w = 0, h = 0, pw = 0, ph = 0;
+    SDL_GetWindowSize(window_, &w, &h);
+    SDL_GetRenderOutputSize(renderer_, &pw, &ph);
+    if (w <= 0 || h <= 0) {
+        return false;
+    }
+    const float kx = static_cast<float>(pw) / static_cast<float>(w), ky = static_cast<float>(ph) / static_cast<float>(h);
+    switch (ev.type) {
+    case SDL_EVENT_KEY_DOWN:
+        return launcher_->key(ev.key.key);
+    case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+    case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
+        const SDL_Keycode k = gamepadKey(ev);
+        if (k == SDLK_RETURN || k == SDLK_UP || k == SDLK_DOWN || k == SDLK_LEFT || k == SDLK_RIGHT) {
+            launcher_->key(k); // B does not quit the app from here
+        }
+        return true;
+    }
+    case SDL_EVENT_MOUSE_MOTION:
+        launcher_->pointerMove(ev.motion.x * kx, ev.motion.y * ky, pw, ph);
+        return true;
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        if (ev.button.button == SDL_BUTTON_LEFT) {
+            launcher_->pointerDown(ev.button.x * kx, ev.button.y * ky, pw, ph);
+        }
+        return true;
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        if (ev.button.button == SDL_BUTTON_LEFT) {
+            launcher_->pointerUp(ev.button.x * kx, ev.button.y * ky, pw, ph);
+        }
+        return true;
+    case SDL_EVENT_FINGER_DOWN:
+        launcher_->pointerDown(ev.tfinger.x * static_cast<float>(pw), ev.tfinger.y * static_cast<float>(ph), pw, ph);
+        return true;
+    case SDL_EVENT_FINGER_UP:
+        launcher_->pointerUp(ev.tfinger.x * static_cast<float>(pw), ev.tfinger.y * static_cast<float>(ph), pw, ph);
+        return true;
+    case SDL_EVENT_FINGER_MOTION:
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Stage coordinates -> the renderer's output pixels (where the port's own screens are drawn).
+void App::stageToPixels(float sx, float sy, float &px, float &py) const
+{
+    int w = 0, h = 0, pw = 0, ph = 0;
+    SDL_GetWindowSize(window_, &w, &h);
+    SDL_GetRenderOutputSize(renderer_, &pw, &ph);
+    float wx = 0, wy = 0;
+    SDL_RenderCoordinatesToWindow(renderer_, sx, sy, &wx, &wy);
+    px = w > 0 ? wx * static_cast<float>(pw) / static_cast<float>(w) : wx;
+    py = h > 0 ? wy * static_cast<float>(ph) / static_cast<float>(h) : wy;
 }
 
 void App::tap(float winX, float winY)
@@ -688,6 +934,7 @@ void App::tap(float winX, float winY)
 SDL_AppResult App::iterate()
 {
     const uint64_t now = SDL_GetTicksNS();
+    const float dt = std::min(0.1f, static_cast<float>(now - lastNs_) / 1e9f);
     accumulatorNs_ += now - lastNs_;
     lastNs_ = now;
     if (accumulatorNs_ > kMaxCatchUpFrames * stepNs_) {
@@ -713,8 +960,34 @@ SDL_AppResult App::iterate()
 
     if (importScreen_) {
         const std::string imported = importScreen_->takeFinished();
-        if (imported == "pl2") { // SKELETON: only PL2 is playable so far
-            loadGame(imported);
+        if (!imported.empty()) {
+            hasData_ = true;
+            if (mode_ == Mode::Level && game_) {
+                launcher_->refresh();
+            } else {
+                enterLauncher(); // back to the picker, on the game just imported
+                launcher_->select(imported);
+            }
+        }
+    }
+    if (launcher_) {
+        updateLauncherMusic(dt);
+        if (mode_ == Mode::Launcher) {
+            launcher_->update(dt);
+        }
+    }
+    if (mode_ == Mode::Launcher) {
+        if (const std::string chosen = launcher_->takeChosen(); !chosen.empty()) {
+            for (auto *music : {&menuMusic_, &menuMusicOld_}) {
+                if (*music) {
+                    (*music)->stop(); // the game's title screen starts the same track itself
+                    music->reset();
+                }
+            }
+            loadGame(chosen); // its title screen
+        }
+        if (launcher_->quitRequested()) {
+            return SDL_APP_SUCCESS;
         }
     }
     render(static_cast<float>(accumulatorNs_) / static_cast<float>(stepNs_));
@@ -748,6 +1021,20 @@ void App::tick()
         tickLevel();
     }
     for (const ScriptedTap &t : taps_) {
+        if (mode_ == Mode::Launcher && (frame_ == t.frame || frame_ == t.frame + 2)) {
+            float px = 0, py = 0;
+            int pw = 0, ph = 0;
+            stageToPixels(t.x, t.y, px, py);
+            SDL_GetRenderOutputSize(renderer_, &pw, &ph);
+            if (frame_ == t.frame) {
+                launcher_->pointerDown(px, py, pw, ph);
+            } else {
+                launcher_->pointerUp(px, py, pw, ph);
+            }
+            SDL_Log("TAP %.0f,%.0f %s (game picker)", static_cast<double>(t.x), static_cast<double>(t.y),
+                    frame_ == t.frame ? "down" : "up");
+            continue;
+        }
         if (frame_ == t.frame || frame_ == t.frame + 2) {
             pointer_.x = t.x;
             pointer_.y = t.y;
@@ -830,18 +1117,8 @@ void App::render(float alpha)
         ctx.alpha = alpha;
         viewerClip_->render(ctx, viewerFit_, ColorTransform{});
     }
-    if (mode_ == Mode::Level) {
-        // The on-screen buttons are drawn in window pixels, anchored to the window corners.
-        int lw = 0, lh = 0;
-        SDL_RendererLogicalPresentation lmode;
-        SDL_GetRenderLogicalPresentation(renderer_, &lw, &lh, &lmode);
-        SDL_SetRenderLogicalPresentation(renderer_, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
-        int pw = 0, ph = 0;
-        SDL_GetRenderOutputSize(renderer_, &pw, &ph);
-        input_.touch.render(renderer_, pw, ph);
-        options_.setOriginalRate(static_cast<int>(std::lround(stage_.frameRate)));
-        options_.render(renderer_, text_, pw, ph);
-        SDL_SetRenderLogicalPresentation(renderer_, lw, lh, lmode);
+    if (mode_ == Mode::Level || mode_ == Mode::Launcher) {
+        renderWindowLayer();
     }
     if (settings_.showOverlay) {
         renderOverlay();
@@ -853,6 +1130,25 @@ void App::render(float alpha)
         quitRequested_ = true;
     }
     SDL_RenderPresent(renderer_);
+}
+
+void App::renderWindowLayer()
+{
+    // Drawn in window pixels: the touch buttons anchored to the window corners, the game picker filling it.
+    int lw = 0, lh = 0;
+    SDL_RendererLogicalPresentation lmode;
+    SDL_GetRenderLogicalPresentation(renderer_, &lw, &lh, &lmode);
+    SDL_SetRenderLogicalPresentation(renderer_, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+    int pw = 0, ph = 0;
+    SDL_GetRenderOutputSize(renderer_, &pw, &ph);
+    if (mode_ == Mode::Launcher) {
+        launcher_->render(renderer_, text_, pw, ph);
+    } else {
+        input_.touch.render(renderer_, pw, ph);
+    }
+    options_.setOriginalRate(static_cast<int>(std::lround(stage_.frameRate)));
+    options_.render(renderer_, text_, pw, ph);
+    SDL_SetRenderLogicalPresentation(renderer_, lw, lh, lmode);
 }
 
 void App::renderBlitDemo(float alpha)

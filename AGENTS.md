@@ -1,4 +1,4 @@
-# AGENTS.md — Papa's Louie Recomp
+# AGENTS.md — Louie Attack Decomp
 
 Guía del proyecto para personas y agentes. **Este archivo tiene prioridad sobre los valores por defecto de
 cualquier skill** (`orchestrator`, `matcher`, `decomp-code-rules`, `native-platform-porting`, …).
@@ -113,17 +113,19 @@ python -I tools/swf2assets.py --swf "C:/Users/alfre/Proyectos/datos-papas/PapaLo
 
 # Windows (VS Build Tools 2026 + Ninja/CMake del Android SDK)
 tools\build_windows.bat Debug
-build\windows\papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
+build\windows\louieattack.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
 #   --capture <png>: guarda el fotograma a los 3 s y sale (comprobaciones automáticas)
 #   --input "R1-60,U61-90" (teclas LRUDJA por fotograma lógico), --trace (estado por fotograma), --frames N,
 #   --level N, --room N, --at x,y (jugador en esa casilla): pruebas por texto, más baratas que las capturas
 #   --mute: sin salida de sonido (con --trace, la línea S lista los sonidos de cada fotograma)
 #   --customer N: jugar con el cliente N (orden de CustomerData; 0 Marty, 9 Kahuna, 26 Papa Louie)
-#   Sin esas opciones de nivel el juego empieza en la pantalla de título. --lang es: idioma de la interfaz;
-#   --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por texto;
+#   Sin esas opciones de nivel la app empieza en el selector de juegos (propio del port: cajas con portada; la de
+#   PL2 está en el escenario ~110,130 y tocarla seleccionada la abre); --game pl2 salta el selector. --lang es: idioma
+#   de la interfaz; --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por
+#   texto, también en el selector;
 #   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. --reenter N: vuelve a empezar el nivel
 #   actual en el fotograma N (prueba los checkpoints). Partidas guardadas de Windows:
-#   %APPDATA%\SkibidiBoiler\PapaLouieRecomp\saves\PapaLouie2_<ranura>.json
+#   %APPDATA%\SkibidiBoiler\LouieAttackDecomp\saves\PapaLouie2_<ranura>.json
 # Varias comprobaciones en una sola ejecución (salida corta; ver la ayuda con -h):
 python -I tools/pl_check.py rooms 55 60 --where e:23 o:15   # tipos por sala (* = sin traducir) y posiciones
 python -I tools/pl_check.py run --build -s "etiqueta|--level 7 --room 2 --at 20,60 --frames 80|23,24" -s ...
@@ -137,7 +139,7 @@ python -I tools/as_func.py "C:/Users/alfre/Proyectos/datos-papas/extracted/pl2-d
 adb -s a7e4babe install -r app/build/outputs/apk/debug/app-debug.apk
 # En Git Bash: MSYS_NO_PATHCONV=1, o convierte /sdcard en una ruta de Windows.
 export MSYS_NO_PATHCONV=1
-R=/sdcard/Android/data/io.github.skibidiboiler.papalouie/files/data/pl2
+R=/sdcard/Android/data/io.github.skibidiboiler.louieattack/files/data/pl2
 adb -s a7e4babe shell mkdir -p $R/shapes
 adb -s a7e4babe push .../build/pl2/symbols.bin .../build/pl2/manifest.json $R/
 adb -s a7e4babe push .../build/pl2/shapes/2x $R/shapes/

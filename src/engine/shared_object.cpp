@@ -1,17 +1,18 @@
 #include "engine/shared_object.h"
 
+#include "engine/paths.h"
+
 #include <SDL3/SDL.h>
 
 namespace engine {
 
 std::string SharedObject::path(const std::string &name)
 {
-    char *pref = SDL_GetPrefPath("SkibidiBoiler", "PapaLouieRecomp");
-    if (!pref) {
+    const std::string pref = prefDir();
+    if (pref.empty()) {
         return {};
     }
-    std::string dir = std::string(pref) + "saves";
-    SDL_free(pref);
+    const std::string dir = pref + "saves";
     SDL_CreateDirectory(dir.c_str());
     return dir + "/" + name + ".json";
 }
