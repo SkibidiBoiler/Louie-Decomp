@@ -12,6 +12,9 @@
 #include "game/papaGame/models/bullets/Basketball.h"
 #include "game/papaGame/models/bullets/BlueberryShot.h"
 #include "game/papaGame/models/bullets/CheeseBullet.h"
+#include "game/papaGame/models/bullets/SauceBullet.h"
+#include "game/papaGame/models/bullets/Beaker.h"
+#include "game/papaGame/models/bullets/BeakerBlob.h"
 #include "game/papaGame/models/bullets/ShroomArrow.h"
 #include "game/papaGame/models/bullets/ChiliCan.h"
 #include "game/papaGame/models/bullets/DogToy.h"
@@ -67,6 +70,15 @@ std::unique_ptr<models::Bullet> createBullet(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "ShroomArrow") {
         return std::make_unique<ShroomArrow>(gameObj);
+    }
+    if (type == "Beaker") {
+        return std::make_unique<Beaker>(gameObj);
+    }
+    if (type == "BeakerBlob") {
+        return std::make_unique<BeakerBlob>(gameObj);
+    }
+    if (type == "SauceBullet") {
+        return std::make_unique<SauceBullet>(gameObj);
     }
     if (type == "CheeseBullet") {
         return std::make_unique<CheeseBullet>(gameObj);

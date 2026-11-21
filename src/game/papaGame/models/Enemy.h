@@ -24,7 +24,7 @@ public:
 
     virtual void setupSprite() {}
     virtual void setupParams(const std::vector<as3::Value> & /*params*/) {}
-    void placeEnemy(double tileX, double tileY);
+    virtual void placeEnemy(double tileX, double tileY); // overridden by Enemy38 (pixel position)
     virtual void stunEnemy();
     virtual void reactToHurtingPlayer() {}
     virtual bool getHit(double damage = 1, double dir = 1, bool unused = false, const std::string &weapon = "none");
@@ -40,6 +40,9 @@ public:
     virtual void checkBeforeBlitting() {}
     void saveEnemyKill();
     virtual void removeEnemy();
+    // Port: only Enemy37 (Radley Madish, who lets out Pararadishes and Burgerzillas) defines it; the original calls
+    // it on an untyped enemy, so the other enemies need no body.
+    virtual void unregisterSpawn(double /*type*/, double /*id*/) {}
     void jumpChar(bool collide = true) override;
     void updateObject() override;
     void destroy() override;

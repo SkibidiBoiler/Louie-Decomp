@@ -319,6 +319,12 @@ MovieClip &MovieClip::addChild(std::unique_ptr<MovieClip> clip, std::string name
     return *attached_.back().clip;
 }
 
+MovieClip &MovieClip::addChildAtBottom(std::unique_ptr<MovieClip> clip, std::string name)
+{
+    attached_.insert(attached_.begin(), Attached{std::move(name), std::move(clip), true});
+    return *attached_.front().clip;
+}
+
 MovieClip *MovieClip::firstChildClip()
 {
     if (!children_.empty()) {
@@ -476,6 +482,11 @@ void MovieClip::renderChild(const RenderContext &ctx, const Child &child, const 
 
 void MovieClip::render(const RenderContext &ctx, const Affine &parent, const ColorTransform &parentColor) const
 {
+    for (const Attached &a : attached_) {
+        if (a.below && a.clip->visible_) {
+            a.clip->render(ctx, parent * a.clip->ownLocal(), parentColor);
+        }
+    }
     // A frame-0 button shows its "up" state; the hit area (frame 3) is never drawn.
     for (size_t i = 0; i < children_.size(); ++i) {
         const Child &child = children_[i];
@@ -511,7 +522,7 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
         i = last;
     }
     for (const Attached &a : attached_) {
-        if (a.clip->visible_) {
+        if (!a.below && a.clip->visible_) {
             a.clip->render(ctx, parent * a.clip->ownLocal(), parentColor);
         }
     }

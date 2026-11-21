@@ -28,6 +28,7 @@ public:
                    const std::vector<as3::Value> &extraParams = {}, bool isDropped = false);
     void processItems();
     void saveItems();
+    void saveItemsAtCheckpoint();
     void clearItems(double whichScreen, bool all = false, bool resetCounter = true);
     void buildItems(double whichScreen);
     void removeItem(double itemID, bool nosplice = false);

@@ -90,6 +90,7 @@ public:
     void startAttacking();
     void setupAttackRect();
     void cancelAttack();
+    void resetFoodiniBalloon(); // port helper, see the .cpp
     bool usingGun() const;
     bool usingPowerTool() const;
 
@@ -129,6 +130,7 @@ public:
     bool isCheesed = false, isPausingAfterMiniboss = false, isHiding = false, fellOffTrain = false;
     bool hitByBlast = false, hasPowerup = false;
     double cheesedFXID = -1;
+    double bossDelayMusicTimer = 0, bossDelayMusicTimerMax = 150; // AS: PlayerChar (after a boss, the music returns)
     double statAttack = 1, invincibleTimer = 0, invincibleFXID = -1, shoveTimer = 0, shoveTimerMax = 6;
     double defaultHealth = 3;
     std::vector<double> stunStarIDs;

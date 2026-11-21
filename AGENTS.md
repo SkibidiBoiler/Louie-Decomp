@@ -123,8 +123,12 @@ build\windows\louieattack.exe --data "C:/Users/alfre/Proyectos/datos-papas/build
 #   PL2 está en el escenario ~110,130 y tocarla seleccionada la abre); --game pl2 salta el selector. --lang es: idioma
 #   de la interfaz; --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por
 #   texto, también en el selector;
-#   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. Partidas guardadas de Windows:
+#   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. --reenter N: vuelve a empezar el nivel
+#   actual en el fotograma N (prueba los checkpoints). Partidas guardadas de Windows:
 #   %APPDATA%\SkibidiBoiler\LouieAttackDecomp\saves\PapaLouie2_<ranura>.json
+# Varias comprobaciones en una sola ejecución (salida corta; ver la ayuda con -h):
+python -I tools/pl_check.py rooms 55 60 --where e:23 o:15   # tipos por sala (* = sin traducir) y posiciones
+python -I tools/pl_check.py run --build -s "etiqueta|--level 7 --room 2 --at 20,60 --frames 80|23,24" -s ...
 # Progreso de la traducción (funciones y líneas del AS con su `// AS:` en src/game; solo local, sin tokens):
 python -I tools/progress.py                 # --by-class: por clase; --missing <Clase>: funciones que faltan
 # Leer una función del código original deofuscado (solo local):

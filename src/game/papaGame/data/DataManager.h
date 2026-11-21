@@ -10,6 +10,7 @@
 
 #include "engine/json.h"
 #include "engine/xml.h"
+#include "game/papaGame/data/CheckpointData.h"
 #include "game/papaGame/data/LevelData.h"
 #include "game/papaGame/data/ScreenData.h"
 #include "game/papaGame/data/WorldData.h"
@@ -37,6 +38,7 @@ public:
     void initializeScreenObjects(double whichScreen);
     void saveCheckpoint(double tileX = -1, double tileY = -1);
     void clearCheckpoint();
+    void handleCheckpointProgress();
     double getOutfitPrice(double customer, double outfit) const; // AS: DataManager.getOutfitPrice
     void setupKeyNames();
     std::string getKeyLabel(const std::string &key) const;
@@ -62,6 +64,7 @@ public:
     std::vector<std::unique_ptr<ScreenData>> currentScreens;
     ScreenData *currentScreenData = nullptr;
     std::unique_ptr<WorldData> currentWorldData;
+    std::unique_ptr<CheckpointData> checkpointData;
     double currentLevel = 1;
     double currentScreen = 0;
     double currentTileset = 1;

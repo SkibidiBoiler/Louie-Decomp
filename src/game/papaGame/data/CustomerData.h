@@ -41,6 +41,7 @@ public:
     const CustomerDataFile *getCustomerData(double index) const;
     double getTrappedCustomerIndex(double whichWorld, double cageIndex) const;
     std::string getCustomerName(double index) const; // AS: CustomerData.getCustomerName
+    double getCustomerIndex(const std::string &name) const; // AS: CustomerData.getCustomerIndex
     // AS: CustomerData.generateCustomerBitmap — every customer's head, 45 x 45 each, in a row (thumbBMP). The port
     // draws it into a texture at kThumbScale. SKELETON: the DropShadowFilter.
     void generateCustomerBitmap();

@@ -220,4 +220,17 @@ engine::MovieClip::BitmapChild CustomerData::getCustomerBitmap(double index) con
     return b;
 }
 
+// AS: CustomerData.getCustomerIndex — by name or clip name; -1 when none.
+double CustomerData::getCustomerIndex(const std::string &name) const
+{
+    double found = -1;
+    for (size_t i = 0; i < customerDataFiles.size(); ++i) {
+        if (customerDataFiles[i]->customerName == name || customerDataFiles[i]->customerClipName == name) {
+            found = static_cast<double>(i);
+            break;
+        }
+    }
+    return found;
+}
+
 } // namespace papaGame::data

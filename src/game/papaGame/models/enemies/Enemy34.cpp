@@ -83,7 +83,9 @@ void Enemy34::setupParams(const std::vector<as3::Value> &params)
 void Enemy34::removeEnemy()
 {
     if (spawnerObjectID != -1) {
-        // SKELETON: the spawner enemy's unregisterSpawn(type, id) (no ported enemy spawns Burgerzillas yet).
+        if (Enemy *spawner = gameObj->obf_E->getEnemy(spawnerObjectID, whichScreen)) {
+            spawner->unregisterSpawn(type, id);
+        }
     }
     Enemy::removeEnemy();
 }

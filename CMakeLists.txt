@@ -93,6 +93,7 @@ set(PL_SOURCES
     src/game/obf_9G/obf_4R.cpp
     src/game/papaGame/data/Challenge.cpp
     src/game/papaGame/data/CustomerData.cpp
+    src/game/papaGame/data/CheckpointData.cpp
     src/game/papaGame/data/DataManager.cpp
     src/game/papaGame/data/LevelData.cpp
     src/game/papaGame/data/ScreenData.cpp
@@ -124,6 +125,9 @@ set(PL_SOURCES
     src/game/papaGame/models/bullets/SargePepper.cpp
     src/game/papaGame/models/bullets/ShroomArrow.cpp
     src/game/papaGame/models/bullets/CheeseBullet.cpp
+    src/game/papaGame/models/bullets/SauceBullet.cpp
+    src/game/papaGame/models/bullets/Beaker.cpp
+    src/game/papaGame/models/bullets/BeakerBlob.cpp
     src/game/papaGame/models/bullets/GiantPepper.cpp
     src/game/papaGame/models/bullets/RomanCandle.cpp
     src/game/papaGame/models/bullets/XandraStar.cpp
@@ -138,6 +142,15 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/BlueberrySplatEffect.cpp
     src/game/papaGame/models/effects/CheeseBitEffect.cpp
     src/game/papaGame/models/effects/CheeseSplatEffect.cpp
+    src/game/papaGame/models/effects/SauceBitEffect.cpp
+    src/game/papaGame/models/effects/SauceSplatEffect.cpp
+    src/game/papaGame/models/effects/RainbowBitEffect.cpp
+    src/game/papaGame/models/effects/BeakerGlassEffect.cpp
+    src/game/papaGame/models/effects/BossPropellerEffect.cpp
+    src/game/papaGame/models/effects/FoodiniBalloonEffect.cpp
+    src/game/papaGame/models/effects/FoodiniGlideEffect.cpp
+    src/game/papaGame/models/effects/ItemGlowEffect.cpp
+    src/game/papaGame/models/effects/WarpCoinEffect.cpp
     src/game/papaGame/models/effects/RadishDirtEffect.cpp
     src/game/papaGame/models/effects/StuckCheeseEffect.cpp
     src/game/papaGame/models/effects/ChiliBitEffect.cpp
@@ -147,6 +160,7 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/SmokeRingEffect.cpp
     src/game/papaGame/models/effects/CrackerBreakEffect.cpp
     src/game/papaGame/models/effects/DizzyEffect.cpp
+    src/game/papaGame/models/effects/PlayerStunSparkleEffect.cpp
     src/game/papaGame/models/effects/DoorFrontEffect.cpp
     src/game/papaGame/models/effects/DustEffect.cpp
     src/game/papaGame/models/effects/BossEscapeEffect.cpp
@@ -187,6 +201,8 @@ set(PL_SOURCES
     src/game/papaGame/models/objects/GameObject33.cpp
     src/game/papaGame/models/objects/GameObject29.cpp
     src/game/papaGame/models/objects/GameObject30.cpp
+    src/game/papaGame/models/objects/GameObject31.cpp
+    src/game/papaGame/models/objects/GameObject32.cpp
     src/game/papaGame/models/objects/GameObject4.cpp
     src/game/papaGame/models/objects/GameObject5.cpp
     src/game/papaGame/models/objects/GameObject6.cpp
@@ -199,6 +215,8 @@ set(PL_SOURCES
     src/game/papaGame/models/objects/GameObject13.cpp
     src/game/papaGame/models/objects/GameObject1.cpp
     src/game/papaGame/models/objects/GameObject14.cpp
+    src/game/papaGame/models/objects/GameObject15.cpp
+    src/game/papaGame/models/objects/GameObject16.cpp
     src/game/papaGame/models/objects/GameObject17.cpp
     src/game/papaGame/models/objects/GameObject18.cpp
     src/game/papaGame/models/objects/GameObject19.cpp
@@ -234,18 +252,27 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy20.cpp
     src/game/papaGame/models/enemies/Enemy21.cpp
     src/game/papaGame/models/enemies/Enemy22.cpp
+    src/game/papaGame/models/enemies/Enemy23.cpp
+    src/game/papaGame/models/enemies/Enemy24.cpp
     src/game/papaGame/models/enemies/Enemy25.cpp
     src/game/papaGame/models/enemies/Enemy26.cpp
     src/game/papaGame/models/enemies/Enemy27.cpp
     src/game/papaGame/models/enemies/Enemy28.cpp
     src/game/papaGame/models/enemies/Enemy29.cpp
+    src/game/papaGame/models/enemies/Enemy30.cpp
     src/game/papaGame/models/enemies/Enemy31.cpp
     src/game/papaGame/models/enemies/Enemy32.cpp
+    src/game/papaGame/models/enemies/Enemy33.cpp
     src/game/papaGame/models/enemies/Enemy35.cpp
+    src/game/papaGame/models/enemies/Enemy36.cpp
+    src/game/papaGame/models/enemies/Enemy37.cpp
+    src/game/papaGame/models/enemies/Enemy38.cpp
+    src/game/papaGame/models/enemies/Enemy39.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp
     src/game/papaGame/screens/GameIntroScreen.cpp
     src/game/papaGame/screens/MainMenuScreen.cpp
+    src/game/papaGame/screens/BossIntroScreen.cpp
     src/game/papaGame/screens/NewCustomerScreen.cpp
     src/game/papaGame/screens/ScoreTallyScreen.cpp
     src/game/papaGame/screens/StageOutroScreen.cpp

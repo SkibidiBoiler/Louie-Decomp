@@ -23,14 +23,22 @@
 #include "game/papaGame/models/enemies/Enemy20.h"
 #include "game/papaGame/models/enemies/Enemy21.h"
 #include "game/papaGame/models/enemies/Enemy22.h"
+#include "game/papaGame/models/enemies/Enemy23.h"
+#include "game/papaGame/models/enemies/Enemy24.h"
 #include "game/papaGame/models/enemies/Enemy25.h"
 #include "game/papaGame/models/enemies/Enemy27.h"
 #include "game/papaGame/models/enemies/Enemy28.h"
 #include "game/papaGame/models/enemies/Enemy29.h"
+#include "game/papaGame/models/enemies/Enemy30.h"
 #include "game/papaGame/models/enemies/Enemy31.h"
 #include "game/papaGame/models/enemies/Enemy26.h"
 #include "game/papaGame/models/enemies/Enemy32.h"
+#include "game/papaGame/models/enemies/Enemy33.h"
 #include "game/papaGame/models/enemies/Enemy35.h"
+#include "game/papaGame/models/enemies/Enemy36.h"
+#include "game/papaGame/models/enemies/Enemy37.h"
+#include "game/papaGame/models/enemies/Enemy38.h"
+#include "game/papaGame/models/enemies/Enemy39.h"
 #include "game/papaGame/models/enemies/Enemy8.h"
 #include "game/papaGame/models/enemies/Enemy9.h"
 #include "game/papaGame/models/enemies/Enemy10.h"
@@ -67,14 +75,22 @@ std::unique_ptr<models::Enemy> createEnemy(obf_9G::obf_4R *gameObj, double type)
     case 20: return std::make_unique<Enemy20>(gameObj);
     case 21: return std::make_unique<Enemy21>(gameObj);
     case 22: return std::make_unique<Enemy22>(gameObj);
+    case 23: return std::make_unique<Enemy23>(gameObj);
+    case 24: return std::make_unique<Enemy24>(gameObj);
     case 25: return std::make_unique<Enemy25>(gameObj);
     case 26: return std::make_unique<Enemy26>(gameObj);
     case 27: return std::make_unique<Enemy27>(gameObj);
     case 28: return std::make_unique<Enemy28>(gameObj);
     case 29: return std::make_unique<Enemy29>(gameObj);
+    case 30: return std::make_unique<Enemy30>(gameObj);
     case 31: return std::make_unique<Enemy31>(gameObj);
     case 32: return std::make_unique<Enemy32>(gameObj);
+    case 33: return std::make_unique<Enemy33>(gameObj);
     case 35: return std::make_unique<Enemy35>(gameObj);
+    case 36: return std::make_unique<Enemy36>(gameObj);
+    case 37: return std::make_unique<Enemy37>(gameObj);
+    case 38: return std::make_unique<Enemy38>(gameObj);
+    case 39: return std::make_unique<Enemy39>(gameObj);
     case 34: return std::make_unique<Enemy34>(gameObj);
     default: return nullptr; // SKELETON: the other enemy types are not ported yet
     }
@@ -329,6 +345,13 @@ void EnemyManager::preblitSheets()
     }
     preblitSheetNames.clear();
     preblitObjectTypes.clear();
+}
+
+// Port: `manager["Enemy" + id]`.
+models::Enemy *EnemyManager::enemyByID(double enemyID) const
+{
+    auto it = byID_.find(enemyID);
+    return it != byID_.end() ? it->second.get() : nullptr;
 }
 
 // AS: EnemyManager.activateObject

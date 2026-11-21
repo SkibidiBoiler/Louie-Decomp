@@ -476,3 +476,85 @@ Checked by trace: room 0 the pool (`--at 123,17`, capture), room 2 a Bacobar pus
 (`--at 124,35`, capture), the planted radishes pop out (`--at 118,5`), room 3 the Laddish climbs and turns at the
 ladder's end (`--at 15,15`) and the Thorn Shrooms turn and duck (`--at 22,66`). Not checked: crunching a Bacobar,
 knocking a Laddish off its ladder.
+
+(44) BBQ Bog (`--level 7`, rooms 8-A to 8-D, ids 55–57 and 60): `GameObject15/16` On and Off Berries (platforms that pop up
+and go down on a timer, wobbling for the last 20 frames; nothing stands on one while it is down), `Enemy23` Bacoburn
+(the Bacobar's wall, but a stomp, slide or ground pound beats it at once and breaks it into three `Enemy24` Baco
+Bites, which hop back and forth), `Enemy30` Pararadish (floats down 2 px a frame on a parachute, folds it on landing,
+then hops after the player), `Enemy33` Awesome Saucer (glides between two columns on a sine wave, slowing into each
+turn, and drops a `SauceBullet` on a timer, with `SauceBitEffect` / `SauceSplatEffect` where it lands). The
+Pararadish's spawner is an enemy (the Radley Madish boss, not ported yet): `Enemy.unregisterSpawn(type, id)` is a
+port virtual with an empty body until Enemy37 overrides it. Checked by trace: room 0 a berry carries the player and
+drops them after its 60 frames (`--at 27,80`), room 1 a saucer turns at its target column and its sauce splats
+(`--at 36,17`), room 2 a ground pound (`--customer 8 --at 20,60 --input D3-5`) crunches a Bacoburn into three hopping
+bites (capture), and a player inside a Bacoburn is pushed out and hurt; room 3 the Pararadishes land, fold their
+parachutes and hop at the player (`--at 25,12`, capture). Note: falling onto a Bacoburn at full speed usually ends in
+the push-out rather than a stomp (its own update pushes the player out in the frame they reach its body, before the
+player's next stomp test); not compared with the original. Progress: 72.8 % of functions, 79.9 % of lines.
+
+(45) The `--level` index is the world's tileset, not its place in levels.xml: 7 BBQ Bog (item 44 first called it
+Radley's Hideout by mistake), 8 Radley's Hideout (rooms 53, 59, 58, 17), 9 X Zone; `tools/pl_check.py worlds` lists
+them. Radley's Hideout room 9-B (`--level 8 --room 2`): `Enemy36` the first boss (sheet "easyboss": once the Start
+Fight trigger fires he runs back and forth, blocks every hit unless stunned, throws a `Beaker` every 120 frames;
+beaten, the music stops with the fanfare), `Beaker` (generated from PepperBomb: breaks into `BeakerGlassEffect`
+shards and three `BeakerBlob`s, generated from Cookie, which puff into dust) and `GameObject31` Spike Bed (kills the
+player or any enemy that touches it; once triggered it shakes, then rises 2 px a frame to its target row). X Zone:
+`GameObject32` Rainbow Sauce (the quicksauce pool with its own sheet, a bottom cap and `RainbowBitEffect` splashes).
+Checked with `pl_check.py run`: walking left into the trigger (`--at 5,79 --input L20-34`) starts the boss, who runs,
+turns and throws beakers that break (capture); the spike bed kills the player (`--at 6,86`); in X Zone room 1 the
+player sinks into the rainbow pool and splashes (`--at 12,30`). Not checked: stunning and beating Enemy36, the
+spike bed rising. Left in Radley's Hideout: `Enemy37` Radley Madish with `RocketBBQ` / `RocketMustard` (room 9-C).
+Progress: 75.2 % of functions, 82.4 % of lines.
+
+(46) Radley Madish (`Enemy37`, Radley's Hideout room 9-C, `--level 8 --room 0`): triggered, he flies after the
+player (easing to 180 px beside and above them, on a wave) with `BossPropellerEffect` and the looping copter sound,
+and on a timer grabs, loads and fires a rocket: `Enemy38` BBQ rocket / `Enemy39` mustard rocket, enemies that home in
+on the player turning at most 0.06 rad a frame (`setAnimationAngle` picks the frame of the angle rounded to 10
+degrees) and splash on a wall. A hit knocks a BBQ rocket away; a hit mustard rocket turns round and homes in on him,
+and it knocks him down: he lands, runs for 120 frames (stun him, then hit him), then takes off again. With 3 hit
+points he lets out one Pararadish at a time, with 2 up to three, with 1 a Burgerzilla and BBQ rockets in bursts of
+three; beaten, the music returns 150 frames after the fanfare (`CustomerChar.bossDelayMusicTimer`, the PlayerChar
+fields). The Pararadish and Burgerzilla now call his `unregisterSpawn(type, id)`; `EnemyManager.enemyByID` is the
+port's `manager["Enemy" + id]`; `Enemy.placeEnemy` is virtual (the rockets are placed in pixels). The bullets
+RocketBBQ / RocketMustard are not added by any code and stay untranslated. Checked with `pl_check.py run`: walking into
+the trigger (`--at 6,16 --input L20-34`) starts him; he flies, fires BBQ rockets that splash, lets out a Pararadish
+(capture); attacking every 8 frames after stepping right (`R40-60` plus `A` pulses) hits a mustard rocket back and he
+falls, lands and runs. The propeller is drawn (green, behind him; it is easy to miss against the trees). Not
+checked: stunning and hitting him on the ground, his 2 and 1 hit-point phases, the end of the fight.
+Progress: 77.4 % of functions, 84.7 % of lines.
+
+(47) Checkpoints: `CheckpointData` (a copy of every room's data with the starting room's start point moved to the
+checkpoint tile, plus the hurt / water flags, kills, lives lost, gameplay time, money, Burgerzillas, special items
+and the counted challenges' tallies). `DataManager.saveCheckpoint` / `clearCheckpoint` keep it,
+`setupLevelScreens` loads the level from it when it is for that level ("Use Checkpoint Data"), and
+`handleCheckpointProgress` (now called when a level starts) restores the tallies. `ObjectManager.saveObjectsAtCheckpoint`
+(the objects with saveDataAtCheckpoint: the boulders) and `ItemManager.saveItemsAtCheckpoint` write the room's live
+state first. The map shows the checkpoint ribbon on that level. Dying with lives left still respawns at the last safe
+spot (`restartPlayer`), as in the original; the checkpoint is used when the level is entered again.
+`tools/pl_check.py run --grep RE` prints matching log lines. Checked: touching the checkpoint in Leaf Landing room 1
+(`--level 0 --room 1 --at 15,37 --input R10-30`) saves it ("4 room states saved"); DEV `--reenter N` starts the current level again at
+frame N (as `--level` does): with `--input R10-30 --reenter 90` the level loads from the checkpoint ("Use Checkpoint
+Data", tallies restored) and the player starts in room 1 at tile 17,38. Pause menu, quit and its confirmation work
+with `--tap "35,398@60;80,20@100;274,232@160"`, but a game started with `--level` has no slot loaded, so the map's
+world buttons do not answer: the ribbon on the map is not checked.
+
+(48) Effects: `FoodiniBalloonEffect` (Foodini's balloon on a string, at most 60 px from his hand: it rises, is
+pulled along, bobs on eased quarter waves, leans one frame per 10 degrees, hides during his attack, floats away when
+he is gone), `FoodiniGlideEffect` (the six small balloons of his glide: they ease to their spots above him and,
+when the glide ends, float away, or are reeled back in if balloons were let go less than 40 frames before),
+`WarpCoinEffect` (the warp key rising over the player) and `ItemGlowEffect` (its glow). The strings are drawn with
+`drawBalloonString` (straight, or the original's quadratic curve as short lines). CustomerChar's Foodini SKELETONs
+are filled: the balloon at startupPlayer, hidden on attack, reset at the attack's end and in cancelAttack
+(`resetFoodiniBalloon`, a port helper), the glide balloons (QUIRK kept: a balloon already reeled in throws in the
+original, which leaves the list uncleared). Checked with `--customer 25` (Foodini): the balloon follows him (capture)
+and the glide balloons appear and rise away. Not checked: the warp key effect (end of a level), the strings'
+look. Progress: 79.2 % of functions, 86.3 % of lines.
+
+(49) `BossIntroScreen`: on the first play of Radley's Hideout (level 8, high score 0) the level start shows Papa
+Louie trapped (customerTrappedMC) facing the radish boss over the tilesheet 4 backdrop, with MidBossTrack; after 120
+frames the iris closes and the level starts (obf_4R obf_6I / obf_28; the SKELETON before obf_52 is gone). QUIRK kept:
+the puppet holds the selected character's weapon. The GlowFilter on the puppets is not drawn (no filters in the
+port). Engine: `MovieClip::addChildAtBottom` (addChildAt 0, under the timeline children). `CustomerData.getCustomerIndex`.
+`PlayerStunSparkleEffect` translated and registered (PL2 never adds it; build checked only). Checked: capture of
+the intro at frame 70 (`--level 8`) and the trace of the level starting after it. Progress: 79.9 % of functions,
+87.1 % of lines.

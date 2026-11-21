@@ -181,6 +181,21 @@ void ItemManager::saveItems()
     objectTypes.clear();
 }
 
+// AS: ItemManager.saveItemsAtCheckpoint — like saveItems, but the items stay in the room.
+void ItemManager::saveItemsAtCheckpoint()
+{
+    std::vector<std::vector<as3::Value>> saved;
+    for (int i = static_cast<int>(items.size()) - 1; i >= 0; --i) {
+        models::GameItem *item = items[static_cast<size_t>(i)];
+        if (item && !item->itemType.empty()) {
+            if (item->shouldSaveOnRoomChange || (item->isWeapon && !item->isEmpty)) {
+                saved.push_back(item->getItemData());
+            }
+        }
+    }
+    gameObj->obf_AQ->currentScreenData->updateItems(saved);
+}
+
 // AS: ItemManager.clearItems
 void ItemManager::clearItems(double whichScreen, bool all, bool resetCounter)
 {
