@@ -72,5 +72,8 @@
   "badge.reward": "+ ${0}",
   "badge.points": "{0} Pts.",
   "badge.hidden_title": "Hidden Badge",
-  "badge.hidden_text": "You can't see this badge yet!"
+  "badge.hidden_text": "You can't see this badge yet!",
+  "baddies.defeated": "Defeated: {0}",
+  "baddies.encounters": "Encounters: {0}",
+  "baddies.bounced": "Bounced: {0}"
 }

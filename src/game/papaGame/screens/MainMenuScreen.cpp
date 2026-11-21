@@ -33,6 +33,7 @@ void MainMenuScreen::setupScreen()
     clip = &container->addChild(engine::MovieClip::create(*gameObj->symbols, "mainMenuMC"), "");
     gameObj->addContainerListener("clickCredits", [this] { clickCredits(); });
     gameObj->addContainerListener("clickMedals", [this] { clickMedals(); });
+    gameObj->addContainerListener("clickBaddies", [this] { clickBaddies(); });
     gameObj->addContainerListener("clickExit", [this] { clickExit(); });
     gameObj->addContainerListener("clickCreditsRedirect", [this] { setSection("credits"); });
     gameObj->addContainerListener("clickCreditsRedirectBack", [this] { setSection("map"); });
@@ -50,7 +51,8 @@ void MainMenuScreen::setupScreen()
     if (!isOnCharSelect) {
         setupInfo();
     }
-    // SKELETON: setupBaddies, setupControls, setupHelp.
+    setupBaddies();
+    // SKELETON: setupControls, setupHelp.
     setupCredits();
     setupMedals();
     setupConfirmQuit();
@@ -1108,6 +1110,121 @@ void MainMenuScreen::enterFrame()
     }
     if (animatingMedals_ && clip) {
         animateMedalsTransition();
+    }
+}
+
+// AS: MainMenuScreen.setupBaddies — the 35 enemy thumbnails: the ones met so far are shown (met / total), the
+// first met one of Onion, Brown Onion or Kaiser Onion is selected. The original draws each thumbnail
+// (enemythumb_<clip>, with a drop shadow) into one bitmap (DataManager.generateEnemyBitmap / getEnemyBitmap); the port
+// adds the clip itself, without the shadow. (Removing the listeners, setup false, is left to the clip going away.)
+void MainMenuScreen::setupBaddies(bool setup)
+{
+    const data::UserData &user = *gameObj->obf_51;
+    const data::DataManager &dm = *gameObj->obf_AQ;
+    engine::MovieClip *baddies = section("baddies");
+    if (!setup || !baddies || dm.enemyKey.empty()) {
+        return;
+    }
+    double met = 0;
+    double total = 0;
+    for (int i = 0; i < 35; ++i) {
+        engine::MovieClip *thumb = baddies->findChild("thumb" + std::to_string(i));
+        if (!thumb) {
+            continue;
+        }
+        if (i < static_cast<int>(dm.enemyKey.size())) {
+            ++total;
+            const data::DataManager::EnemyKeyEntry &key = dm.enemyKey[static_cast<size_t>(i)];
+            for (const char *part : {"hilite", "roll", "newbanner"}) {
+                if (engine::MovieClip *c = thumb->findChild(part)) {
+                    c->setVisible(false);
+                }
+            }
+            thumb->onMouseDown = [this, i] { clickEnemyThumb(i); };
+            thumb->onRollOver = [thumb] {
+                if (engine::MovieClip *roll = thumb->findChild("roll")) {
+                    roll->setVisible(true);
+                }
+            };
+            thumb->onRollOut = [thumb] {
+                if (engine::MovieClip *roll = thumb->findChild("roll")) {
+                    roll->setVisible(false);
+                }
+            };
+            thumb->gotoAndStop(6);
+            if (key.id == 35 || key.id == 37) {
+                thumb->gotoAndStop(2);
+            }
+            if (engine::MovieClip *holder = thumb->findChild("holder")) {
+                if (auto pic = engine::MovieClip::create(*gameObj->symbols, "enemythumb_" + key.clip)) {
+                    pic->mouseEnabled = false;
+                    holder->addChild(std::move(pic), "");
+                }
+            }
+            if (user.getEnemyKills(key.id) <= 0) {
+                thumb->setVisible(false);
+            } else {
+                ++met;
+            }
+        } else {
+            thumb->setVisible(false);
+        }
+    }
+    baddies->setText("tally_txt", as3::String(met) + "/" + as3::String(total));
+    if (user.getEnemyKills(dm.enemyKey[0].id) > 0) {
+        selectEnemy(0);
+    } else if (dm.enemyKey.size() > 1 && user.getEnemyKills(dm.enemyKey[1].id) > 0) {
+        selectEnemy(1);
+    } else if (dm.enemyKey.size() > 4 && user.getEnemyKills(dm.enemyKey[4].id) > 0) {
+        selectEnemy(4);
+    } else {
+        selectEnemy(0);
+    }
+}
+
+// AS: MainMenuScreen.clickEnemyThumb (MOUSE_DOWN; the thumbnail's number comes from its instance name)
+void MainMenuScreen::clickEnemyThumb(int index)
+{
+    gameObj->obf_7C->playSound("buttonclick.wav");
+    selectEnemy(index);
+}
+
+// AS: MainMenuScreen.selectEnemy — its thumbnail lit, its name and count (encounters for Swiss Zack, bounces for
+// Jellyback), and its picture.
+void MainMenuScreen::selectEnemy(double index)
+{
+    const data::DataManager &dm = *gameObj->obf_AQ;
+    const engine::Lang &lang = *gameObj->lang;
+    engine::MovieClip *baddies = section("baddies");
+    if (!baddies) {
+        return;
+    }
+    for (int i = 0; i < 35; ++i) {
+        if (engine::MovieClip *thumb = baddies->findChild("thumb" + std::to_string(i))) {
+            if (engine::MovieClip *hilite = thumb->findChild("hilite")) {
+                hilite->setVisible(i == index);
+            }
+        }
+    }
+    baddies->setText("name_txt", dm.getEnemyName(index));
+    const double id = dm.getEnemyIDFromIndex(index);
+    const std::string kills = as3::String(gameObj->obf_51->getEnemyKills(id));
+    if (id == 25) {
+        baddies->setText("defeated_txt", lang.get("baddies.encounters", kills));
+    } else if (id == 32) {
+        baddies->setText("defeated_txt", lang.get("baddies.bounced", kills));
+    } else {
+        baddies->setText("defeated_txt", lang.get("baddies.defeated", kills));
+    }
+    if (enemyDetail != nullptr) {
+        baddies->removeChild(enemyDetail);
+        enemyDetail = nullptr;
+    }
+    if (auto detail = engine::MovieClip::create(*gameObj->symbols, "enemydetail_" + dm.getEnemyClipName(index))) {
+        detail->mouseEnabled = false;
+        detail->mouseChildren = false;
+        detail->setPosition(10, 101);
+        enemyDetail = &baddies->addChild(std::move(detail), "");
     }
 }
 

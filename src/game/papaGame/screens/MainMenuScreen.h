@@ -2,7 +2,7 @@
 // AS: papaGame.screens.MainMenuScreen — the map of areas and, before a level, the customer and outfit choice,
 // with the credits, badges, baddies, controls and help sections the bar's tabs open.
 // The store, social and "first game" links went to web sites and are not shown.
-// SKELETON: the baddies, controls and help sections, and the tutorial pop-ups (§_-6n§ / §_-c§).
+// SKELETON: the controls and help sections, and the tutorial pop-ups (§_-6n§ / §_-c§).
 #include <memory>
 #include <string>
 #include <vector>
@@ -38,6 +38,10 @@ public:
     void clickStartLevel();
     void setupCredits();
     void setupMedals(bool setup = true);
+    void setupBaddies(bool setup = true);
+    void clickEnemyThumb(int index);
+    void selectEnemy(double index);
+    void clickBaddies() { setSection("baddies"); } // AS: MainMenuScreen.clickBaddies
     void populateMedals();
     void clickNextMedals();
     void clickPrevMedals();
@@ -95,6 +99,7 @@ private:
     bool tweening_ = false;     // port: the tweenSections ENTER_FRAME listener is on
     bool updatingChar_ = false; // port: the updateCharacter ENTER_FRAME listener is on
     double medalsPage = 0;
+    engine::MovieClip *enemyDetail = nullptr; // owned by the baddies section
     double medalsPerPage = 8;
     std::string medalsDirection = "next";
     bool medalsTransitioning = true;

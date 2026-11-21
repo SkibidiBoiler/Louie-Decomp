@@ -42,7 +42,6 @@ EXCLUDED = {
                         "clickCreditsPapaLouie", "clickFacebook", "clickTwitter", "clickBonusFacebook",
                         "clickBonusTwitter"}, _ONLINE),
     "GameHUD": ({"clickSponsorLogo", "clickLicenseLogo"}, _ONLINE),
-    "DataManager": ({"getLeaderBoardID", "getMainLoaderInfo"}, _ONLINE),
     "SplashScreen": ({"clickHighScores", "closedHighScores", "errorHighScores", "clickPromo", "clickPromoTwo",
                       "clickPromoThree"}, _ONLINE),
     "ScoreTallyScreen": ({"clickSubmit", "leaderboardClosed"}, _ONLINE),
@@ -51,6 +50,8 @@ EXCLUDED = {
                      "reblitLayer", "reblitCursor", "reblitSprite", "reblitMultispriteEnemy",
                      "blitCollisionArea"}, _BLIT),
     "BitmapManager": ({"loadBitmap", "loadMovieClip", "loadBitmapFromMovieClip"}, _LOAD),
+    "DataManager": ({"getLeaderBoardID", "getMainLoaderInfo", "generateEnemyBitmap", "getEnemyBitmap"},
+                    _ONLINE + "; " + _BLIT),
 }
 
 

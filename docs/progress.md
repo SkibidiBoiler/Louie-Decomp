@@ -588,3 +588,11 @@ page with title, description and tally, reward, points, picture and earned mark;
 (port texts badge.* in lang/). Not drawn: the grey (ColorMatrixFilter) on unearned badges. The drop-down's reward and
 points texts use the same keys. Checked: captures of pages 1 and 2 from the pause menu. Progress: 86.4 % of functions,
 93.1 % of lines.
+
+(54) Menu BADDIES tab: MainMenuScreen setupBaddies, clickEnemyThumb, selectEnemy, clickBaddies, the roll-over /
+roll-out of the thumbnails; DataManager enemyKey (from datamanager.json), getEnemyName, getEnemyClipName,
+getEnemyIDFromIndex. The thumbnails are the enemythumb_<clip> clips themselves (the original draws them into one
+bitmap with a drop shadow: generateEnemyBitmap / getEnemyBitmap, now in progress.py's EXCLUDED). Port texts
+baddies.* in lang/. The tab is on the main and pause menu bars. Checked: after killing three Red Tomatoes in Leaf
+Landing the tab shows 1/33, the tomato's thumbnail, picture and "Derrotados: 3" (capture). Progress: 86.8 % of
+functions, 93.6 % of lines.

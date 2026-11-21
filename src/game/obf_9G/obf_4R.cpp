@@ -400,11 +400,12 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, "title.choose_slot", {{Kind::Back, "menu.back", "clickBack"}}, layout);
     } else if (name == "MainMenu") {
-        // SKELETON: the BADDIES, CONTROLS and HELP tabs (their sections are not ported yet).
+        // SKELETON: the CONTROLS and HELP tabs (their sections are not ported yet).
         mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
-                      {{Kind::Tab, "menu.badges", "clickMedals"},
+                      {{Kind::Tab, "menu.baddies", "clickBaddies"},
+                       {Kind::Tab, "menu.badges", "clickMedals"},
                        {Kind::Tab, "menu.credits", "clickCredits"},
                        {Kind::Back, "menu.quit", "clickExit"}},
                       layout);
@@ -416,12 +417,13 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
                        {Kind::Tab, "menu.back_to_map", "clickBackToMap"}},
                       layout);
     } else if (name == "PauseMenu") {
-        // SKELETON: the BADDIES, CONTROLS and HELP tabs (their sections are not ported yet).
+        // SKELETON: the CONTROLS and HELP tabs (their sections are not ported yet).
         mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
                       {{Kind::Action, "menu.back_to_game", "clickBackToGame"},
                        {Kind::Tab, "menu.info", "clickInfo"},
+                       {Kind::Tab, "menu.baddies", "clickBaddies"},
                        {Kind::Tab, "menu.badges", "clickMedals"},
                        {Kind::Tab, "menu.credits", "clickCredits"},
                        {Kind::Back, "menu.quit_level", "clickQuit"}},

@@ -72,5 +72,8 @@
   "badge.reward": "+ ${0}",
   "badge.points": "{0} pts.",
   "badge.hidden_title": "Insignia oculta",
-  "badge.hidden_text": "¡Todavía no puedes ver esta insignia!"
+  "badge.hidden_text": "¡Todavía no puedes ver esta insignia!",
+  "baddies.defeated": "Derrotados: {0}",
+  "baddies.encounters": "Encuentros: {0}",
+  "baddies.bounced": "Rebotes: {0}"
 }
