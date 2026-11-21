@@ -31,6 +31,7 @@ public:
     void processObjects();
     void clearObjects(double whichScreen, bool all = false, bool resetCounter = true, bool keepCarried = false);
     void saveObjects();
+    void saveObjectsAtCheckpoint();
     void buildObjects(double whichScreen);
     void removeObject(double objectID, bool nosplice = false);
     void preblitSheets() {} // AS: ObjectManager.preblitSheets (empty)

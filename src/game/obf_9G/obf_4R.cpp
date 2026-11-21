@@ -91,7 +91,8 @@ void obf_4R::obf_52()
     obf_7C->playSound("portalsound_spinfallout.wav");
     // SKELETON: playerObj.startTrainSound (train and river levels).
     obf_6Z->showHUD();
-    // SKELETON: setupControls, setupCycleCode, handleCheckpointProgress.
+    // SKELETON: setupControls, setupCycleCode.
+    obf_AQ->handleCheckpointProgress();
     obf_6Z->updateDisplay();
     obf_6Z->updatePlayerHealth(playerObj->currentHealth);
 }

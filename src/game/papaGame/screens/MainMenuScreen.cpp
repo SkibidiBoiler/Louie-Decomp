@@ -487,7 +487,7 @@ void MainMenuScreen::buildModel(bool sameCharacter)
 }
 
 // AS: MainMenuScreen.setupMap — the unlocked areas, the totals, and the reveal of a newly opened area.
-// SKELETON: the checkpoint ribbon (CheckpointData). The store upsell is not shown.
+// The store upsell is not shown.
 void MainMenuScreen::setupMap(bool setup)
 {
     engine::MovieClip *map = section("map");
@@ -532,7 +532,8 @@ void MainMenuScreen::setupMap(bool setup)
             if (engine::MovieClip *ribbon = world->findChild("ribbon")) {
                 ribbon->mouseEnabled = false;
                 ribbon->mouseChildren = false;
-                ribbon->setVisible(false);
+                const data::CheckpointData *checkpoint = gameObj->obf_AQ->checkpointData.get();
+                ribbon->setVisible(checkpoint != nullptr && checkpoint->whichLevel == i);
             }
         } else {
             world->setVisible(false);

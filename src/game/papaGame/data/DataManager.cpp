@@ -116,7 +116,20 @@ void DataManager::setupLevelScreens(double whichLevel)
     const double whichTileset = whichLevel;
     currentLevel = whichLevel;
     currentWorldData = std::make_unique<WorldData>(gameObj, *worldXML);
-    // SKELETON: the checkpoint branch (checkpointData) is not ported yet; this is the "Normal Loading" path.
+    if (checkpointData != nullptr && checkpointData->getCheckpointLevel() == whichLevel) {
+        SDL_Log(">>>>>  Use Checkpoint Data");
+        currentScreen = checkpointData->getStartingRoomIndex();
+        std::vector<std::unique_ptr<ScreenData>> savedArray = checkpointData->getScreenDataArray();
+        for (size_t i = 0; i < savedArray.size(); ++i) {
+            if (static_cast<double>(i) == currentScreen) {
+                currentScreenData = savedArray[i].get();
+            }
+            currentScreens.push_back(std::move(savedArray[i]));
+        }
+        setupCollisionArrays();
+        return;
+    }
+    SDL_Log(">>>>> Normal Loading");
     currentScreen = currentWorldData->worldStartRoom;
     const std::vector<double> roomArray = currentWorldData->getWorldRoomIDs();
     for (size_t i = 0; i < roomArray.size(); ++i) {
@@ -175,17 +188,45 @@ void DataManager::initializeScreenObjects(double whichScreen)
     }
 }
 
-// AS: DataManager.saveCheckpoint (SKELETON: CheckpointData, the saved room states and tallies to restart from)
+// AS: DataManager.saveCheckpoint — replaces the level's checkpoint with one at this tile of the current room.
 void DataManager::saveCheckpoint(double tileX, double tileY)
 {
-    SDL_Log("Saving Checkpoint... (level %s, room %s, tile %s,%s)", as3::String(currentLevel).c_str(),
-            as3::String(currentScreen).c_str(), as3::String(tileX).c_str(), as3::String(tileY).c_str());
+    SDL_Log("Saving Checkpoint...");
+    checkpointData.reset();
+    checkpointData = std::make_unique<CheckpointData>(gameObj, currentLevel, currentScreen, currentScreens, tileX, tileY);
 }
 
 // AS: DataManager.clearCheckpoint
 void DataManager::clearCheckpoint()
 {
     SDL_Log("Clearing Checkpoint");
+    checkpointData.reset();
+}
+
+// AS: DataManager.handleCheckpointProgress — restarting from this level's checkpoint brings back the time and the
+// tallies it saved.
+void DataManager::handleCheckpointProgress()
+{
+    if (checkpointData != nullptr && checkpointData->whichLevel == currentLevel) {
+        const CheckpointData &c = *checkpointData;
+        SDL_Log("Restore progress from checkpoint");
+        gameObj->obf_8o->gameplayTimer = c.save_gameplayTimer;
+        UserData &user = *gameObj->obf_51;
+        user.gotHurt = c.save_gotHurt;
+        user.fellInWater = c.save_fellInWater;
+        user.killsTally = c.save_killsTally;
+        user.livesLost = c.save_livesLost;
+        user.burgerzillas = c.burgerzillas_tally;
+        user.money = c.money_tally;
+        user.specialitems = c.specialitems_tally;
+        managers::ChallengeManager &cm = *gameObj->obf_94;
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 1, c.challenge1_tally);
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 2, c.challenge2_tally);
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 3, c.challenge3_tally);
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 4, c.challenge4_tally);
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 5, c.challenge5_tally);
+        cm.setChallengeTallyFromCheckpoint(c.whichLevel, 6, c.challenge6_tally);
+    }
 }
 
 // AS: DataManager.clearLevelScreens

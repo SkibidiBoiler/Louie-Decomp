@@ -244,6 +244,18 @@ void ObjectManager::saveObjects()
     clearObjects(1, true);
 }
 
+// AS: ObjectManager.saveObjectsAtCheckpoint — the objects that keep their state at a checkpoint (the boulders)
+// write it into the room's data.
+void ObjectManager::saveObjectsAtCheckpoint()
+{
+    for (int i = static_cast<int>(objects.size()) - 1; i >= 0; --i) {
+        models::GameObject *o = objects[static_cast<size_t>(i)];
+        if (o && o->saveDataAtCheckpoint) {
+            o->saveObjectData();
+        }
+    }
+}
+
 // AS: ObjectManager.buildObjects — rows of objectArray: [type, x, y, triggers, params...]; type 0 is gone.
 void ObjectManager::buildObjects(double whichScreen)
 {

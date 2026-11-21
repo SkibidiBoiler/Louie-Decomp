@@ -522,3 +522,15 @@ the trigger (`--at 6,16 --input L20-34`) starts him; he flies, fires BBQ rockets
 falls, lands and runs. The propeller is drawn (green, behind him; it is easy to miss against the trees). Not
 checked: stunning and hitting him on the ground, his 2 and 1 hit-point phases, the end of the fight.
 Progress: 77.4 % of functions, 84.7 % of lines.
+
+(47) Checkpoints: `CheckpointData` (a copy of every room's data with the starting room's start point moved to the
+checkpoint tile, plus the hurt / water flags, kills, lives lost, gameplay time, money, Burgerzillas, special items
+and the counted challenges' tallies). `DataManager.saveCheckpoint` / `clearCheckpoint` keep it,
+`setupLevelScreens` loads the level from it when it is for that level ("Use Checkpoint Data"), and
+`handleCheckpointProgress` (now called when a level starts) restores the tallies. `ObjectManager.saveObjectsAtCheckpoint`
+(the objects with saveDataAtCheckpoint: the boulders) and `ItemManager.saveItemsAtCheckpoint` write the room's live
+state first. The map shows the checkpoint ribbon on that level. Dying with lives left still respawns at the last safe
+spot (`restartPlayer`), as in the original; the checkpoint is used when the level is entered again.
+`tools/pl_check.py run --grep RE` prints matching log lines. Checked: touching the checkpoint in Leaf Landing room 1
+(`--level 0 --room 1 --at 15,37 --input R10-30`) saves it ("4 room states saved"). Not checked: entering the level
+again from the map (needs menu taps), the ribbon on the map.

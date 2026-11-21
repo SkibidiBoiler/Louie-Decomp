@@ -4,7 +4,7 @@
   worlds                               --level index (the world's tileset) -> world name and its room ids
   rooms LO HI [--where e:23,30 o:15]   types placed in rooms LO..HI (room ids); '*' = no factory case yet;
                                        --where lists the placements (type,x,y,params) of those types
-  run [--build] -s SPEC [-s SPEC ...]  optionally build Debug (prints only errors/warnings), then run each
+  run [--build] [--grep RE] -s SPEC ...  optionally build Debug (prints only errors/warnings), then run each
                                        scenario with --trace --mute (PL_SEED=1) and summarise it
 
 SPEC = "label|game args|types", e.g. "bites|--level 7 --room 2 --at 20,60 --customer 8 --input D3-5 --frames 80|23,24"
@@ -87,8 +87,12 @@ def dedup(seq):
     return ' '.join('%sx%d' % (x, n) if n > 1 else x for x, n in out)
 
 
-def summarise(label, text, types):
+def summarise(label, text, types, grep=None):
     print('== %s' % label)
+    if grep:
+        for l in text:
+            if re.search(grep, l):
+                print('  | ' + l[:180])
     sounds = Counter(re.findall(r'[\w-]+\.wav|\bjump\w*\b', ' '.join(l for l in text if l.startswith('S '))))
     print('  sounds: ' + (' '.join('%sx%d' % kv if kv[1] > 1 else kv[0] for kv in sounds.items()) or '-'))
     tl = [l for l in text if l.startswith('T ')]
@@ -146,7 +150,7 @@ def cmd_run(a):
         label, args, types = (spec.split('|') + ['', ''])[:3]
         cmd = [EXE, '--data', DATA, '--mute', '--trace'] + args.split()
         r = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, errors='replace')
-        summarise(label, (r.stdout + r.stderr).splitlines(), set(t for t in types.split(',') if t))
+        summarise(label, (r.stdout + r.stderr).splitlines(), set(t for t in types.split(',') if t), a.grep)
     return 0
 
 
@@ -162,6 +166,7 @@ def main():
     u = sub.add_parser('run')
     u.add_argument('--build', action='store_true')
     u.add_argument('-s', action='append', default=[])
+    u.add_argument('--grep', help='also print the raw log lines matching this regex')
     u.set_defaults(f=cmd_run)
     a = p.parse_args()
     sys.exit(a.f(a) or 0)
