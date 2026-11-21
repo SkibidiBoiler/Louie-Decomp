@@ -55,6 +55,11 @@ void obf_4R::obf_6V(double whichLevel)
     obf_51->clearTallies();
     // SKELETON: BitmapManager.clearExtraSprites.
     bitmapManager->whichTileset = -1;
+    // Port: the original's BitmapManager is new for each level (its sky and backdrop start null); the port keeps one,
+    // so they are dropped here. Without this the tile sheet's getter sets whichTileset first and the old level's sky
+    // and backdrop were kept.
+    bitmapManager->bgsheet = nullptr;
+    bitmapManager->mgsheet = nullptr;
     obf_AQ->setupLevelScreens(whichLevel);
     if (obf_AQ->currentScreenData == nullptr) {
         return; // port: no level data

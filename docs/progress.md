@@ -618,3 +618,12 @@ same font with the most glyphs (Flash embeds only the characters a field was mad
 "Sace", "Let"). The menu bar's tab row starts after the back button when it would go under it, with narrower buttons
 (no side padding) when it would run off the right edge (the pause menu's six tabs). Checked: captures of the CONTROLS
 tab (Space, Up, Left, Right) and of the pause bar.
+
+(58) Fix: the sky and backdrop of a level played after another kept the first level's. The original makes a new
+BitmapManager for each level (its bgsheet / mgsheet start null); the port keeps one, and getTilesheetBitmap sets
+whichTileset before getBackgroundBitmap / getMiddlegroundBitmap ask, so they returned the old sheets. obf_6V now drops
+them. Note: worlds share backdrops in the original (bgNames / mgNames): Leaf Landing and Lettuce Lane use tilesheet1,
+Fort Onion and Sarge's Lair tilesheet2, Mount Monterey and Cheddar Hills tilesheet3, The Saucelands, BBQ Bog and
+Radley's Hideout tilesheet4, X Zone tilesheet5. The room order per world is levels.xml's roomArray (Radley's Hideout
+starts in room 2, "9-A"; Sarge's Lair's 4-F is its fourth room), as in the original. Checked by reading the code
+path; not checked by playing two levels in a row.
