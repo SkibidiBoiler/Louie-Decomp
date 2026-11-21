@@ -95,5 +95,9 @@
   "help.topic16": "Baddies",
   "help.topic17": "Controls",
   "help.topic18": "Saving",
-  "options.intro_music": "Full level intro music"
+  "options.intro_music": "Full level intro music",
+  "exit.title": "Quit to...",
+  "exit.title_screen": "TITLE SCREEN",
+  "exit.frontend": "GAME PICKER",
+  "exit.cancel": "CANCEL"
 }

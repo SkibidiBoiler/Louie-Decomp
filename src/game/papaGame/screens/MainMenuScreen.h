@@ -87,6 +87,9 @@ public:
     void clickMap() { setSection("map"); }
     void clickCredits() { setSection("credits"); }
     void clickExit();
+    // Port: QUIT asks where to go (the title screen, as the original, or the port's game picker).
+    void showExitChoice();
+    void closeExitChoice();
     void clickExitMapSelect();
     void clickBackToMap();
     void setSection(const std::string &section);
@@ -119,6 +122,7 @@ public:
     engine::MovieClip *infoModel = nullptr;        // owned by clip.info
     engine::MovieClip *confirmYesButton = nullptr; // owned by clip.confirmquit
     engine::MovieClip *confirmNoButton = nullptr;  // owned by clip.confirmquit
+    engine::MovieClip *exitChoice = nullptr;       // port: owned by container
     double mapLastUnlocked = 0;
 
 private:

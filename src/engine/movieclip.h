@@ -138,8 +138,8 @@ public:
     TextField &addTextField(const std::string &name, const TextField &field);
     TextField *textField(std::string_view name);
 
-    // `.mask = <sibling>` set from code: this clip is drawn clipped by `mask`, a timeline child of the same
-    // parent, which itself is no longer drawn. Null removes it.
+    // `.mask = <sibling>` set from code: this clip is drawn clipped by `mask`, a child (timeline or added by code)
+    // of the same parent, which itself is no longer drawn. Null removes it.
     void setMask(MovieClip *mask);
 
     // A Bitmap added by code (`addChild(new Bitmap(data))`): part of a texture drawn at (x, y) with size w x h,

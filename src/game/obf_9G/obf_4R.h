@@ -116,6 +116,7 @@ public:
     bool updateScreens(const engine::PointerState &pointer);
     engine::PointerState pointer; // port: this frame's pointer (stage mouse position and button, for drags)
     bool waitIntroMusic = true;   // port option: the level intro waits for its music (StageIntroScreen)
+    bool wantsFrontend = false;   // port: QUIT chose the port's game picker; the app closes the game
     double stageFrameRate = 0;    // port: stage.frameRate as the game sets it (0 = the SWF's); the app follows it
     bool screensActive() const;
     // Port: keyboard text for a screen's text input (the name entry): set while one has focus.

@@ -228,7 +228,7 @@ void App::enterLauncher()
             }
         }
     }
-    buildCovers();
+    coversPending_ = true; // made by render(), in the foreground
 }
 
 // The picker's covers: each imported game's title screen (splashScreenMC, as SplashScreen.setupScreen shows it),
@@ -630,6 +630,11 @@ void App::showSymbol(int index)
 
 SDL_AppResult App::event(const SDL_Event &ev)
 {
+    if (ev.type == SDL_EVENT_WILL_ENTER_BACKGROUND || ev.type == SDL_EVENT_DID_ENTER_BACKGROUND) {
+        background_ = true;
+    } else if (ev.type == SDL_EVENT_DID_ENTER_FOREGROUND) {
+        background_ = false;
+    }
     if ((mode_ == Mode::Level || mode_ == Mode::Launcher) && optionsEvent(ev)) {
         return SDL_APP_CONTINUE; // used by the options menu or its button
     }
@@ -931,7 +936,9 @@ void App::tap(float winX, float winY)
     if (mode_ == Mode::Level && game_ && game_->screensActive()) {
         return; // the menus take the pointer
     }
-    if (fy < 0.15f) { // DEV top band: FPS cap | next mode | interpolation
+    // DEV top band: FPS cap | next mode | interpolation. Only in the DEV modes (viewer, demo, import): in the game and
+    // the picker these are set from the options menu, and a tap at the top must not change them.
+    if (fy < 0.15f && mode_ != Mode::Level && mode_ != Mode::Launcher) {
         if (fx < 0.33f) {
             settings_.nextFpsCap(originalRate);
             settings_.save();
@@ -1086,6 +1093,12 @@ void App::tick()
             stepNs_ = static_cast<uint64_t>(1e9 / stage_.frameRate);
         }
         game_->obf_7C->advanceTime(1000.0 / stage_.frameRate);
+        if (game_->wantsFrontend) { // port: the main menu's QUIT chose the game picker
+            game_.reset();
+            stage_.frameRate = 30;
+            stepNs_ = static_cast<uint64_t>(1e9 / stage_.frameRate);
+            enterLauncher();
+        }
     }
     pointer_.pressed = false;
     pointer_.released = false;
@@ -1143,12 +1156,26 @@ void App::render(float alpha)
         alpha = 1.0f; // original look: always the latest logic state
     }
     updatePresentation();
+    if (coversPending_ && !background_ && mode_ == Mode::Launcher &&
+        !(SDL_GetWindowFlags(window_) & (SDL_WINDOW_HIDDEN | SDL_WINDOW_MINIMIZED | SDL_WINDOW_OCCLUDED))) {
+        coversPending_ = false;
+        buildCovers();
+    }
     if (!hasData_) {
         SDL_SetRenderDrawColor(renderer_, 110, 28, 28, 255); // red: data folder missing
+    } else if (mode_ == Mode::Level) {
+        SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255); // the bars beside a pillarboxed game screen
     } else {
         SDL_SetRenderDrawColor(renderer_, 200, 200, 210, 255);
     }
     SDL_RenderClear(renderer_);
+    if (hasData_ && mode_ == Mode::Level) {
+        // The stage itself keeps the light background under the game's screens.
+        SDL_SetRenderDrawColor(renderer_, 200, 200, 210, 255);
+        const SDL_FRect stage{0, 0, static_cast<float>(stage_.width) + 2 * viewExtra_,
+                              static_cast<float>(stage_.height)};
+        SDL_RenderFillRect(renderer_, &stage);
+    }
 
     if (mode_ == Mode::Import) {
         importScreen_->render(renderer_, static_cast<float>(stage_.width), static_cast<float>(stage_.height));

@@ -19,8 +19,8 @@ struct Settings {
     // Widescreen: in a level, show more of the room at the sides instead of grey bars when the window is wider
     // than the stage. Off = original framing (the 700x416 stage, pillarboxed).
     bool widescreen = true;
-    // The DEV line with FPS, room and camera at the top left.
-    bool showOverlay = true;
+    // The DEV line with FPS, room and camera at the top left (off unless turned on in the options menu).
+    bool showOverlay = false;
     // Port: the level intro waits for its music (the original waited while it drew the player's sprites).
     bool waitIntroMusic = true;
 

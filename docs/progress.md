@@ -658,3 +658,45 @@ screen at 24 fps, as in the original; at its "stopframe" label the game goes bac
 opens (obf_4R obf_7X / obf_4E; `obf_4R::stageFrameRate` is the original's stage.frameRate, which the app's fixed step
 follows). Its button's link to flipline.com (§_-36§) stays out (progress.py EXCLUDED), as do the analytics events.
 Checked: captures at frames 50 and 120 (the logo, "logic 24/s") and the log showing the title screen after it.
+
+(62) Port (the owner asked for it): the main menu's QUIT (MainMenuScreen.clickExit) first opens a panel with TITLE
+SCREEN (the original's code: back to the title screen), GAME PICKER (the app closes the game and opens its picker;
+`obf_4R::wantsFrontend`) and CANCEL. The panel is the API's bottom panel band clipped to a rectangle, with the API's
+buttons; the menu and the bars take no clicks while it is open. The engine now clips a clip added by code with an
+added sibling as its mask (`.mask` from code worked only on timeline children). Texts: `exit.*` in lang/en, es.
+Checked: captures of the panel, of each of the three choices, and of entering the game again from the picker.
+
+(63) Shapes with a colour transform's additive terms (the map's clouds tinted white: multiplier 0, offset 1) were
+drawn black (only the multiplier was applied). The shape is now drawn twice: with the multiplier, then its white
+silhouette (ShapeTextures::silhouette) added with the offset colour, which is Flash's (c*m + add) over the
+background; the alpha offset is still not applied. Checked: the map with levels 1-4 open (the black cloud over the
+score is white now) and a level capture. Also: the DEV band at the top of the window (FPS cap, mode, interpolation)
+no longer takes taps in the game or the picker (the options menu sets them), and the FPS line is off by default.
+A rescue at the end of a level ends it, as in the original (GameObject19 calls finishLevel("cage")).
+
+`--level 2`. Checked by trace: only the army onions of room 1. Next: test 8/15/16 and the helmet, then GameObject6,
+7, 17, 18.
+(35) Fort Onion, part 2: checked by trace in `--level 2 --room 4`: the dill wheels roll round their blocks, the runt
+tomato hops back and forth, the leafy lark flies between its columns. `GameObject6` / `GameObject7` horizontal
+blimps (small one too): the waiting ones start when the player boards and carry the player (`--room 3 --at 32,9`);
+the others shuttle. `stepOnObject` is virtual. Next: GameObject17 (switch), GameObject18 (door).
+(36) Fort Onion, part 3: `GameObject17` floor switch (stepping on it presses it: step_switch.wav) and `GameObject18`
+door (solid while shut, opens with papow.wav; `DoorFrontEffect` is drawn over the player). Checked in
+`--level 2 --room 0 --at 21,23 --input "R100-300,J115-118"`: the switch sinks, the three doors open, the player runs
+through (trace and a capture). Not checked: the gold helmet drop. Next world: Sarge's Lair.
+(37) Sarge's Lair, part 1 (`--level 3`): `Enemy5` kaiser onion (walks, cannot be stunned), the party sub `Enemy9`
+(back) / `Enemy10` (middle) / `Enemy11` (front) walking as a group (EnemyManager sendMessageToEnemyGroup,
+getEnemyIDsFromGroup, checkGroupOnScreen), `Enemy17` dill worm (hangs, drops on the player, crawls after them).
+Checked by trace: room 0 kaiser onions, room 1 party subs, room 2 `--at 36,56 --input L40-80` the worms drop.
+Next: GameObject2 (pushable boulder), GameObject14 (drop berry), then Sarge (Enemy35, SargePepper, GiantPepper,
+GameObject29/30).
+(38) `GameObject14` drop berry: stood on, it drops after 20 frames carrying the player, splats (bouncing them off)
+and refills where it hung. Checked: `--level 3 --room 0 --at 7,21`. QUIRK kept: splatBerry skips every other rider.
+Next: GameObject2 (pushable boulder: needs the player's pushing — canPush, checkPushingObject, the looping push
+sound), then Sarge.
+(39) Tile seams: the vector tilesheet parts are baked with their bounds as the pixel origin (e.g. -24.67), so the
+32-unit grid falls between pixels and each tile's edge pixel is half transparent; tiles side by side showed thin
+see-through lines. `SheetLibrary::repairCellEdges` runs once on the composed tilesheet: each cell's outermost pixel
+that is more transparent than the one just inside takes that pixel (two pixels deep thickened art crossing an edge,
+so only one). Checked by captures of `--level 2 --room 4` and `--level 0 --room 2`. A proper fix would bake the
+parts at a whole-pixel origin in the importer (FFDec has no option for it).
