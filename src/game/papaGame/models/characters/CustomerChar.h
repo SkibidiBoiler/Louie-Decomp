@@ -90,6 +90,7 @@ public:
     void startAttacking();
     void setupAttackRect();
     void cancelAttack();
+    void resetFoodiniBalloon(); // port helper, see the .cpp
     bool usingGun() const;
     bool usingPowerTool() const;
 

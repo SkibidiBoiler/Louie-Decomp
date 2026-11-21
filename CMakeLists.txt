@@ -145,6 +145,10 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/RainbowBitEffect.cpp
     src/game/papaGame/models/effects/BeakerGlassEffect.cpp
     src/game/papaGame/models/effects/BossPropellerEffect.cpp
+    src/game/papaGame/models/effects/FoodiniBalloonEffect.cpp
+    src/game/papaGame/models/effects/FoodiniGlideEffect.cpp
+    src/game/papaGame/models/effects/ItemGlowEffect.cpp
+    src/game/papaGame/models/effects/WarpCoinEffect.cpp
     src/game/papaGame/models/effects/RadishDirtEffect.cpp
     src/game/papaGame/models/effects/StuckCheeseEffect.cpp
     src/game/papaGame/models/effects/ChiliBitEffect.cpp

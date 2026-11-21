@@ -41,6 +41,10 @@
 #include "game/papaGame/models/effects/RainbowBitEffect.h"
 #include "game/papaGame/models/effects/BeakerGlassEffect.h"
 #include "game/papaGame/models/effects/BossPropellerEffect.h"
+#include "game/papaGame/models/effects/FoodiniBalloonEffect.h"
+#include "game/papaGame/models/effects/FoodiniGlideEffect.h"
+#include "game/papaGame/models/effects/ItemGlowEffect.h"
+#include "game/papaGame/models/effects/WarpCoinEffect.h"
 #include "game/papaGame/models/effects/StuckCheeseEffect.h"
 #include "game/papaGame/models/effects/FeatherEffect.h"
 #include "game/papaGame/models/effects/ChiliBitEffect.h"
@@ -156,6 +160,18 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "RainbowBitEffect") {
         return std::make_unique<RainbowBitEffect>(gameObj);
+    }
+    if (type == "FoodiniBalloonEffect") {
+        return std::make_unique<FoodiniBalloonEffect>(gameObj);
+    }
+    if (type == "FoodiniGlideEffect") {
+        return std::make_unique<FoodiniGlideEffect>(gameObj);
+    }
+    if (type == "ItemGlowEffect") {
+        return std::make_unique<ItemGlowEffect>(gameObj);
+    }
+    if (type == "WarpCoinEffect") {
+        return std::make_unique<WarpCoinEffect>(gameObj);
     }
     if (type == "BossPropellerEffect") {
         return std::make_unique<BossPropellerEffect>(gameObj);

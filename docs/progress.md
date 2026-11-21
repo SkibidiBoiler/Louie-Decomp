@@ -537,3 +537,15 @@ frame N (as `--level` does): with `--input R10-30 --reenter 90` the level loads 
 Data", tallies restored) and the player starts in room 1 at tile 17,38. Pause menu, quit and its confirmation work
 with `--tap "35,398@60;80,20@100;274,232@160"`, but a game started with `--level` has no slot loaded, so the map's
 world buttons do not answer: the ribbon on the map is not checked.
+
+(48) Effects: `FoodiniBalloonEffect` (Foodini's balloon on a string, at most 60 px from his hand: it rises, is
+pulled along, bobs on eased quarter waves, leans one frame per 10 degrees, hides during his attack, floats away when
+he is gone), `FoodiniGlideEffect` (the six small balloons of his glide: they ease to their spots above him and,
+when the glide ends, float away, or are reeled back in if balloons were let go less than 40 frames before),
+`WarpCoinEffect` (the warp key rising over the player) and `ItemGlowEffect` (its glow). The strings are drawn with
+`drawBalloonString` (straight, or the original's quadratic curve as short lines). CustomerChar's Foodini SKELETONs
+are filled: the balloon at startupPlayer, hidden on attack, reset at the attack's end and in cancelAttack
+(`resetFoodiniBalloon`, a port helper), the glide balloons (QUIRK kept: a balloon already reeled in throws in the
+original, which leaves the list uncleared). Checked with `--customer 25` (Foodini): the balloon follows him (capture)
+and the glide balloons appear and rise away. Not checked: the warp key effect (end of a level), the strings'
+look. Progress: 79.2 % of functions, 86.3 % of lines.
