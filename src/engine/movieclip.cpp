@@ -39,7 +39,9 @@ void drawShape(const RenderContext &ctx, uint16_t id, const Affine &m, const Col
     const float x0 = bounds->x, y0 = bounds->y;
     const float x1 = x0 + tw / scale, y1 = y0 + th / scale;
 
-    // TODO: additive colour terms need a shader; only the multiplier is applied for now.
+    // The multiplier first; the additive terms (if any) as a second, additive pass of the shape's white
+    // silhouette: dst(1 - a) + c*m*a, then + add*a, which is Flash's (c*m + add) over dst. The alpha offset is
+    // not applied.
     const SDL_FColor tint{clamp01(color.mr), clamp01(color.mg), clamp01(color.mb), clamp01(color.ma)};
     SDL_Vertex v[4];
     const float corners[4][4] = {{x0, y0, 0, 0}, {x1, y0, 1, 0}, {x1, y1, 1, 1}, {x0, y1, 0, 1}};
@@ -50,6 +52,15 @@ void drawShape(const RenderContext &ctx, uint16_t id, const Affine &m, const Col
     }
     static const int indices[6] = {0, 1, 2, 0, 2, 3};
     SDL_RenderGeometry(ctx.renderer, texture, v, 4, indices, 6);
+    if (color.ar > 0.0f || color.ag > 0.0f || color.ab > 0.0f) {
+        if (SDL_Texture *white = ctx.textures->silhouette(id)) {
+            const SDL_FColor add{clamp01(color.ar), clamp01(color.ag), clamp01(color.ab), clamp01(color.ma)};
+            for (SDL_Vertex &vertex : v) {
+                vertex.color = add;
+            }
+            SDL_RenderGeometry(ctx.renderer, white, v, 4, indices, 6);
+        }
+    }
 }
 
 // Bounds of the tracks of `tl` alive at `frame` (shapes, and the first frame of nested sprites / buttons).

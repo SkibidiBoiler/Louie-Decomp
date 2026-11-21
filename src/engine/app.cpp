@@ -924,7 +924,9 @@ void App::tap(float winX, float winY)
     if (mode_ == Mode::Level && game_ && game_->screensActive()) {
         return; // the menus take the pointer
     }
-    if (fy < 0.15f) { // DEV top band: FPS cap | next mode | interpolation
+    // DEV top band: FPS cap | next mode | interpolation. Only in the DEV modes (viewer, demo, import): in the game and
+    // the picker these are set from the options menu, and a tap at the top must not change them.
+    if (fy < 0.15f && mode_ != Mode::Level && mode_ != Mode::Launcher) {
         if (fx < 0.33f) {
             settings_.nextFpsCap(originalRate);
             settings_.save();

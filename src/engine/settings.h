@@ -16,8 +16,8 @@ struct Settings {
     // On-screen touch buttons: opacity 0..1 and size multiplier.
     float touchOpacity = 0.55f;
     float touchSize = 1.0f;
-    // The DEV line with FPS, room and camera at the top left.
-    bool showOverlay = true;
+    // The DEV line with FPS, room and camera at the top left (off unless turned on in the options menu).
+    bool showOverlay = false;
     // Port: the level intro waits for its music (the original waited while it drew the player's sprites).
     bool waitIntroMusic = true;
 

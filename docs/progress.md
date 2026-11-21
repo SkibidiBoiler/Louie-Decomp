@@ -654,3 +654,11 @@ SCREEN (the original's code: back to the title screen), GAME PICKER (the app clo
 buttons; the menu and the bars take no clicks while it is open. The engine now clips a clip added by code with an
 added sibling as its mask (`.mask` from code worked only on timeline children). Texts: `exit.*` in lang/en, es.
 Checked: captures of the panel, of each of the three choices, and of entering the game again from the picker.
+
+(63) Shapes with a colour transform's additive terms (the map's clouds tinted white: multiplier 0, offset 1) were
+drawn black (only the multiplier was applied). The shape is now drawn twice: with the multiplier, then its white
+silhouette (ShapeTextures::silhouette) added with the offset colour, which is Flash's (c*m + add) over the
+background; the alpha offset is still not applied. Checked: the map with levels 1-4 open (the black cloud over the
+score is white now) and a level capture. Also: the DEV band at the top of the window (FPS cap, mode, interpolation)
+no longer takes taps in the game or the picker (the options menu sets them), and the FPS line is off by default.
+A rescue at the end of a level ends it, as in the original (GameObject19 calls finishLevel("cage")).
