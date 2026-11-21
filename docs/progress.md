@@ -567,3 +567,12 @@ gone), obf_3q, obf_49, obf_2r. QUIRK kept: releaseNextGroup's group size is an u
 staggered. DEV `--parade N` shows it at app frame N. Checked: captures of the parade (Marty and Rita) and of the
 ending. Not checked: the walking/waving parade (showWeapons false, only from the API menu), the hand-over to the
 tally. Progress: 80.9 % of functions, 88.9 % of lines.
+
+(51) Challenge drop-down: ChallengeManager checkForDisplayingDropdown, animateBadgeDropdown, clickBadgeDropdown
+(the queued treasure, challenge or badge eases down from the top, stays 150 frames or until clicked, goes up, and the
+next follows; QUIRK kept: a treasure's panel gets neither part set up), getChallengeTitle / Description /
+RewardAmount, getBadgeTally / TallyString, shouldLockBadge (Challenge gets requiredCustomers / requiredLevel and
+getRewardAmount). The original adds the drop-down to the game object itself: the port's `obf_4R::rootClips` holds it
+above the screens and takes the pointer when it is under it. Checked: rescuing Prudence in Leaf Landing shows
+"Challenge Complete! Rescued Prudence!" (capture) with getstar.wav. Not checked: a badge's panel. Progress: 81.4 % of
+functions, 89.3 % of lines.
