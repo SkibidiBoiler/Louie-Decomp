@@ -122,6 +122,7 @@ set(PL_SOURCES
     src/game/papaGame/models/bullets/SargePepper.cpp
     src/game/papaGame/models/bullets/ShroomArrow.cpp
     src/game/papaGame/models/bullets/CheeseBullet.cpp
+    src/game/papaGame/models/bullets/SauceBullet.cpp
     src/game/papaGame/models/bullets/GiantPepper.cpp
     src/game/papaGame/models/bullets/RomanCandle.cpp
     src/game/papaGame/models/bullets/XandraStar.cpp
@@ -136,6 +137,8 @@ set(PL_SOURCES
     src/game/papaGame/models/effects/BlueberrySplatEffect.cpp
     src/game/papaGame/models/effects/CheeseBitEffect.cpp
     src/game/papaGame/models/effects/CheeseSplatEffect.cpp
+    src/game/papaGame/models/effects/SauceBitEffect.cpp
+    src/game/papaGame/models/effects/SauceSplatEffect.cpp
     src/game/papaGame/models/effects/RadishDirtEffect.cpp
     src/game/papaGame/models/effects/StuckCheeseEffect.cpp
     src/game/papaGame/models/effects/ChiliBitEffect.cpp
@@ -197,6 +200,8 @@ set(PL_SOURCES
     src/game/papaGame/models/objects/GameObject13.cpp
     src/game/papaGame/models/objects/GameObject1.cpp
     src/game/papaGame/models/objects/GameObject14.cpp
+    src/game/papaGame/models/objects/GameObject15.cpp
+    src/game/papaGame/models/objects/GameObject16.cpp
     src/game/papaGame/models/objects/GameObject17.cpp
     src/game/papaGame/models/objects/GameObject18.cpp
     src/game/papaGame/models/objects/GameObject19.cpp
@@ -232,13 +237,17 @@ set(PL_SOURCES
     src/game/papaGame/models/enemies/Enemy20.cpp
     src/game/papaGame/models/enemies/Enemy21.cpp
     src/game/papaGame/models/enemies/Enemy22.cpp
+    src/game/papaGame/models/enemies/Enemy23.cpp
+    src/game/papaGame/models/enemies/Enemy24.cpp
     src/game/papaGame/models/enemies/Enemy25.cpp
     src/game/papaGame/models/enemies/Enemy26.cpp
     src/game/papaGame/models/enemies/Enemy27.cpp
     src/game/papaGame/models/enemies/Enemy28.cpp
     src/game/papaGame/models/enemies/Enemy29.cpp
+    src/game/papaGame/models/enemies/Enemy30.cpp
     src/game/papaGame/models/enemies/Enemy31.cpp
     src/game/papaGame/models/enemies/Enemy32.cpp
+    src/game/papaGame/models/enemies/Enemy33.cpp
     src/game/papaGame/models/enemies/Enemy35.cpp
     src/game/papaGame/models/enemies/Enemy34.cpp
     src/game/papaGame/models/characters/CustomerChar.cpp

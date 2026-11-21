@@ -40,6 +40,9 @@ public:
     virtual void checkBeforeBlitting() {}
     void saveEnemyKill();
     virtual void removeEnemy();
+    // Port: only Enemy37 (the Radley Madish boss, which lets out Pararadishes) defines it; the original calls it on
+    // an untyped enemy, so the other enemies need no body.
+    virtual void unregisterSpawn(double /*type*/, double /*id*/) {}
     void jumpChar(bool collide = true) override;
     void updateObject() override;
     void destroy() override;

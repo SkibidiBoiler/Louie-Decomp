@@ -476,3 +476,18 @@ Checked by trace: room 0 the pool (`--at 123,17`, capture), room 2 a Bacobar pus
 (`--at 124,35`, capture), the planted radishes pop out (`--at 118,5`), room 3 the Laddish climbs and turns at the
 ladder's end (`--at 15,15`) and the Thorn Shrooms turn and duck (`--at 22,66`). Not checked: crunching a Bacobar,
 knocking a Laddish off its ladder.
+
+(44) Radley's Hideout (`--level 7`, rooms 8-A to 8-D): `GameObject15/16` On and Off Berries (platforms that pop up
+and go down on a timer, wobbling for the last 20 frames; nothing stands on one while it is down), `Enemy23` Bacoburn
+(the Bacobar's wall, but a stomp, slide or ground pound beats it at once and breaks it into three `Enemy24` Baco
+Bites, which hop back and forth), `Enemy30` Pararadish (floats down 2 px a frame on a parachute, folds it on landing,
+then hops after the player), `Enemy33` Awesome Saucer (glides between two columns on a sine wave, slowing into each
+turn, and drops a `SauceBullet` on a timer, with `SauceBitEffect` / `SauceSplatEffect` where it lands). The
+Pararadish's spawner is an enemy (the Radley Madish boss, not ported yet): `Enemy.unregisterSpawn(type, id)` is a
+port virtual with an empty body until Enemy37 overrides it. Checked by trace: room 0 a berry carries the player and
+drops them after its 60 frames (`--at 27,80`), room 1 a saucer turns at its target column and its sauce splats
+(`--at 36,17`), room 2 a ground pound (`--customer 8 --at 20,60 --input D3-5`) crunches a Bacoburn into three hopping
+bites (capture), and a player inside a Bacoburn is pushed out and hurt; room 3 the Pararadishes land, fold their
+parachutes and hop at the player (`--at 25,12`, capture). Note: falling onto a Bacoburn at full speed usually ends in
+the push-out rather than a stomp (its own update pushes the player out in the frame they reach its body, before the
+player's next stomp test); not compared with the original. Progress: 72.8 % of functions, 79.9 % of lines.
