@@ -400,13 +400,13 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, "title.choose_slot", {{Kind::Back, "menu.back", "clickBack"}}, layout);
     } else if (name == "MainMenu") {
-        // SKELETON: the HELP tab (their sections are not ported yet).
         mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
                       {{Kind::Tab, "menu.baddies", "clickBaddies"},
                        {Kind::Tab, "menu.badges", "clickMedals"},
                        {Kind::Tab, "menu.controls", "clickControls"},
+                       {Kind::Tab, "menu.help", "clickHelp"},
                        {Kind::Tab, "menu.credits", "clickCredits"},
                        {Kind::Back, "menu.quit", "clickExit"}},
                       layout);
@@ -418,7 +418,6 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
                        {Kind::Tab, "menu.back_to_map", "clickBackToMap"}},
                       layout);
     } else if (name == "PauseMenu") {
-        // SKELETON: the HELP tab (their sections are not ported yet).
         mainMenuScreen = std::make_unique<papaGame::screens::MainMenuScreen>(this, obf_5h.get(), params);
         engine::MenuBar::Layout layout;
         menuBar.setup(*symbols, text, lang, mainMenuScreen->getSectionTitle(),
@@ -427,6 +426,7 @@ void obf_4R::showApiScreen(const std::string &name, const papaGame::screens::Mai
                        {Kind::Tab, "menu.baddies", "clickBaddies"},
                        {Kind::Tab, "menu.badges", "clickMedals"},
                        {Kind::Tab, "menu.controls", "clickControls"},
+                       {Kind::Tab, "menu.help", "clickHelp"},
                        {Kind::Tab, "menu.credits", "clickCredits"},
                        {Kind::Back, "menu.quit_level", "clickQuit"}},
                       layout);
@@ -488,8 +488,9 @@ bool obf_4R::screensActive() const
            obf_7K != nullptr;
 }
 
-bool obf_4R::updateScreens(const engine::PointerState &pointer)
+bool obf_4R::updateScreens(const engine::PointerState &pointer_)
 {
+    pointer = pointer_;
     pendingDestroySplash_.reset();
     pendingDestroyIntro_.reset();
     pendingDestroySlots_.reset();

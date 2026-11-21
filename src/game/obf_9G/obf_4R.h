@@ -111,6 +111,7 @@ public:
     // Port: one logic frame of the screens: the pointer (menu bar, then the screens' buttons), then their
     // ENTER_FRAME handlers. True while a menu screen is up.
     bool updateScreens(const engine::PointerState &pointer);
+    engine::PointerState pointer; // port: this frame's pointer (stage mouse position and button, for drags)
     bool screensActive() const;
     // Port: keyboard text for a screen's text input (the name entry): set while one has focus.
     std::function<void(const std::string &)> onTextInput;

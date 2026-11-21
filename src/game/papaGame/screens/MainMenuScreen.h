@@ -2,7 +2,7 @@
 // AS: papaGame.screens.MainMenuScreen — the map of areas and, before a level, the customer and outfit choice,
 // with the credits, badges, baddies, controls and help sections the bar's tabs open.
 // The store, social and "first game" links went to web sites and are not shown.
-// SKELETON: the help section, and the tutorial pop-ups (§_-6n§ / §_-c§).
+// SKELETON: and the tutorial pop-ups (§_-6n§ / §_-c§).
 #include <memory>
 #include <string>
 #include <vector>
@@ -40,6 +40,29 @@ public:
     void setupMedals(bool setup = true);
     void setupBaddies(bool setup = true);
     void setupControls(bool setup = true);
+    void setupHelp(bool setup = true);
+    void setupHelpKeys();
+    void showHelp(double index);
+    void clickHelpTab(int index);
+    void clickHelpTabArrow(int dir);
+    void holdHelpTabArrow();
+    void releaseHelpTabArrow();
+    void clickHelpTabDragger();
+    void dragHelpTabDragger();
+    void releaseHelpTabDragger();
+    void clickHelpMainArrow(int dir);
+    void holdHelpMainArrow();
+    void releaseHelpMainArrow();
+    void clickHelpMainDragger();
+    void dragHelpMainDragger();
+    void releaseHelpMainDragger();
+    void clickHelp() { setSection("help"); } // AS: MainMenuScreen.clickHelp (the analytics event is dropped)
+    void updateHelp(); // port: the help section's ENTER_FRAME and stage MOUSE_UP listeners
+    double helpIndex = -1;
+    double helpScrollStart = 30;
+    double helpScrollRange = 158;
+    double helpTabScrollDir = 0;
+    double helpMainScrollDir = 0;
     void clickControlsButton(const std::string &which);
     void cancelSettingControls();
     void controlsKeyListener(double keyCode);
@@ -110,6 +133,9 @@ private:
     std::string medalsDirection = "next";
     bool medalsTransitioning = true;
     bool animatingMedals_ = false; // port: the animateMedalsTransition ENTER_FRAME listener is on
+    // Port: the help section's listeners that are on, and the drag start (startDrag keeps the grab offset).
+    bool holdingTabArrow_ = false, holdingMainArrow_ = false, draggingTab_ = false, draggingMain_ = false;
+    double dragStartPointerY_ = 0, dragStartButtonY_ = 0;
 };
 
 } // namespace papaGame::screens

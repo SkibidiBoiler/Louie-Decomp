@@ -605,3 +605,12 @@ key uses them. While the tab waits for a key, the app sends the next key to `obf
 KEY_DOWN listener). Checked: capture of the tab with the six keys. Not checked: changing a key (no scripted raw keys).
 Known: the key labels miss letters ("Sace", "Let"): the label field's font lacks those glyphs in the port's text
 renderer. Progress: 87.1 % of functions, 93.9 % of lines.
+
+(56) Menu HELP tab: MainMenuScreen setupHelp, setupHelpKeys (also when the section opens), showHelp, clickHelpTab,
+the tabs' roll-over / roll-out, the two scroll bars (click / hold / release of the arrows, click / drag / release of
+the dragger, for the tab list and the page), clickHelp. The 18 topic names are port texts (help.topic1..18 in lang/).
+Port: drags keep the grab offset (startDrag), the stage MOUSE_UP is the pointer going up, `obf_4R::pointer` holds the
+frame's pointer; moving a timeline child vertically keeps its timeline x (setChildY). QUIRK kept:
+releaseHelpMainArrow clears helpTabScrollDir. Not ported: the `useSection: "help"` parameter (never sent). Checked:
+captures of topics 1 and 2 (Attacking shows the player's Space key). Not checked: the scroll bars. The pause bar now
+has six tabs: INFO may sit under the QUIT LEVEL button (to check). Progress: 88.0 % of functions, 94.5 % of lines.
