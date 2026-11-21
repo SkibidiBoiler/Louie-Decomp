@@ -771,6 +771,7 @@ void MainMenuScreen::tweenSections()
             isTransitioning = false;
             tweening_ = false;
             gameObj->menuBar.setTitle(gameObj->lang, getSectionTitle());
+            gameObj->menuBar.setBottomHidden(currentSection == "credits"); // port: the credits fill the stage
         }
     } else if (std::abs(oldDistance) <= 1) {
         isTransitioning = false;

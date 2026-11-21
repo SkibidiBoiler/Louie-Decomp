@@ -627,3 +627,10 @@ Fort Onion and Sarge's Lair tilesheet2, Mount Monterey and Cheddar Hills tileshe
 Radley's Hideout tilesheet4, X Zone tilesheet5. The room order per world is levels.xml's roomArray (Radley's Hideout
 starts in room 2, "9-A"; Sarge's Lair's 4-F is its fourth room), as in the original. Checked by reading the code
 path; not checked by playing two levels in a row.
+
+(59) Engine fixes from the owner's phone captures: nested masks now clip (MaskLayers keeps one texture pair per
+nesting depth and composites onto the outer one; before, a mask inside masked content was skipped and its hidden art
+showed: the second portal ring in the character select's level circle). The menu bar's bottom panel hides on the
+CREDITS section when it holds no button (the credits picture reaches the bottom of the stage). Checked: captures of
+the map (unchanged) and of the credits (whole picture). Not checked: the character select (needs a save with a level
+unlocked) and the map's black cloud seen on the phone.

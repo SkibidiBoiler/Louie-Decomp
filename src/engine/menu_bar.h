@@ -40,6 +40,8 @@ public:
     void setEnabled(bool enabled) { enabled_ = enabled; }
     // api.§_-AG§(title): a new title for the current screen.
     void setTitle(const Lang *lang, const std::string &titleKey);
+    // Port: hide the bottom panel while it holds no button (the credits picture reaches the bottom of the stage).
+    void setBottomHidden(bool hidden);
     // The pointer for one logic frame: calls `onEvent(event)` when a button is clicked. True when the pointer
     // is over the bars (the screen below should not get it).
     bool update(const PointerState &pointer, const std::function<void(const std::string &)> &onEvent);
@@ -63,6 +65,7 @@ private:
     std::string title_;
     Layout layout_;
     std::unique_ptr<MovieClip> top_, bottom_;
+    bool bottomHidden_ = false;
     float topY_ = 0, bottomY_ = 0;
     std::vector<Button> buttons_;
     int pressed_ = -1;

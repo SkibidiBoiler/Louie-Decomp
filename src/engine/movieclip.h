@@ -25,8 +25,13 @@ public:
               const std::function<void(const Affine &)> &mask);
 
 private:
-    SDL_Texture *content_ = nullptr, *mask_ = nullptr;
-    int w_ = 0, h_ = 0;
+    struct Level {
+        SDL_Texture *content = nullptr, *mask = nullptr;
+        int w = 0, h = 0;
+    };
+    std::vector<Level> levels_; // one pair per nesting depth
+    size_t depth_ = 0;
+    int w_ = 0, h_ = 0, lw_ = 0, lh_ = 0;
 };
 
 struct RenderContext {

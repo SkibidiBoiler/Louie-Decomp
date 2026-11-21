@@ -77,6 +77,16 @@ std::unique_ptr<MovieClip> makeApiButton(const SymbolLibrary &symbols, TextLibra
     return button;
 }
 
+void MenuBar::setBottomHidden(bool hidden)
+{
+    for (const Button &b : buttons_) {
+        if (b.item.kind == Kind::Action) {
+            return; // the bottom panel holds this screen's button
+        }
+    }
+    bottomHidden_ = hidden;
+}
+
 void MenuBar::setTitle(const Lang *lang, const std::string &titleKey)
 {
     title_ = lang ? lang->get(titleKey) : titleKey;
@@ -87,6 +97,7 @@ void MenuBar::clear()
     active_ = false;
     top_.reset();
     bottom_.reset();
+    bottomHidden_ = false;
     buttons_.clear();
     pressed_ = -1;
 }
@@ -211,7 +222,7 @@ bool MenuBar::update(const PointerState &pointer, const std::function<void(const
         }
     }
     const bool overTop = layout_.showTop && pointer.y >= 0 && pointer.y < layout_.topVisible;
-    const bool overBottom = layout_.showBottom && pointer.y >= kStageHeight - layout_.bottomVisible;
+    const bool overBottom = layout_.showBottom && !bottomHidden_ && pointer.y >= kStageHeight - layout_.bottomVisible;
     return hit >= 0 || overTop || overBottom;
 }
 
@@ -223,7 +234,7 @@ void MenuBar::render(const RenderContext &ctx) const
     if (top_) {
         top_->render(ctx, Affine::translate(0, topY_), ColorTransform{});
     }
-    if (bottom_) {
+    if (bottom_ && !bottomHidden_) {
         bottom_->render(ctx, Affine::translate(0, bottomY_), ColorTransform{});
     }
     const bool tabs = std::any_of(buttons_.begin(), buttons_.end(),
