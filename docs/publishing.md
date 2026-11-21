@@ -27,8 +27,9 @@ without judging the claim; the owner can then file a counter-notice.
 
 1. [ ] Ask Flipline Studios for permission (free, non-commercial, bring-your-own-copy, preservation after Flash).
    With a yes, publish; with a no, keep it private.
-2. [ ] Pick a neutral repository and app name (the current repository, app id `io.github.skibidiboiler.papalouie`
-   and `papalouie.exe` use the trademark). Renaming is the owner's decision.
+2. [x] Project and app name: **Louie Attack Decomp** (`louieattack.exe`, app id
+   `io.github.skibidiboiler.louieattack`). It still contains part of the trademark, chosen by the owner; the README
+   disclaimer covers it. [x] GitHub repository renamed to `Louie-Decomp`.
 3. [x] README: unofficial / not-affiliated disclaimer, no-donations note, contact for the rights holder.
 4. [x] License for our own code: MIT ([LICENSE](../LICENSE)); third-party licenses listed in the README.
 5. [x] History audit: no game files in any commit.

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(PapaLouieRecomp VERSION 0.1.0 LANGUAGES C CXX)
+project(LouieAttackDecomp VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -257,15 +257,15 @@ set(PL_SOURCES
 
 if(ANDROID)
     # SDLActivity loads "libmain.so".
-    add_library(papalouie SHARED ${PL_SOURCES})
-    set_target_properties(papalouie PROPERTIES OUTPUT_NAME main)
+    add_library(louieattack SHARED ${PL_SOURCES})
+    set_target_properties(louieattack PROPERTIES OUTPUT_NAME main)
 else()
-    add_executable(papalouie WIN32 ${PL_SOURCES})
+    add_executable(louieattack WIN32 ${PL_SOURCES})
 endif()
 
-target_include_directories(papalouie PRIVATE src)
-target_include_directories(papalouie SYSTEM PRIVATE external/stb external/minimp3 ${PL_GENERATED})
-target_link_libraries(papalouie PRIVATE SDL3::SDL3 plutovg::plutovg)
+target_include_directories(louieattack PRIVATE src)
+target_include_directories(louieattack SYSTEM PRIVATE external/stb external/minimp3 ${PL_GENERATED})
+target_link_libraries(louieattack PRIVATE SDL3::SDL3 plutovg::plutovg)
 
 # Desktop command line for the importer (same conversion the game runs on the device).
 if(NOT ANDROID)
@@ -284,13 +284,13 @@ if(NOT ANDROID)
 endif()
 
 if(MSVC)
-    target_compile_options(papalouie PRIVATE /W4 /permissive- /utf-8)
-    target_compile_definitions(papalouie PRIVATE _CRT_SECURE_NO_WARNINGS) # sscanf with bounded %Ns is fine
+    target_compile_options(louieattack PRIVATE /W4 /permissive- /utf-8)
+    target_compile_definitions(louieattack PRIVATE _CRT_SECURE_NO_WARNINGS) # sscanf with bounded %Ns is fine
 else()
-    target_compile_options(papalouie PRIVATE -Wall -Wextra -Wconversion)
+    target_compile_options(louieattack PRIVATE -Wall -Wextra -Wconversion)
 endif()
 
 if(WIN32)
-    add_custom_command(TARGET papalouie POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:SDL3::SDL3-shared> $<TARGET_FILE_DIR:papalouie>)
+    add_custom_command(TARGET louieattack POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:SDL3::SDL3-shared> $<TARGET_FILE_DIR:louieattack>)
 endif()

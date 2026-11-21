@@ -12,7 +12,7 @@
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
 
         <activity
-            android:name=".PapaLouieActivity"
+            android:name=".LouieAttackActivity"
             android:exported="true"
             android:screenOrientation="sensorLandscape"
             android:launchMode="singleInstance"

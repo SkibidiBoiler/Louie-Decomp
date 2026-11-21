@@ -1,4 +1,4 @@
-package io.github.skibidiboiler.papalouie;
+package io.github.skibidiboiler.louieattack;
 
 import android.os.Build;
 import android.os.Bundle;
@@ -8,7 +8,7 @@ import android.view.WindowManager;
 import org.libsdl.app.SDLActivity;
 
 // SDLActivity loads libSDL3.so and libmain.so and calls SDL_main (our SDL3 callbacks in src/main.cpp).
-public class PapaLouieActivity extends SDLActivity {
+public class LouieAttackActivity extends SDLActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
