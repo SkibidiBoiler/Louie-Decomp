@@ -124,7 +124,8 @@ build\windows\louieattack.exe --data "C:/Users/alfre/Proyectos/datos-papas/build
 #   de la interfaz; --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por
 #   texto, también en el selector;
 #   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. --reenter N: vuelve a empezar el nivel
-#   actual en el fotograma N (prueba los checkpoints). Partidas guardadas de Windows:
+#   actual en el fotograma N (prueba los checkpoints); --parade N: el desfile y el final en el fotograma N.
+#   Partidas guardadas de Windows:
 #   %APPDATA%\SkibidiBoiler\LouieAttackDecomp\saves\PapaLouie2_<ranura>.json
 # Varias comprobaciones en una sola ejecución (salida corta; ver la ayuda con -h):
 python -I tools/pl_check.py rooms 55 60 --where e:23 o:15   # tipos por sala (* = sin traducir) y posiciones

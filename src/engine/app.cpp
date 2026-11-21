@@ -129,6 +129,8 @@ SDL_AppResult App::init(int argc, char *argv[])
         } else if (std::strcmp(argv[i], "--trace") == 0) { // DEV: log the player's state every logic frame
             trace_ = true;
             scriptFrame_ = std::max(scriptFrame_, 0);
+        } else if (std::strcmp(argv[i], "--parade") == 0) { // DEV: show the parade (then the ending) at frame N
+            paradeFrame_ = std::strtoull(argv[i + 1], nullptr, 10);
         } else if (std::strcmp(argv[i], "--reenter") == 0) { // DEV: start the current level again at frame N
             reenterFrame_ = std::strtoull(argv[i + 1], nullptr, 10);
         } else if (std::strcmp(argv[i], "--frames") == 0) { // DEV: quit after N logic frames
@@ -1010,6 +1012,9 @@ void App::tick()
         return; // the options menu pauses the game
     }
     ++frame_;
+    if (game_ && paradeFrame_ != 0 && frame_ == paradeFrame_) { // DEV: --parade
+        game_->obf_14(true);
+    }
     if (game_ && reenterFrame_ != 0 && frame_ == reenterFrame_) { // DEV: --reenter (checks the checkpoint load)
         SDL_Log("DEV: enter level %s again", std::to_string(static_cast<int>(game_->obf_AQ->currentLevel)).c_str());
         game_->obf_6V(game_->obf_AQ->currentLevel);

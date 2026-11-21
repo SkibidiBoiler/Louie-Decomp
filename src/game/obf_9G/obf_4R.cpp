@@ -199,10 +199,36 @@ void obf_4R::obf_28()
     }
 }
 
-// AS: §_-4R§.§_-14§ — SKELETON: ParadeScreen is not ported; the level-complete tally shows instead.
-void obf_4R::obf_14(bool /*fromLevel*/)
+// AS: §_-4R§.§_-14§ — the parade (with weapons unless false), once.
+void obf_4R::obf_14(bool showWeapons)
 {
-    showApiScreen("EndOfDay");
+    if (!obf_5s) {
+        obf_5s = std::make_unique<papaGame::screens::ParadeScreen>(this, showWeapons);
+    }
+}
+
+// AS: §_-4R§.§_-3q§
+void obf_4R::obf_3q()
+{
+    if (obf_5s) {
+        obf_5s->destroy();
+        pendingDestroyParade_ = std::move(obf_5s); // port: it may be running; freed on the next frame
+    }
+}
+
+// AS: §_-4R§.§_-49§
+void obf_4R::obf_49()
+{
+    obf_7K = std::make_unique<papaGame::screens::GameOutroScreen>(this);
+}
+
+// AS: §_-4R§.§_-2r§ — GameControls.resetKeyFocus is a Flash matter.
+void obf_4R::obf_2r()
+{
+    if (obf_7K) {
+        obf_7K->destroy();
+        pendingDestroyGameOutro_ = std::move(obf_7K); // port: it may be running; freed on the next frame
+    }
 }
 
 // AS: §_-4R§.§_-Ap§ — the port keeps bitmapManager: it holds the textures of the imported sheets, which the
@@ -449,7 +475,8 @@ void obf_4R::obf_64(bool tween)
 
 bool obf_4R::screensActive() const
 {
-    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr || obf_59 != nullptr;
+    return !apiScreen.empty() || obf_7L != nullptr || obf_3U != nullptr || obf_6j != nullptr || obf_6p != nullptr || obf_59 != nullptr || obf_5s != nullptr ||
+           obf_7K != nullptr;
 }
 
 bool obf_4R::updateScreens(const engine::PointerState &pointer)
@@ -463,6 +490,8 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     pendingDestroyTally_.reset();
     pendingDestroyNewCustomer_.reset();
     pendingDestroyBossIntro_.reset();
+    pendingDestroyParade_.reset();
+    pendingDestroyGameOutro_.reset();
     engine::MovieClip::collectGarbage();
     const bool onBar = menuBar.update(pointer, [this](const std::string &event) { dispatchContainerEvent(event); });
     // Port: the HUD sits in the original's display list above the game; here it is drawn by the display, so it
@@ -502,6 +531,12 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     }
     if (obf_59) {
         obf_59->updateScreen();
+    }
+    if (obf_5s) {
+        obf_5s->updateScreen();
+    }
+    if (obf_7K) {
+        obf_7K->updateScreen();
     }
     obf_9X->advance();
     if (obf_a) {

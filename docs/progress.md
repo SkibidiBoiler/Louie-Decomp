@@ -558,3 +558,12 @@ port). Engine: `MovieClip::addChildAtBottom` (addChildAt 0, under the timeline c
 `PlayerStunSparkleEffect` translated and registered (PL2 never adds it; build checked only). Checked: capture of
 the intro at frame 70 (`--level 8`) and the trace of the level starting after it. Progress: 79.9 % of functions,
 87.1 % of lines.
+
+(50) `ParadeScreen` and `GameOutroScreen`: after the last boss (StageOutroScreen of level 8) every unlocked customer
+marches across in roster order (running puppets with weapons; the next one starts when the newest is 200 px in, or
+80 px when they share a skill), then an iris opens the ending: the unlocked customers posed in three rows around Papa
+Louie under "The End"; after 250 frames the EndOfDay tally. obf_4R obf_14 (the SKELETON that showed the tally is
+gone), obf_3q, obf_49, obf_2r. QUIRK kept: releaseNextGroup's group size is an unset local, so marchers are never
+staggered. DEV `--parade N` shows it at app frame N. Checked: captures of the parade (Marty and Rita) and of the
+ending. Not checked: the walking/waving parade (showWeapons false, only from the API menu), the hand-over to the
+tally. Progress: 80.9 % of functions, 88.9 % of lines.

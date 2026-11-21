@@ -36,6 +36,8 @@
 #include "game/papaGame/screens/GameIntroScreen.h"
 #include "game/papaGame/screens/MainMenuScreen.h"
 #include "game/papaGame/screens/BossIntroScreen.h"
+#include "game/papaGame/screens/GameOutroScreen.h"
+#include "game/papaGame/screens/ParadeScreen.h"
 #include "game/papaGame/screens/NewCustomerScreen.h"
 #include "game/papaGame/screens/ScoreTallyScreen.h"
 #include "game/papaGame/screens/StageOutroScreen.h"
@@ -82,8 +84,11 @@ public:
     void obf_4Z(double whichCustomer); // AS: §_-4Z§, the new customer screen
     void obf_6s(); // AS: §_-6s§
     void obf_6I(); // AS: §_-6I§ (show the boss intro)
+    void obf_3q(); // AS: §_-3q§ (remove the parade)
+    void obf_49(); // AS: §_-49§ (show the game ending)
+    void obf_2r(); // AS: §_-2r§ (remove the game ending)
     void obf_28(); // AS: §_-28§ (remove the boss intro)
-    void obf_14(bool fromLevel = true); // AS: §_-14§, the parade
+    void obf_14(bool showWeapons = true); // AS: §_-14§, the parade
     void obf_Ap(); // AS: §_-Ap§, the level is torn down
     void obf_19();
     void obf_5a();
@@ -151,6 +156,8 @@ public:
     std::unique_ptr<papaGame::screens::StageOutroScreen> obf_6j;
     std::unique_ptr<papaGame::screens::NewCustomerScreen> obf_6p;
     std::unique_ptr<papaGame::screens::BossIntroScreen> obf_59;
+    std::unique_ptr<papaGame::screens::ParadeScreen> obf_5s;
+    std::unique_ptr<papaGame::screens::GameOutroScreen> obf_7K;
     std::unique_ptr<papaGame::screens::ScoreTallyScreen> scoreTallyScreen; // port: the API's EndOfDay
     const engine::Lang *lang = nullptr;      // port: the menu bars' texts
     engine::MaskLayers *masks = nullptr;     // port: offscreen layers for masks
@@ -169,6 +176,8 @@ private:
     std::unique_ptr<papaGame::screens::ScoreTallyScreen> pendingDestroyTally_;
     std::unique_ptr<papaGame::screens::NewCustomerScreen> pendingDestroyNewCustomer_;
     std::unique_ptr<papaGame::screens::BossIntroScreen> pendingDestroyBossIntro_;
+    std::unique_ptr<papaGame::screens::ParadeScreen> pendingDestroyParade_;
+    std::unique_ptr<papaGame::screens::GameOutroScreen> pendingDestroyGameOutro_;
 };
 
 } // namespace obf_9G
