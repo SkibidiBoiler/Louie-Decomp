@@ -40,6 +40,7 @@
 #include "game/papaGame/models/effects/SauceSplatEffect.h"
 #include "game/papaGame/models/effects/RainbowBitEffect.h"
 #include "game/papaGame/models/effects/BeakerGlassEffect.h"
+#include "game/papaGame/models/effects/BossPropellerEffect.h"
 #include "game/papaGame/models/effects/StuckCheeseEffect.h"
 #include "game/papaGame/models/effects/FeatherEffect.h"
 #include "game/papaGame/models/effects/ChiliBitEffect.h"
@@ -155,6 +156,9 @@ std::unique_ptr<models::Effect> createEffect(obf_9G::obf_4R *gameObj, const std:
     }
     if (type == "RainbowBitEffect") {
         return std::make_unique<RainbowBitEffect>(gameObj);
+    }
+    if (type == "BossPropellerEffect") {
+        return std::make_unique<BossPropellerEffect>(gameObj);
     }
     if (type == "BeakerGlassEffect") {
         return std::make_unique<BeakerGlassEffect>(gameObj);

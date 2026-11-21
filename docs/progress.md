@@ -505,3 +505,20 @@ turns and throws beakers that break (capture); the spike bed kills the player (`
 player sinks into the rainbow pool and splashes (`--at 12,30`). Not checked: stunning and beating Enemy36, the
 spike bed rising. Left in Radley's Hideout: `Enemy37` Radley Madish with `RocketBBQ` / `RocketMustard` (room 9-C).
 Progress: 75.2 % of functions, 82.4 % of lines.
+
+(46) Radley Madish (`Enemy37`, Radley's Hideout room 9-C, `--level 8 --room 0`): triggered, he flies after the
+player (easing to 180 px beside and above them, on a wave) with `BossPropellerEffect` and the looping copter sound,
+and on a timer grabs, loads and fires a rocket: `Enemy38` BBQ rocket / `Enemy39` mustard rocket, enemies that home in
+on the player turning at most 0.06 rad a frame (`setAnimationAngle` picks the frame of the angle rounded to 10
+degrees) and splash on a wall. A hit knocks a BBQ rocket away; a hit mustard rocket turns round and homes in on him,
+and it knocks him down: he lands, runs for 120 frames (stun him, then hit him), then takes off again. With 3 hit
+points he lets out one Pararadish at a time, with 2 up to three, with 1 a Burgerzilla and BBQ rockets in bursts of
+three; beaten, the music returns 150 frames after the fanfare (`CustomerChar.bossDelayMusicTimer`, the PlayerChar
+fields). The Pararadish and Burgerzilla now call his `unregisterSpawn(type, id)`; `EnemyManager.enemyByID` is the
+port's `manager["Enemy" + id]`; `Enemy.placeEnemy` is virtual (the rockets are placed in pixels). The bullets
+RocketBBQ / RocketMustard are not added by any code and stay untranslated. Checked with `pl_check.py run`: walking into
+the trigger (`--at 6,16 --input L20-34`) starts him; he flies, fires BBQ rockets that splash, lets out a Pararadish
+(capture); attacking every 8 frames after stepping right (`R40-60` plus `A` pulses) hits a mustard rocket back and he
+falls, lands and runs. The propeller is drawn (green, behind him; it is easy to miss against the trees). Not
+checked: stunning and hitting him on the ground, his 2 and 1 hit-point phases, the end of the fight.
+Progress: 77.4 % of functions, 84.7 % of lines.

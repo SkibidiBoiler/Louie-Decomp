@@ -69,10 +69,10 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 | Enemy13, 19, 25, 26, 32 | Brussel Lark, Blue Shroom, Swiss Zack, Cheddar Mack, Jellyback | Mount Monterey | ✅ |
 | Enemy18, 21, 27, 31 | Dill Weed, Bow Shroom (fires `ShroomArrow`), Pepper Jack, Cheese Wheel | Cheddar Hills | ✅ |
 | Enemy20, 22, 28, 29 | Thorn Shroom, Bacobar, Radish, Laddish | The Saucelands | ✅ |
-| Enemy36, 37 | Radley's Hideout bosses: 36 (not in `enemyKey`; fires `Beaker`, boss music) and Radley Madish (rockets) | Radley's Hideout | 36 ✅ |
+| Enemy36, 37 | Radley's Hideout bosses: 36 (not in `enemyKey`; fires `Beaker`, boss music) and Radley Madish (rockets) | Radley's Hideout | ✅ |
 | Enemy23, 30, 33 | Bacoburn, Pararadish, Awesome Saucer (fires `SauceBullet`) | BBQ Bog | ✅ |
 | Enemy24 | Baco Bites: a beaten Bacoburn breaks into three (`Enemy23.addBacoBites`) | BBQ Bog | ✅ |
-| Enemy38, 39 | not in `enemyKey` (38 fires the rockets) | no room places them: check how they spawn before translating | |
+| Enemy38, 39 | Radley Madish's BBQ and mustard rockets (enemies he adds with `addEnemy`; not in `enemyKey`) | Radley's Hideout | ✅ |
 
 ## Objects
 
@@ -99,7 +99,8 @@ Subclasses only change a few defaults (`Enemy4` of `Enemy3`, `Enemy10`/`Enemy11`
 `BulletManager` keeps every type. Customer weapons: `PepperBomb` (Big Pauly), `Basketball` (Connor),
 `BlueberryShot` (Penny), `DogToy` (Prudence), `Cookie` (Yippy), `GummyOnion` (Sarge Fan), `ChiliCan` (Rico),
 `RomanCandle` (Boomer), `Banana` (Akari), `XandraStar` (Xandra). Enemies and objects: `ShroomArrow`, `SauceBullet`,
-`CheeseBullet`, `Beaker` and `BeakerBlob`, `SargePepper`, `GiantPepper`, `RocketBBQ` and `RocketMustard`.
+`CheeseBullet`, `Beaker` and `BeakerBlob`, `SargePepper`, `GiantPepper`, `RocketBBQ` and `RocketMustard` (no code adds these two bullets: the boss's rockets are
+Enemy38/39; not translated).
 
 ## Screens
 

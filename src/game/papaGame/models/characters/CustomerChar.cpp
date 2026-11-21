@@ -1273,7 +1273,14 @@ void CustomerChar::updateObject()
     } else {
         collRect = standCollRect;
     }
-    // SKELETON: forceGrabYoffset and the boss music delay.
+    // SKELETON: forceGrabYoffset.
+    if (bossDelayMusicTimer > 0) {
+        ++bossDelayMusicTimer;
+        if (bossDelayMusicTimer >= bossDelayMusicTimerMax) {
+            gameObj->obf_7C->playTrack("AlternateTrack", INT_MAX, 0, "crossfade");
+            bossDelayMusicTimer = 0;
+        }
+    }
     if (isDoubleJumping && !jump) {
         if (data->customerName == "Scooter" && (isWalking || isSkidding || onSlope != 0) && speed > 0 &&
             controls.keyPressedDown) {

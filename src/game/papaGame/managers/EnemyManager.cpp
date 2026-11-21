@@ -36,6 +36,9 @@
 #include "game/papaGame/models/enemies/Enemy33.h"
 #include "game/papaGame/models/enemies/Enemy35.h"
 #include "game/papaGame/models/enemies/Enemy36.h"
+#include "game/papaGame/models/enemies/Enemy37.h"
+#include "game/papaGame/models/enemies/Enemy38.h"
+#include "game/papaGame/models/enemies/Enemy39.h"
 #include "game/papaGame/models/enemies/Enemy8.h"
 #include "game/papaGame/models/enemies/Enemy9.h"
 #include "game/papaGame/models/enemies/Enemy10.h"
@@ -85,6 +88,9 @@ std::unique_ptr<models::Enemy> createEnemy(obf_9G::obf_4R *gameObj, double type)
     case 33: return std::make_unique<Enemy33>(gameObj);
     case 35: return std::make_unique<Enemy35>(gameObj);
     case 36: return std::make_unique<Enemy36>(gameObj);
+    case 37: return std::make_unique<Enemy37>(gameObj);
+    case 38: return std::make_unique<Enemy38>(gameObj);
+    case 39: return std::make_unique<Enemy39>(gameObj);
     case 34: return std::make_unique<Enemy34>(gameObj);
     default: return nullptr; // SKELETON: the other enemy types are not ported yet
     }
@@ -339,6 +345,13 @@ void EnemyManager::preblitSheets()
     }
     preblitSheetNames.clear();
     preblitObjectTypes.clear();
+}
+
+// Port: `manager["Enemy" + id]`.
+models::Enemy *EnemyManager::enemyByID(double enemyID) const
+{
+    auto it = byID_.find(enemyID);
+    return it != byID_.end() ? it->second.get() : nullptr;
 }
 
 // AS: EnemyManager.activateObject

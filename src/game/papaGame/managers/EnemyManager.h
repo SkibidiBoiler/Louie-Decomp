@@ -37,6 +37,7 @@ public:
     void addToPreblit(double type, const std::string &sheetName);
     // The original finds these by `manager["Enemy" + id]`: the enemy id, which equals the screen object id when the
     // room's enemies are built from a cleared manager.
+    models::Enemy *enemyByID(double enemyID) const; // port: `manager["Enemy" + id]` (null when there is none)
     void activateObject(double whichScreen, double enemyID, bool pan, double amount, bool fromGlobal);
     void setEvent(double whichScreen, double enemyID, const std::vector<std::vector<double>> &triggers, double pan,
                   double panTarget);
