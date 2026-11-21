@@ -131,7 +131,8 @@ build\windows\louieattack.exe --data "C:/Users/alfre/Proyectos/datos-papas/build
 python -I tools/pl_check.py rooms 55 60 --where e:23 o:15   # tipos por sala (* = sin traducir) y posiciones
 python -I tools/pl_check.py run --build -s "etiqueta|--level 7 --room 2 --at 20,60 --frames 80|23,24" -s ...
 # Progreso de la traducción (funciones y líneas del AS con su `// AS:` en src/game; solo local, sin tokens):
-python -I tools/progress.py                 # --by-class: por clase; --missing <Clase>: funciones que faltan
+python -I tools/progress.py                 # --by-class: por clase; --missing <Clase>: funciones que faltan;
+                                            # --excluded: lo que el port deja fuera a propósito (no cuenta)
 # Leer una función del código original deofuscado (solo local):
 python -I tools/as_func.py "C:/Users/alfre/Proyectos/datos-papas/extracted/pl2-deob/scripts" GameControls keyCheckPlayer
 

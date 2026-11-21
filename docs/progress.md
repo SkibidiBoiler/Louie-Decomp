@@ -576,3 +576,8 @@ getRewardAmount). The original adds the drop-down to the game object itself: the
 above the screens and takes the pointer when it is under it. Checked: rescuing Prudence in Leaf Landing shows
 "Challenge Complete! Rescued Prudence!" (capture) with getstar.wav. Not checked: a badge's panel. Progress: 81.4 % of
 functions, 89.3 % of lines.
+
+(52) `tools/progress.py` leaves out what the port drops or replaces on purpose (EXCLUDED: online services, sponsor
+and loading screens, Flash bitmap drawing and asset loading, the never-created RocketBBQ / RocketMustard): 126
+functions, 1423 lines; `--excluded` lists them with the reason. Progress over the ported scope: 86.1 % of functions,
+92.8 % of lines.
