@@ -147,6 +147,8 @@ public:
     std::unique_ptr<papaGame::models::GameHUD> obf_6Z; // created by loadLevelData, once the tables exist
     std::unique_ptr<engine::MovieClip> obf_5h; // AS: §_-5h§, the container the screens add their clips to
     std::unique_ptr<engine::MovieClip> obf_9X; // AS: §_-9X§, a container above §_-5h§ (no mouse)
+    // Port: the clips the original adds to the game object itself later (the badge drop-down), above the others.
+    std::unique_ptr<engine::MovieClip> rootClips;
     std::unique_ptr<papaGame::screens::TrainingPopup> obf_a; // AS: §_-a§, the training bubble
     std::unique_ptr<papaGame::screens::StageIntroScreen> obf_7L;
     std::unique_ptr<papaGame::screens::SplashScreen> splashScreen; // port: the API's SplashScreen instance

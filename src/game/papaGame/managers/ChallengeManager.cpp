@@ -6,6 +6,7 @@
 
 #include "engine/json.h"
 #include "game/as3.h"
+#include "game/obf_AF/obf_81.h"
 #include "game/obf_9G/obf_4R.h"
 
 namespace papaGame::managers {
@@ -69,6 +70,12 @@ data::Challenge readChallenge(const engine::JsonValue &v)
     if (const engine::JsonValue *p = params.get("showTally")) {
         c.showTally = p->number != 0 || p->boolean;
     }
+    if (const engine::JsonValue *p = params.get("requiredCustomers")) {
+        for (const engine::JsonValue &n : p->items) {
+            c.requiredCustomerUnlocks.push_back(n.string);
+        }
+    }
+    num("requiredLevel", c.requiredLevelUnlock);
     return c;
 }
 
@@ -542,25 +549,241 @@ void ChallengeManager::resetCurrentChallenges()
     }
 }
 
-// AS: ChallengeManager.showEarningBadge — SKELETON: checkForDisplayingDropdown (the drop-down announcement).
+// AS: ChallengeManager.showEarningBadge
 void ChallengeManager::showEarningBadge(double which)
 {
     SDL_Log("EARN BADGE #%s. ADD TO QUEUE!", as3::String(which).c_str());
     badgeQueue.push_back(which);
+    checkForDisplayingDropdown();
 }
 
-// AS: ChallengeManager.showCompletingChallenge — SKELETON: checkForDisplayingDropdown.
+// AS: ChallengeManager.showCompletingChallenge
 void ChallengeManager::showCompletingChallenge(double which)
 {
     SDL_Log("COMPLETE CHALLENGE #%s. ADD TO QUEUE!", as3::String(which).c_str());
     challengeQueue.push_back(which);
+    checkForDisplayingDropdown();
 }
 
-// AS: ChallengeManager.showEarningTreasure — SKELETON: checkForDisplayingDropdown.
+// AS: ChallengeManager.showEarningTreasure
 void ChallengeManager::showEarningTreasure(double which)
 {
     SDL_Log("FOUND TREASURE #%s. ADD TO QUEUE!", as3::String(which).c_str());
     treasureQueue.push_back(which);
+    checkForDisplayingDropdown();
+}
+
+// AS: ChallengeManager.getChallengeTitle — a level's challenge, or (world -1) badge `whichBadge`.
+std::string ChallengeManager::getChallengeTitle(double whichWorld, double whichChallenge, double whichBadge) const
+{
+    std::string result;
+    if (whichWorld > -1) {
+        for (const data::Challenge &c : challenges) {
+            if (c.whichWorld == whichWorld && c.whichChallenge == whichChallenge) {
+                result = c.title;
+                break;
+            }
+        }
+    } else if (whichBadge > -1 && whichBadge < static_cast<double>(badges.size())) {
+        result = badges[static_cast<size_t>(whichBadge)].title;
+    }
+    return result;
+}
+
+// AS: ChallengeManager.getChallengeDescription
+std::string ChallengeManager::getChallengeDescription(double whichWorld, double whichChallenge,
+                                                      double whichBadge) const
+{
+    std::string result;
+    if (whichWorld > -1) {
+        for (const data::Challenge &c : challenges) {
+            if (c.whichWorld == whichWorld && c.whichChallenge == whichChallenge) {
+                result = c.description;
+                break;
+            }
+        }
+    } else if (whichBadge > -1 && whichBadge < static_cast<double>(badges.size())) {
+        result = badges[static_cast<size_t>(whichBadge)].description;
+    }
+    return result;
+}
+
+// AS: ChallengeManager.getChallengeRewardAmount
+double ChallengeManager::getChallengeRewardAmount(double whichWorld, double whichChallenge, double whichBadge) const
+{
+    double result = 0;
+    if (whichWorld > -1) {
+        for (const data::Challenge &c : challenges) {
+            if (c.whichWorld == whichWorld && c.whichChallenge == whichChallenge) {
+                result = c.rewardMoney;
+                break;
+            }
+        }
+    } else if (whichBadge > -1 && whichBadge < static_cast<double>(badges.size())) {
+        result = badges[static_cast<size_t>(whichBadge)].rewardMoney;
+    }
+    return result;
+}
+
+// AS: ChallengeManager.getBadgeTallyString — "(tally/target)" while a counted badge is unearned.
+std::string ChallengeManager::getBadgeTallyString(double whichBadge) const
+{
+    std::string result;
+    if (whichBadge < static_cast<double>(badges.size())) {
+        const data::Challenge &b = badges[static_cast<size_t>(whichBadge)];
+        if (b.showTally && b.tally < b.targetAmount) {
+            result = "(" + as3::String(b.tally) + "/" + as3::String(b.targetAmount) + ")";
+        }
+    }
+    return result;
+}
+
+// AS: ChallengeManager.getBadgeTally
+double ChallengeManager::getBadgeTally(double whichBadge) const
+{
+    return whichBadge < static_cast<double>(badges.size()) ? badges[static_cast<size_t>(whichBadge)].tally : 0;
+}
+
+// AS: ChallengeManager.shouldLockBadge — locked until one of its customers is unlocked, or its area is.
+bool ChallengeManager::shouldLockBadge(double whichBadge) const
+{
+    bool locked = false;
+    if (whichBadge < static_cast<double>(badges.size())) {
+        const data::Challenge &b = badges[static_cast<size_t>(whichBadge)];
+        if (!b.requiredCustomerUnlocks.empty()) {
+            locked = true;
+            for (const std::string &name : b.requiredCustomerUnlocks) {
+                if (gameObj->obf_51->hasCustomerUnlocked(gameObj->obf_3A->getCustomerIndex(name))) {
+                    locked = false;
+                    break;
+                }
+            }
+        }
+        if (b.requiredLevelUnlock > 0) {
+            const auto &areas = gameObj->obf_51->areasUnlocked;
+            const size_t area = static_cast<size_t>(b.requiredLevelUnlock - 1);
+            if (area < areas.size() && areas[area] == 0) {
+                locked = true;
+            }
+        }
+    }
+    return locked;
+}
+
+// AS: ChallengeManager.checkForDisplayingDropdown — with none showing, the first queued treasure, challenge or
+// badge drops down from the top of the screen (a badge with its title, description, reward and picture).
+// QUIRK: a treasure gets the panel with neither part set up.
+void ChallengeManager::checkForDisplayingDropdown()
+{
+    std::string type = "none";
+    double which = -1;
+    if (badgeDropdown == nullptr) {
+        if (!treasureQueue.empty()) {
+            type = "treasure";
+            which = treasureQueue.front();
+        } else if (!challengeQueue.empty()) {
+            type = "challenge";
+            which = challengeQueue.front();
+        } else if (!badgeQueue.empty()) {
+            type = "badge";
+            which = badgeQueue.front();
+        }
+    }
+    if (type == "none" || which == -1) {
+        return;
+    }
+    std::unique_ptr<engine::MovieClip> made = engine::MovieClip::create(*gameObj->symbols, "badgeDropdownMC");
+    if (!made) {
+        return;
+    }
+    dropdownCurrentType = type;
+    badgeDropdown = &gameObj->rootClips->addChild(std::move(made), "");
+    badgeDropdown->mouseChildren = false;
+    badgeDropdown->setX(static_cast<float>(dropdownX));
+    engine::MovieClip *challenge = badgeDropdown->findChild("challenge");
+    engine::MovieClip *badge = badgeDropdown->findChild("badge");
+    if (type == "badge") {
+        if (challenge) {
+            challenge->setVisible(false);
+        }
+        if (badge) {
+            badge->setVisible(true);
+            if (engine::MovieClip *panel = badge->findChild("panel")) {
+                panel->setText("title_txt", getChallengeTitle(-1, -1, which));
+                panel->setText("description_txt", getChallengeDescription(-1, -1, which));
+                panel->setText("reward_txt", "+ $" + obf_AF::obf_81::obf_7w(getChallengeRewardAmount(-1, -1, which)));
+                panel->setText("points_txt", as3::String(getChallengeRewardAmount(-1, -1, which)) + " Pts.");
+                if (engine::MovieClip *thumb = panel->findChild("thumb")) {
+                    thumb->gotoAndStop(static_cast<int>(which) + 1);
+                }
+            }
+        }
+        gameObj->obf_7C->playSound("getstar.wav");
+    } else if (type == "challenge") {
+        if (challenge) {
+            challenge->setVisible(true);
+            challenge->setText("title_txt", getChallengeTitle(gameObj->obf_AQ->currentLevel, which));
+            challenge->setText("number_txt", as3::String(which));
+        }
+        if (badge) {
+            badge->setVisible(false);
+        }
+        gameObj->obf_7C->playSound("getstar.wav");
+    }
+    dropdownOnScreenTimer = 0;
+    dropdownStartY = 0 - dropdownHeight;
+    badgeDropdown->setY(static_cast<float>(dropdownStartY));
+    badgeDropdown->onClick = [this] { clickBadgeDropdown(); };
+}
+
+// AS: ChallengeManager.clickBadgeDropdown — it goes up on the next frame.
+void ChallengeManager::clickBadgeDropdown()
+{
+    dropdownOnScreenTimer = dropdownOnScreenWait - 1;
+}
+
+// AS: ChallengeManager.animateBadgeDropdown (ENTER_FRAME) — it eases down an eighth of the way a frame, waits 150
+// frames, eases back up, and the next queued one follows.
+void ChallengeManager::animateBadgeDropdown()
+{
+    if (badgeDropdown == nullptr) {
+        return;
+    }
+    const double y = badgeDropdown->y();
+    if (dropdownOnScreenTimer == 0) {
+        if (y < dropdownStartY + dropdownHeight) {
+            const double dist = dropdownStartY + dropdownHeight - y;
+            badgeDropdown->setY(static_cast<float>(y + dist / dropdownSpeed));
+            if (dist >= -1 && dist <= 1) {
+                badgeDropdown->setY(static_cast<float>(dropdownStartY + dropdownHeight));
+                ++dropdownOnScreenTimer;
+            }
+        }
+    } else if (dropdownOnScreenTimer == dropdownOnScreenWait) {
+        if (y > dropdownStartY) {
+            const double dist = dropdownStartY - y;
+            badgeDropdown->setY(static_cast<float>(y + dist / dropdownSpeed));
+            if (dist >= -1 && dist <= 1) {
+                gameObj->rootClips->removeChild(badgeDropdown);
+                badgeDropdown = nullptr;
+                auto shift = [](std::vector<double> &q) {
+                    if (!q.empty()) {
+                        q.erase(q.begin());
+                    }
+                };
+                if (dropdownCurrentType == "treasure") {
+                    shift(treasureQueue);
+                } else if (dropdownCurrentType == "challenge") {
+                    shift(challengeQueue);
+                } else if (dropdownCurrentType == "badge") {
+                    shift(badgeQueue);
+                }
+                checkForDisplayingDropdown();
+            }
+        }
+    } else {
+        ++dropdownOnScreenTimer;
+    }
 }
 
 } // namespace papaGame::managers

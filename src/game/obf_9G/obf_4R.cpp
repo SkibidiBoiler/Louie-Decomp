@@ -27,6 +27,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     obf_5h = engine::MovieClip::createEmpty(*symbols);
     obf_9X = engine::MovieClip::createEmpty(*symbols);
     obf_9X->mouseEnabled = false;
+    rootClips = engine::MovieClip::createEmpty(*symbols);
 }
 
 bool obf_4R::loadLevelData(const std::string &gameDir_)
@@ -499,7 +500,9 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
     // press and roll-over targets are shared).
     const bool hudTakesPointer = apiScreen.empty() && !screensActive() && obf_AQ->currentScreenData && obf_6Z &&
                                  obf_6Z->interfaceClip && obf_6Z->interfaceClip->visible();
-    if (hudTakesPointer) {
+    if (rootClips->hitTest(engine::Affine{}, pointer.x, pointer.y) != nullptr) {
+        engine::MovieClip::dispatchPointer(*rootClips, engine::Affine{}, pointer);
+    } else if (hudTakesPointer) {
         engine::MovieClip::dispatchPointer(*obf_6Z->interfaceClip, engine::Affine{}, pointer);
     } else if (!onBar) {
         engine::MovieClip::dispatchPointer(*obf_5h, engine::Affine{}, pointer);
@@ -539,6 +542,8 @@ bool obf_4R::updateScreens(const engine::PointerState &pointer)
         obf_7K->updateScreen();
     }
     obf_9X->advance();
+    rootClips->advance();
+    obf_94->animateBadgeDropdown();
     if (obf_a) {
         obf_a->updatePopup();
     }
@@ -550,6 +555,7 @@ void obf_4R::renderScreens(engine::RenderContext &ctx)
     ctx.masks = masks;
     obf_5h->render(ctx, engine::Affine{}, engine::ColorTransform{});
     obf_9X->render(ctx, engine::Affine{}, engine::ColorTransform{});
+    rootClips->render(ctx, engine::Affine{}, engine::ColorTransform{});
     menuBar.render(ctx);
 }
 
