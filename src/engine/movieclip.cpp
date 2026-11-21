@@ -508,9 +508,29 @@ void MovieClip::renderChild(const RenderContext &ctx, const Child &child, const 
 
 void MovieClip::render(const RenderContext &ctx, const Affine &parent, const ColorTransform &parentColor) const
 {
+    // An attached clip may be masked by an attached sibling (`.mask = sibling` from code); masks are not drawn.
+    const auto renderAttached = [&](const Attached &a) {
+        if (!a.clip->visible_ || a.clip->masking_) {
+            return;
+        }
+        const MovieClip *mask = a.clip->maskedBy_;
+        bool maskAttached = false;
+        for (const Attached &other : attached_) {
+            maskAttached = maskAttached || (mask && other.clip.get() == mask);
+        }
+        const Affine m = parent * a.clip->ownLocal();
+        if (maskAttached && ctx.masks) {
+            const Affine maskM = parent * mask->ownLocal();
+            ctx.masks->draw(
+                ctx.renderer, [&](const Affine &toTexture) { a.clip->render(ctx, toTexture * m, parentColor); },
+                [&](const Affine &toTexture) { mask->render(ctx, toTexture * maskM, ColorTransform{}); });
+        } else {
+            a.clip->render(ctx, m, parentColor);
+        }
+    };
     for (const Attached &a : attached_) {
-        if (a.below && a.clip->visible_) {
-            a.clip->render(ctx, parent * a.clip->ownLocal(), parentColor);
+        if (a.below) {
+            renderAttached(a);
         }
     }
     // A frame-0 button shows its "up" state; the hit area (frame 3) is never drawn.
@@ -548,8 +568,8 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
         i = last;
     }
     for (const Attached &a : attached_) {
-        if (!a.below && a.clip->visible_) {
-            a.clip->render(ctx, parent * a.clip->ownLocal(), parentColor);
+        if (!a.below) {
+            renderAttached(a);
         }
     }
     for (const BitmapChild &b : bitmaps_) {

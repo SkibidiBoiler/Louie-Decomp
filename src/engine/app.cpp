@@ -1079,6 +1079,12 @@ void App::tick()
             stepNs_ = static_cast<uint64_t>(1e9 / stage_.frameRate);
         }
         game_->obf_7C->advanceTime(1000.0 / stage_.frameRate);
+        if (game_->wantsFrontend) { // port: the main menu's QUIT chose the game picker
+            game_.reset();
+            stage_.frameRate = 30;
+            stepNs_ = static_cast<uint64_t>(1e9 / stage_.frameRate);
+            enterLauncher();
+        }
     }
     pointer_.pressed = false;
     pointer_.released = false;

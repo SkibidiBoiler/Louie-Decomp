@@ -647,3 +647,10 @@ screen at 24 fps, as in the original; at its "stopframe" label the game goes bac
 opens (obf_4R obf_7X / obf_4E; `obf_4R::stageFrameRate` is the original's stage.frameRate, which the app's fixed step
 follows). Its button's link to flipline.com (§_-36§) stays out (progress.py EXCLUDED), as do the analytics events.
 Checked: captures at frames 50 and 120 (the logo, "logic 24/s") and the log showing the title screen after it.
+
+(62) Port (the owner asked for it): the main menu's QUIT (MainMenuScreen.clickExit) first opens a panel with TITLE
+SCREEN (the original's code: back to the title screen), GAME PICKER (the app closes the game and opens its picker;
+`obf_4R::wantsFrontend`) and CANCEL. The panel is the API's bottom panel band clipped to a rectangle, with the API's
+buttons; the menu and the bars take no clicks while it is open. The engine now clips a clip added by code with an
+added sibling as its mask (`.mask` from code worked only on timeline children). Texts: `exit.*` in lang/en, es.
+Checked: captures of the panel, of each of the three choices, and of entering the game again from the picker.

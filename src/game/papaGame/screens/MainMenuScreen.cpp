@@ -678,15 +678,88 @@ void MainMenuScreen::destroy()
         setupInfo(false);
     }
     setupConfirmQuit(false);
+    closeExitChoice();
     container->removeChild(clip);
     clip = nullptr;
 }
 
-// AS: MainMenuScreen.clickExit — back to the title screen.
+// AS: MainMenuScreen.clickExit — back to the title screen. Port: first asks whether to go there or to the port's
+// game picker (showExitChoice); the title screen choice runs the original code below.
 void MainMenuScreen::clickExit()
 {
+    if (!exitChoice) {
+        showExitChoice();
+        return;
+    }
+    closeExitChoice();
     gameObj->obf_64(false);
     gameObj->showApiScreen("SplashScreen");
+}
+
+// Port (not in the original): a panel over the menu with TITLE SCREEN, GAME PICKER and CANCEL, built from the
+// API's bottom panel and buttons. The menu and the bars take no clicks while it is open.
+void MainMenuScreen::showExitChoice()
+{
+    const engine::SymbolLibrary &symbols = *gameObj->symbols;
+    auto panel = engine::MovieClip::createEmpty(symbols);
+    constexpr float kX = 145, kY = 118, kW = 410, kH = 180;
+    // The bottom panel's striped band (700 x 101 at its origin) stretched over the panel, clipped by the whole
+    // panel stretched to the panel's rectangle (its shapes fill all of their bounds).
+    auto bg = engine::MovieClip::create(symbols, "api_menu_bottom_panel");
+    auto mask = engine::MovieClip::create(symbols, "api_menu_bottom_panel");
+    if (bg && mask) {
+        float minX = 1e9f, minY = 1e9f, maxX = -1e9f, maxY = -1e9f;
+        mask->accumulateBounds(engine::Affine{}, minX, minY, maxX, maxY);
+        if (maxX > minX && maxY > minY) {
+            const float sx = kW / (maxX - minX), sy = kH / (maxY - minY);
+            mask->setScale(sx, sy);
+            mask->setPosition(kX - minX * sx, kY - minY * sy);
+        }
+        bg->setScale(kW / 700, kH / 101);
+        bg->setPosition(kX, kY);
+        bg->onClick = [] {}; // takes the clicks on the panel
+        engine::MovieClip &maskRef = panel->addChild(std::move(mask), "");
+        panel->addChild(std::move(bg), "").setMask(&maskRef);
+    }
+    engine::MovieClip::TextField title;
+    title.font = "Arial Black";
+    title.size = 22;
+    title.color = SDL_FColor{0.69f, 0.69f, 0.68f, 1};
+    title.x = kX;
+    title.y = kY + 18;
+    title.width = kW;
+    title.align = 2;
+    title.text = gameObj->lang->get("exit.title");
+    panel->addTextField("title", title);
+    const auto button = [&](const char *key, float x, float y, float w, std::function<void()> fn) {
+        if (auto b = engine::makeApiButton(symbols, gameObj->text, gameObj->lang->get(key), false, w)) {
+            b->setPosition(x, y);
+            b->onClick = std::move(fn);
+            panel->addChild(std::move(b), "");
+        }
+    };
+    button("exit.title_screen", kX + 15, kY + 72, 180, [this] { clickExit(); });
+    button("exit.frontend", kX + 215, kY + 72, 180, [this] {
+        closeExitChoice();
+        gameObj->wantsFrontend = true; // the app goes back to its game picker after this frame
+    });
+    button("exit.cancel", kX + 135, kY + 124, 140, [this] { closeExitChoice(); });
+    exitChoice = &container->addChild(std::move(panel), "");
+    clip->mouseChildren = false;
+    gameObj->menuBar.setEnabled(false);
+}
+
+void MainMenuScreen::closeExitChoice()
+{
+    if (!exitChoice) {
+        return;
+    }
+    container->removeChild(exitChoice);
+    exitChoice = nullptr;
+    if (clip) {
+        clip->mouseChildren = true;
+    }
+    gameObj->menuBar.setEnabled(true);
 }
 
 // AS: MainMenuScreen.clickExitMapSelect

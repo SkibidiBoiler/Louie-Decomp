@@ -94,5 +94,9 @@
   "help.topic16": "Enemigos",
   "help.topic17": "Controles",
   "help.topic18": "Guardar",
-  "options.intro_music": "Música de entrada completa"
+  "options.intro_music": "Música de entrada completa",
+  "exit.title": "Salir a...",
+  "exit.title_screen": "MENÚ DE INICIO",
+  "exit.frontend": "SELECTOR DE JUEGOS",
+  "exit.cancel": "CANCELAR"
 }
