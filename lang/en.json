@@ -49,5 +49,19 @@
   "options.overlay": "Show FPS info",
   "options.on": "On",
   "options.off": "Off",
-  "options.close": "CLOSE"
+  "options.close": "CLOSE",
+  "launcher.title": "LOUIE ATTACK RECOMP",
+  "launcher.subtitle": "Choose a game",
+  "launcher.game_pl2": "Papa Louie 2: When Burgers Attack!",
+  "launcher.game_pl3": "Papa Louie 3: When Sundaes Attack!",
+  "launcher.game_pl1": "Papa Louie: When Pizzas Attack!",
+  "launcher.play": "PLAY ►",
+  "launcher.import": "IMPORT .SWF",
+  "launcher.ready": "Ready to play",
+  "launcher.not_imported": "Not imported",
+  "launcher.coming_soon": "Coming soon",
+  "launcher.importing": "Importing {0}...",
+  "launcher.import_failed": "Import failed:",
+  "launcher.note": "Unofficial project. Plays your own copies of the games.",
+  "launcher.quit": "QUIT"
 }

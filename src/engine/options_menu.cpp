@@ -9,67 +9,20 @@
 #include "engine/math.h"
 #include "engine/settings.h"
 #include "engine/text.h"
+#include "engine/ui_draw.h"
 
 namespace engine {
 
 namespace {
 
-constexpr const char *kFont = "Arial Black";
 constexpr float kOpacities[] = {0.25f, 0.4f, 0.55f, 0.7f, 0.85f};
 constexpr float kSizes[] = {0.75f, 1.0f, 1.25f, 1.5f};
 constexpr const char *kLanguages[] = {"", "en", "es"};
 
-void fillRect(SDL_Renderer *r, float x, float y, float w, float h, SDL_FColor c)
-{
-    SDL_SetRenderDrawColorFloat(r, c.r, c.g, c.b, c.a);
-    const SDL_FRect rect{x, y, w, h};
-    SDL_RenderFillRect(r, &rect);
-}
-
-void frameRect(SDL_Renderer *r, float x, float y, float w, float h, float t, SDL_FColor c)
-{
-    fillRect(r, x, y, w, t, c);
-    fillRect(r, x, y + h - t, w, t, c);
-    fillRect(r, x, y + t, t, h - 2 * t, c);
-    fillRect(r, x + w - t, y + t, t, h - 2 * t, c);
-}
-
-void disc(SDL_Renderer *r, float cx, float cy, float radius, SDL_FColor c)
-{
-    constexpr int kSegments = 40;
-    SDL_Vertex v[kSegments + 2];
-    int idx[kSegments * 3];
-    v[0] = {{cx, cy}, c, {0, 0}};
-    for (int i = 0; i <= kSegments; ++i) {
-        const float a = static_cast<float>(i) / kSegments * 6.2831853f;
-        v[i + 1] = {{cx + std::cos(a) * radius, cy + std::sin(a) * radius}, c, {0, 0}};
-    }
-    for (int i = 0; i < kSegments; ++i) {
-        idx[i * 3] = 0;
-        idx[i * 3 + 1] = i + 1;
-        idx[i * 3 + 2] = i + 2;
-    }
-    SDL_RenderGeometry(r, nullptr, v, kSegments + 2, idx, kSegments * 3);
-}
-
-void ring(SDL_Renderer *r, float cx, float cy, float radius, float thickness, SDL_FColor c)
-{
-    constexpr int kSegments = 40;
-    SDL_Vertex v[(kSegments + 1) * 2];
-    int idx[kSegments * 6];
-    for (int i = 0; i <= kSegments; ++i) {
-        const float a = static_cast<float>(i) / kSegments * 6.2831853f;
-        const float ca = std::cos(a), sa = std::sin(a);
-        v[i * 2] = {{cx + ca * radius, cy + sa * radius}, c, {0, 0}};
-        v[i * 2 + 1] = {{cx + ca * (radius - thickness), cy + sa * (radius - thickness)}, c, {0, 0}};
-    }
-    for (int i = 0; i < kSegments; ++i) {
-        const int a = i * 2;
-        const int k[6] = {a, a + 1, a + 2, a + 1, a + 3, a + 2};
-        std::copy(k, k + 6, idx + i * 6);
-    }
-    SDL_RenderGeometry(r, nullptr, v, (kSegments + 1) * 2, idx, kSegments * 6);
-}
+using ui::disc;
+using ui::fillRect;
+using ui::kFont;
+using ui::ring;
 
 template <size_t N> int indexOf(const float (&values)[N], float v)
 {
@@ -317,10 +270,9 @@ void OptionsMenu::render(SDL_Renderer *r, TextLibrary &text, int w, int h) const
     // Dim the game a little, then the panel.
     fillRect(r, 0, 0, static_cast<float>(w), static_cast<float>(h), SDL_FColor{0, 0, 0, 0.25f});
     const float panelH = l.titleH + l.rowH * static_cast<float>(RowCount);
-    fillRect(r, l.panelX, l.panelY, l.panelW, panelH, SDL_FColor{0.05f, 0.07f, 0.12f, 0.62f});
-    frameRect(r, l.panelX, l.panelY, l.panelW, panelH, std::max(2.0f, l.rowH * 0.04f), SDL_FColor{1, 1, 1, 0.55f});
-    const SDL_FColor white{1, 1, 1, 0.95f};
-    const SDL_FColor dim{1, 1, 1, 0.7f};
+    ui::panel(r, l.panelX, l.panelY, l.panelW, panelH, l.rowH);
+    const SDL_FColor white = ui::kTextBright;
+    const SDL_FColor dim = ui::kTextDim;
     const float titleSize = l.titleH * 0.5f;
     text.drawString(kFont, titleSize, lang_.get("options.title"), l.panelX + l.panelW / 2,
                     l.panelY + l.titleH * 0.68f, white, 2, Affine{});
@@ -329,9 +281,9 @@ void OptionsMenu::render(SDL_Renderer *r, TextLibrary &text, int w, int h) const
     for (int i = 0; i < RowCount; ++i) {
         const float y = l.panelY + l.titleH + l.rowH * static_cast<float>(i);
         if (i == selected_) {
-            fillRect(r, l.panelX + 4, y + 2, l.panelW - 8, l.rowH - 4, SDL_FColor{1, 1, 1, 0.14f});
+            fillRect(r, l.panelX + 4, y + 2, l.panelW - 8, l.rowH - 4, ui::kRowHighlight);
         } else {
-            fillRect(r, l.panelX + pad, y, l.panelW - 2 * pad, 1, SDL_FColor{1, 1, 1, 0.18f});
+            fillRect(r, l.panelX + pad, y, l.panelW - 2 * pad, 1, ui::kRowSeparator);
         }
         const float baseline = y + l.rowH * 0.64f;
         if (i == Close) {

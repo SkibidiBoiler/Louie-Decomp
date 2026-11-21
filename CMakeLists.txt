@@ -76,6 +76,8 @@ set(PL_SOURCES
     src/engine/sheets.cpp
     src/engine/settings.cpp
     src/engine/options_menu.cpp
+    src/engine/ui_draw.cpp
+    src/engine/launcher.cpp
     src/engine/json.cpp
     src/engine/lang.cpp
     src/engine/menu_bar.cpp

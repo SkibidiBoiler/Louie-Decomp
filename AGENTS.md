@@ -119,8 +119,10 @@ build\windows\papalouie.exe --data "C:/Users/alfre/Proyectos/datos-papas/build"
 #   --level N, --room N, --at x,y (jugador en esa casilla): pruebas por texto, más baratas que las capturas
 #   --mute: sin salida de sonido (con --trace, la línea S lista los sonidos de cada fotograma)
 #   --customer N: jugar con el cliente N (orden de CustomerData; 0 Marty, 9 Kahuna, 26 Papa Louie)
-#   Sin esas opciones de nivel el juego empieza en la pantalla de título. --lang es: idioma de la interfaz;
-#   --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por texto;
+#   Sin esas opciones de nivel la app empieza en el selector de juegos (propio del port; PL2 está en la primera
+#   fila, en el escenario ~350,150); --game pl2 salta el selector y va a la pantalla de título. --lang es: idioma
+#   de la interfaz; --tap "x,y@fotograma;...": toques simulados (coordenadas del escenario) para probar menús por
+#   texto, también en el selector;
 #   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. Partidas guardadas de Windows:
 #   %APPDATA%\SkibidiBoiler\PapaLouieRecomp\saves\PapaLouie2_<ranura>.json
 # Progreso de la traducción (funciones y líneas del AS con su `// AS:` en src/game; solo local, sin tokens):
