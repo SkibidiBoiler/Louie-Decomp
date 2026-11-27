@@ -403,6 +403,8 @@ void Launcher::render(SDL_Renderer *r, TextLibrary &text, int w, int h) const
     renderBackground(r, w, h);
 
     label(r, text, fh * 0.034f, lang_.get("launcher.title"), l.pad, l.pad + fh * 0.02f, ui::kTextDim, 0);
+    const std::string version = std::string("v") + PL_VERSION + (PL_COMMIT[0] ? std::string(" (") + PL_COMMIT + ")" : "");
+    label(r, text, fh * 0.026f, version, l.pad, l.pad + fh * 0.065f, ui::kTextDim, 0);
     // The selected box last, so its glow is on top.
     for (int i = 0; i < GameCount; ++i) {
         if (i != selected_) {

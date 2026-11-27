@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.24)
-project(LouieAttackDecomp VERSION 0.1.0 LANGUAGES C CXX)
+# The version lives in VERSION (one line, MAJOR.MINOR.PATCH); Gradle reads the same file.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" PL_VERSION LIMIT_COUNT 1)
+project(LouieAttackDecomp VERSION ${PL_VERSION} LANGUAGES C CXX)
+# The commit the build comes from (empty outside a git checkout), shown next to the version.
+find_package(Git QUIET)
+set(PL_COMMIT "")
+if(GIT_FOUND)
+    execute_process(COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                    OUTPUT_VARIABLE PL_COMMIT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -294,6 +303,7 @@ else()
 endif()
 
 target_include_directories(louieattack PRIVATE src)
+target_compile_definitions(louieattack PRIVATE PL_VERSION="${PROJECT_VERSION}" PL_COMMIT="${PL_COMMIT}")
 target_include_directories(louieattack SYSTEM PRIVATE external/stb external/minimp3 ${PL_GENERATED})
 target_link_libraries(louieattack PRIVATE SDL3::SDL3 plutovg::plutovg)
 

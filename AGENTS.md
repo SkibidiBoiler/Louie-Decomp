@@ -88,6 +88,14 @@ Todas son opcionales y configurables; con todo desactivado el juego debe verse y
 | **Controles táctiles editables (Android)** | Capa de entrada por **acciones** (izquierda, saltar, atacar…), no por teclas. Controles en pantalla con editor: posición, tamaño, opacidad/transparencia, visibilidad por botón; perfiles guardados en el almacenamiento de la app. También mando físico y teclado. |
 | **Ajustes** | Menú de opciones propio del port (FPS, escala, widescreen, idioma, controles, vsync), guardado en un archivo de configuración. |
 
+## Versiones
+
+Una sola versión para todas las plataformas, en el archivo `VERSION` de la raíz (`MAYOR.MENOR.PARCHE`). CMake la
+lee para el ejecutable (y la muestra en el selector de juegos con el commit: `v0.2.0 (abc1234)`); Gradle la usa
+como `versionName` y calcula `versionCode = MAYOR*10000 + MENOR*100 + PARCHE`. Se sube PARCHE en arreglos, MENOR al
+terminar una etapa (0.2.0 = PL2 traducido entero) y MAYOR en la primera versión completa. Cambiarla es un commit
+propio.
+
 ## Estructura
 
 ```

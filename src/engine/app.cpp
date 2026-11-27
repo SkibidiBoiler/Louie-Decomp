@@ -36,7 +36,7 @@ App::~App()
 
 SDL_AppResult App::init(int argc, char *argv[])
 {
-    SDL_SetAppMetadata("Louie Attack Decomp", "0.1.0", "io.github.skibidiboiler.louieattack");
+    SDL_SetAppMetadata("Louie Attack Decomp", PL_VERSION, "io.github.skibidiboiler.louieattack");
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 
     // Touches are handled as fingers (on-screen buttons, taps); no synthetic mouse events from them.
