@@ -569,7 +569,10 @@ void MovieClip::render(const RenderContext &ctx, const Affine &parent, const Col
                 renderChild(ctx, children_[j], parent, parentColor);
             }
         } else {
+            // No interpolation under a timeline mask: a strip of frames slid one cell per frame behind a fixed
+            // mask is a flipbook (the score screen's bubble glass), and a half-way strip shows two cells at once.
             RenderContext inner = ctx;
+            inner.interpolate = false;
             ctx.masks->draw(
                 ctx.renderer,
                 [&](const Affine &toTexture) {
