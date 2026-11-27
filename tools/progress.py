@@ -90,8 +90,11 @@ _OVERRIDDEN = "always overridden: every object that runs it is a subclass with i
 _NOGRAB = ("carrying and throwing objects: no PL2 object is grabbable (isGrabbable is never true), so this "
            "engine code shared with PL3 never runs in PL2")
 _PL3DATA = "reached only with data PL2 does not have (money drops: no \"$\" items and no Money* item classes)"
+_NAMEONLY = "never called: the calls with this name all go to the same method of another class"
 _INPUT = "Flash keyboard listeners and focus (the port's input layer sets the same key flags)"
 EXCLUDED_FN = {
+    ("ObjectManager", "allowReactions"): _NAMEONLY, ("EnemyManager", "allowReactions"): _NAMEONLY,
+    ("EnemyManager", "stopCameraPan"): _NAMEONLY,
     ("PlayerChar", "checkForHittingEnemies"): _OVERRIDDEN,
     ("PlayerChar", "checkForHittingObjects"): _OVERRIDDEN,
     ("PlayerChar", "checkForGrabbingTile"): _OVERRIDDEN,

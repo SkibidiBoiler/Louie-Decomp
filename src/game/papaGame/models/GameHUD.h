@@ -16,6 +16,8 @@ public:
 
     void setupHUD();
     void updateDisplay();
+    void showTally(double /*tally*/, double /*target*/) {} // AS: GameHUD.showTally (empty in PL2)
+    void updateAdjustmentNumbers() {}                      // AS: GameHUD.updateAdjustmentNumbers (empty)
     void updateTimer();
     void hideHUD();
     void showHUD();

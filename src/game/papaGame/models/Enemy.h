@@ -37,7 +37,11 @@ public:
     virtual double getTorsoOffsetX() const { return 0; }
     // AS: Enemy.getTorsoOffsetY
     virtual double getTorsoOffsetY() const { return 0; }
-    void endAnimationCycle() override {}
+    void endAnimationCycle() override {} // AS: Enemy.endAnimationCycle (empty)
+    virtual void legsEndAnimationCycle() {} // AS: Enemy.legsEndAnimationCycle (empty)
+    // AS: Enemy.setCameraPan (empty: enemies never pan the camera)
+    virtual void setCameraPan(const std::string & /*wait*/, const std::string & /*reaction*/) {}
+    virtual void stopCameraPan() {} // AS: Enemy.stopCameraPan (empty)
     void broadcastTriggered(double state, bool fromGlobal = false);
     virtual void sendTriggered(double state, bool pan, bool fromGlobal = false);
     virtual bool checkOnScreen();

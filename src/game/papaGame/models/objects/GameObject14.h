@@ -12,8 +12,8 @@ public:
     void init(double xtile, double ytile, double id, double whichScreen, double screenObjID,
               const std::vector<as3::Value> &extraParams) override;
     void defineVars() override;
-    void setupParams(const std::vector<as3::Value> & /*params*/) override {} // AS: GameObject14 (empty)
-    void saveObjectData() override {}                                        // AS: GameObject14 (empty)
+    void setupParams(const std::vector<as3::Value> & /*params*/) override {} // AS: GameObject14.setupParams (empty)
+    void saveObjectData() override {}                                        // AS: GameObject14.saveObjectData (empty)
     void destroy() override {}                                               // AS: GameObject14 (empty)
     void endAnimationCycle() override;
     const AnimationCycle &grabAnimationCycle() override;

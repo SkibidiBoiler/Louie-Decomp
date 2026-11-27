@@ -26,7 +26,7 @@ public:
     virtual void collectItem();
     void placeObject(double tileX, double tileY, bool keepPosition = false);
     const AnimationCycle &grabAnimationCycle() override;
-    void endAnimationCycle() override {}
+    void endAnimationCycle() override {} // AS: GameItem.endAnimationCycle (empty)
     bool checkOnScreen() const;
     void updateObject() override;
 
