@@ -30,6 +30,7 @@ public:
     void saveItems();
     void saveItemsAtCheckpoint();
     void clearItems(double whichScreen, bool all = false, bool resetCounter = true);
+    void destroy() { clearItems(1, true); } // AS: ItemManager.destroy
     void buildItems(double whichScreen);
     void removeItem(double itemID, bool nosplice = false);
 

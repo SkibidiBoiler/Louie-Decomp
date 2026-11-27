@@ -32,8 +32,23 @@ void GameControls::detectKeys()
 {
     CustomerChar &p = *gameObj->playerObj;
     const bool wasJumping = p.jump;
-    if (isPaused || stopCycle) {
+    if (isPaused) {
         return;
+    }
+    if (stopCycle) {
+        // The camera pans (to an object a switch moved, and back) while the game stands still.
+        if (!playerIsDead && cameraPan) {
+            if (cameraPanType == "1") {
+                if (models::GameObject *obj = gameObj->obf_7u->getObject(cameraPanID, 0)) {
+                    obj->updateObject();
+                }
+            } else if (cameraPanType == "2") {
+                SDL_Log("ERROR --- Camera Pan to ENEMY not supported.");
+            }
+            gameObj->obf_V->processEffects();
+            gameObj->obf_3Y->panCamera(cameraPanTargetX, cameraPanTargetY, cameraPanType);
+        }
+        return; // the original redraws here; the port redraws in its render pass
     }
     if (!p.isFinishingLevel) {
         ++gameplayTimer;
@@ -105,6 +120,58 @@ void GameControls::detectKeys()
     gameObj->obf_3Y->adjustCamera(p.x, p.y, true);
     gameObj->obf_6Z->updateTimer();
     // redrawScreen comes next in the original; the port redraws in its render pass.
+}
+
+// AS: GameControls.setCameraPan — stops the game and pans to (tx, ty); a pan away from the player remembers where
+// the camera was, for the pan back.
+void GameControls::setCameraPan(double tx, double ty, const std::string &type, double id)
+{
+    display::GameCam &cam = *gameObj->obf_3Y;
+    cameraPanTargetX = tx;
+    cameraPanTargetY = ty;
+    cameraPanID = id;
+    cameraPanType = type;
+    cameraPan = true;
+    stopCycle = true;
+    stopControls = true;
+    cam.currstartdelay = 0;
+    cam.currenddelay = 0;
+    if (type != "player" && cam.prepanx == 0 && cam.prepany == 0) {
+        cam.prepanx = cam.x;
+        cam.prepany = cam.y;
+    }
+}
+
+// AS: GameControls.finishCameraPan — back at the player the game goes on; at an object, the object reacts.
+void GameControls::finishCameraPan()
+{
+    display::GameCam &cam = *gameObj->obf_3Y;
+    if (cameraPanType == "player") {
+        stopCycle = false;
+        stopControls = false;
+        cameraPan = false;
+        cam.prepanx = 0;
+        cam.prepany = 0;
+    } else if (cameraPanType == "1") {
+        gameObj->obf_7u->stopCameraPan(cameraPanID);
+    }
+    // QUIRK: type 2 (an enemy) calls EnemyManager.stopCameraPan, which looks up a property the class does not
+    // have; no enemy ever starts a pan, so it is never reached.
+}
+
+// AS: GameControls.setupControls — the timers start again; the key listeners are the input layer of the app.
+void GameControls::setupControls()
+{
+    gameplayTimer = 0;
+    currentLevelTimer = 0;
+}
+
+// AS: GameControls.setupCycleCode — the frame handler itself is the fixed step of the app.
+void GameControls::setupCycleCode()
+{
+    stopCycle = false;
+    stopControls = false;
+    stopActionControls = false;
 }
 
 // AS: GameControls.jumpPlayer

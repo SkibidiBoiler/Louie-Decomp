@@ -1251,6 +1251,7 @@ void CustomerChar::setupAttackRect()
 }
 
 // AS: CustomerChar.cancelAttack (PlayerChar.cancelAttack, then Foodini's balloon comes back)
+// AS: PlayerChar.cancelAttack (the base part: the first two lines)
 void CustomerChar::cancelAttack()
 {
     isAttacking = false;
@@ -2203,6 +2204,42 @@ void CustomerChar::finishLevel(const std::string &how)
         gameObj->obf_94->recordCompletionTime(gameObj->obf_8o->gameplayTimer);
         gameObj->obf_94->checkCustomChallenges();
     }
+}
+
+// AS: PlayerChar.startTrainSound — the train level's track loop, or the river loop on level 11.
+void CustomerChar::startTrainSound()
+{
+    if (gameObj->obf_AQ->isOnTrain()) {
+        trainSound = gameObj->obf_7C->playSound("train_tracks.wav", true);
+    } else if (gameObj->obf_AQ->currentLevel == 11) {
+        trainSound = gameObj->obf_7C->playSound("river_loop", true, 0.5);
+    }
+}
+
+// AS: PlayerChar.stopTrainSound
+void CustomerChar::stopTrainSound()
+{
+    if (trainSound) {
+        trainSound->stop();
+        trainSound = nullptr;
+    }
+}
+
+// AS: PlayerChar.destroy (the super call of CustomerChar.destroy, folded in)
+// AS: CustomerChar.destroy with PlayerChar.destroy (its super call) — the looping sounds stop; the rest is Flash
+// clean-up.
+void CustomerChar::destroy()
+{
+    if (poundSound) {
+        poundSound->stop();
+        poundSound = nullptr;
+    }
+    whichObjectRiding = nullptr;
+    if (slideSound) {
+        slideSound->stop();
+        slideSound = nullptr;
+    }
+    stopTrainSound();
 }
 
 } // namespace papaGame::models::characters

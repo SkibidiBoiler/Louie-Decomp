@@ -56,6 +56,7 @@ public:
     static constexpr const char *KEY_PAUSE = "keyCodePause";
     void clearLevelScreens();
     bool isOnTrain() const;
+    bool isOnBarge() const { return false; } // AS: DataManager.isOnBarge
     bool isAnimatedBackground() const;
 
     obf_9G::obf_4R *gameObj = nullptr;

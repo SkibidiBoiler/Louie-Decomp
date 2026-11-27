@@ -126,4 +126,12 @@ void GameObject1::releaseRideableObject()
     grabbingChar = nullptr;
 }
 
+// AS: GameObject1.saveObjectData
+void GameObject1::saveObjectData()
+{
+    const std::vector<as3::Value> row{as3::Value::num(type), as3::Value::num(xtile), as3::Value::num(ytile),
+                                      as3::Value::num(currentTriggers)};
+    gameObj->obf_AQ->currentScreenData->saveObjectState(id - 1, row, true);
+}
+
 } // namespace papaGame::models::objects

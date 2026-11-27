@@ -2,6 +2,7 @@
 // AS: papaGame.models.Effect (extends Character) — short animations: dust, stars, crumbs, the item pick-ups...
 #include <string>
 
+#include "game/as3.h"
 #include "game/papaGame/models/Character.h"
 
 namespace engine { struct Sheet; }
@@ -16,7 +17,15 @@ public:
                       double playerXoffset, double playerYoffset);
 
     void placeEffect(double px, double py);
-    void endAnimationCycle() override {}
+    void endAnimationCycle() override {} // AS: Effect.endAnimationCycle (empty)
+    // AS: Effect.setupParams (empty)
+    virtual void setupParams(const std::vector<as3::Value> & /*params*/) {}
+    // AS: Effect.grabAnimationCycle — null in the original: each effect class has its own.
+    const AnimationCycle &grabAnimationCycle() override
+    {
+        static const AnimationCycle none;
+        return none;
+    }
     virtual bool checkOnScreen() const;
     void updateObject() override;
     virtual const engine::Sheet *getSheet() const;

@@ -68,6 +68,7 @@ std::string DataManager::getKeyLabel(const std::string &key) const
     return label;
 }
 
+// AS: DataManager.prepareLevelData (reads the converted levels.xml; the original decoded it from a bitmap)
 bool DataManager::prepareLevelData(const std::string &levelsXmlPath)
 {
     const bool ok = levelDataClass.load(levelsXmlPath);

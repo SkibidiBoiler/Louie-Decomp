@@ -23,6 +23,7 @@ public:
     std::string getChallengeType(double whichWorld, double whichChallenge) const;        // AS
     std::string getChallengeSkillNeeded(double whichWorld, double whichChallenge) const; // AS
     std::string getChallengeTallyString(double whichWorld, double whichChallenge) const; // AS
+    // AS: ChallengeManager.getNumberOfBadges
     double getNumberOfBadges() const { return static_cast<double>(badges.size()); } // AS
     std::vector<double> getMedalProgressArray() const;        // AS: ChallengeManager.getMedalProgressArray
     void populateMedalProgress(const std::vector<double> &progress); // AS: ChallengeManager.populateMedalProgress

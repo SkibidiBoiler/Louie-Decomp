@@ -9,6 +9,7 @@ public:
     using Effect::Effect;
 
     void defineVars() override;
+    // AS: RomanTrailEffect.grabAnimationCycle
     const AnimationCycle &grabAnimationCycle() override { return cycleFrames("animCycleFrames"); }
     void endAnimationCycle() override;
     void updateObject() override { updateSprite(); } // AS: RomanTrailEffect.updateObject

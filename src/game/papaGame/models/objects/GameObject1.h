@@ -16,6 +16,9 @@ public:
     void updateObject() override;
     void grabRideableObject(Character *c) override;
     void releaseRideableObject() override;
+    void getHit(double /*damage*/ = 1) override {}              // AS: GameObject1.getHit (empty)
+    double getRideableDirection() const override { return 0; } // AS: GameObject1.getRideableDirection
+    void saveObjectData() override;
 
     Character *grabbingChar = nullptr;
 };

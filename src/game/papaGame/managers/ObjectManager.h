@@ -24,12 +24,15 @@ public:
 
     void updateTrainingSigns();
     models::GameObject *getObject(double screenObjID, double whichScreen) const;
+    void stopCameraPan(double screenObjID);
+    std::string getWeaponType(const std::string &weapon) const;
     void checkSteppingOnObjects(models::Character &c, bool byObject = false);
     void releaseStandingChars(models::GameObject &o); // port: no dangling whichMovingTile
     double addObject(double xtile, double ytile, double type, double whichScreen, double screenObjID,
                      const std::vector<as3::Value> &extraParams = {});
     void processObjects();
     void clearObjects(double whichScreen, bool all = false, bool resetCounter = true, bool keepCarried = false);
+    void destroy() { clearObjects(1, true, false, true); } // AS: ObjectManager.destroy
     void saveObjects();
     void saveObjectsAtCheckpoint();
     void buildObjects(double whichScreen);

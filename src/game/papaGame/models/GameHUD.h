@@ -16,6 +16,8 @@ public:
 
     void setupHUD();
     void updateDisplay();
+    void showTally(double /*tally*/, double /*target*/) {} // AS: GameHUD.showTally (empty in PL2)
+    void updateAdjustmentNumbers() {}                      // AS: GameHUD.updateAdjustmentNumbers (empty)
     void updateTimer();
     void hideHUD();
     void showHUD();
@@ -34,6 +36,11 @@ public:
 
     obf_9G::obf_4R *gameObj = nullptr;
     std::unique_ptr<engine::MovieClip> interfaceClip; // AS: new hudMC()
+    engine::MovieClip *portraitMC = nullptr;          // owned by interfaceClip.portraitholder
+
+    void setupPortrait();
+    void setupBubbles(bool setup = true);
+    void destroy();
 };
 
 } // namespace papaGame::models

@@ -116,11 +116,13 @@ void MainMenuScreen::setupCharacter(bool setup)
         }
         const double index = i;
         thumb->onMouseDown = [this, index] { clickCharacterThumb(index); };
+        // AS: MainMenuScreen.rolloverCharacterThumb
         thumb->onRollOver = [thumb] {
             if (engine::MovieClip *roll = thumb->findChild("roll")) {
                 roll->setVisible(true);
             }
         };
+        // AS: MainMenuScreen.rolloutCharacterThumb
         thumb->onRollOut = [thumb] {
             if (engine::MovieClip *roll = thumb->findChild("roll")) {
                 roll->setVisible(false);
@@ -208,11 +210,13 @@ void MainMenuScreen::setupCharacter(bool setup)
         }
         const double style = s + 1;
         button->onMouseDown = [this, style] { clickCharacterStyle(style); };
+        // AS: MainMenuScreen.rolloverCharacterStyle
         button->onRollOver = [button] {
             if (engine::MovieClip *r = button->findChild("rolloverclip")) {
                 r->setVisible(true);
             }
         };
+        // AS: MainMenuScreen.rolloutCharacterStyle
         button->onRollOut = [button] {
             if (engine::MovieClip *r = button->findChild("rolloverclip")) {
                 r->setVisible(false);
@@ -1230,11 +1234,13 @@ void MainMenuScreen::setupBaddies(bool setup)
                 }
             }
             thumb->onMouseDown = [this, i] { clickEnemyThumb(i); };
+            // AS: MainMenuScreen.rolloverEnemyThumb
             thumb->onRollOver = [thumb] {
                 if (engine::MovieClip *roll = thumb->findChild("roll")) {
                     roll->setVisible(true);
                 }
             };
+            // AS: MainMenuScreen.rolloutEnemyThumb
             thumb->onRollOut = [thumb] {
                 if (engine::MovieClip *roll = thumb->findChild("roll")) {
                     roll->setVisible(false);
@@ -1349,6 +1355,7 @@ void MainMenuScreen::setupControls(bool setup)
                 btn->gotoLabel("rollover", false);
             }
         };
+        // AS: MainMenuScreen.rolloutControlsButton
         btn->onRollOut = [this, btn] {
             if (settingWhichKey == "none") {
                 btn->gotoLabel("click", false);
@@ -1462,6 +1469,7 @@ void MainMenuScreen::setupHelp(bool setup)
                 h->setVisible(true);
             }
         };
+        // AS: MainMenuScreen.rolloutHelpTab
         tab->onRollOut = [this, tab, i] {
             if (helpIndex != i) {
                 if (engine::MovieClip *h = tab->findChild("hilite")) {
@@ -1815,9 +1823,11 @@ void MainMenuScreen::setupMedals(bool setup)
     animatingMedals_ = true;
 }
 
+// AS: MainMenuScreen.getDesaturatedFilter — the ColorMatrixFilter that turns a clip grey (luminance weights
+// 0.212671, 0.71516, 0.072169): the engine's `desaturated` flag on the clip.
+
 // AS: MainMenuScreen.populateMedals — this page's eight badges: title, description and tally, reward, picture and
-// earned mark (an unearned one is greyed in the original: a ColorMatrixFilter, getDesaturatedFilter, which the
-// port does not draw); a locked one is the "Hidden Badge". Then the page arrows and number, and the slide-in.
+// earned mark (an unearned one is greyed: getDesaturatedFilter); a locked one is the "Hidden Badge". Then the page arrows and number, and the slide-in.
 void MainMenuScreen::populateMedals()
 {
     const data::UserData &user = *gameObj->obf_51;
@@ -1851,6 +1861,9 @@ void MainMenuScreen::populateMedals()
             }
             if (engine::MovieClip *earned = p->findChild("earned")) {
                 earned->setVisible(user.hasBadge(which));
+            }
+            if (thumb) {
+                thumb->desaturated = !user.hasBadge(which); // thumb.filters = [getDesaturatedFilter()] or []
             }
             if (challenges.shouldLockBadge(which)) {
                 if (thumb) {

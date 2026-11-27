@@ -14,7 +14,7 @@ public:
     using GameObject::GameObject;
 
     void defineVars() override;
-    void setupParams(const std::vector<as3::Value> & /*params*/) override {} // AS: GameObject2 (empty body)
+    void setupParams(const std::vector<as3::Value> & /*params*/) override {} // AS: GameObject2.setupParams (empty body)
     void saveObjectData() override;
     void destroy() override;
     const AnimationCycle &grabAnimationCycle() override;

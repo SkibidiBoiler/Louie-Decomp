@@ -36,7 +36,7 @@ App::~App()
 
 SDL_AppResult App::init(int argc, char *argv[])
 {
-    SDL_SetAppMetadata("Louie Attack Decomp", "0.1.0", "io.github.skibidiboiler.louieattack");
+    SDL_SetAppMetadata("Louie Attack Decomp", PL_VERSION, "io.github.skibidiboiler.louieattack");
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 
     // Touches are handled as fingers (on-screen buttons, taps); no synthetic mouse events from them.
@@ -177,6 +177,8 @@ SDL_AppResult App::init(int argc, char *argv[])
                 }
             }
         } else if (std::strcmp(argv[i], "--level") == 0 && game_) { // DEV: start level N (0-based)
+            // A test run saves (on beating the level) into its own files, never over a player's slot.
+            game_->obf_51->saveSlotPrefix += "DevTest_";
             game_->obf_6V(std::atof(argv[i + 1]));
         } else if (std::strcmp(argv[i], "--room") == 0 && game_) { // DEV: start in room N (0-based)
             switchRoom(std::atoi(argv[i + 1]) - static_cast<int>(game_->obf_AQ->currentScreen));
@@ -530,6 +532,7 @@ void App::tickLevel()
                 player.isDoubleJumping ? " dj" : "", player.isGliding ? " glide" : "",
                 player.isGroundPounding ? " pound" : "", player.isSliding ? " slide" : "",
                 player.isWallSliding ? " wallslide" : "", player.isWallJumping ? " walljump" : "");
+        SDL_Log("CAM %.0f,%.0f%s", game_->obf_3Y->x, game_->obf_3Y->y, game_->obf_8o->cameraPan ? " pan" : "");
         // DEV: the room's enemies: id:type x,y cycle and flags (d dead, s stunned, h hit).
         std::string enemies;
         for (const papaGame::models::Enemy *e : game_->obf_E->enemies) {
@@ -1139,7 +1142,7 @@ void App::updatePresentation()
         const float wide = static_cast<float>(stage_.height) * static_cast<float>(pw) / static_cast<float>(ph);
         extra = std::clamp(std::floor((wide - static_cast<float>(stage_.width)) / 2), 0.0f, 190.0f);
     }
-    if (game_) {
+    if (game_ && game_->obf_71) { // no GameDisplay between levels (§_-Ap§ frees it)
         game_->obf_71->viewExtraX = extra;
     }
     if (extra == viewExtra_) {

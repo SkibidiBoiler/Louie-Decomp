@@ -54,10 +54,129 @@ EXCLUDED = {
                     _ONLINE + "; " + _BLIT),
 }
 
+# Functions the game never calls: no call site (nor event listener) anywhere in the SWF's code. Found by searching
+# every .as file for the name; a name shared with a called function elsewhere is not listed here.
+_DEAD = "never called by the game (no call site in the SWF's code)"
+DEAD = {
+    "Challenge": {"meetsJuggleRequirements", "weaponIsFists", "meetsRescueRequirements"},
+    "CustomerData": {"getCustomerFirstGame"},
+    "DataManager": {"weaponNameToID", "levelDataError", "randomize", "getUpgradeCost", "getArsenalCost", "getNumberOfArsenal", "isArrow"},
+    "ScreenData": {"createBackgroundBitmap"},
+    "UserData": {"getLivesLostTally", "getTreasureBonus", "checkForCheats"},
+    "GameCam": {"setCameraForceScrolling", "offsetCamera", "withinPanBounds"},
+    "GameDisplay": {"getTileCoords"},
+    "GameControls": {"playerHasDied", "setCameraAnchor"},
+    "BitmapManager": {"createEnemySprite"},
+    "EnemyManager": {"clearEnemySheet", "preblitEnemySheets", "getWeaponSheet", "clearWeaponSheets", "getCurrentEnemyTotal", "anyEnemiesAttacking", "checkForceNoDrop", "output"},
+    "ItemManager": {"weaponNameToID", "dropEnemyWeapon"},
+    "ObjectManager": {"getObjectByID"},
+    "Character": {"checkForCloudToBottom"},
+    "Enemy": {"setupSprite", "launchEnemy", "grabWeaponAnimationCycle", "startShoving", "startQuickAttacking"},
+    "GameHUD": {"clickPause", "clickAdjustment", "animateTally", "tempRemoveInterface"},
+    "GameObject": {"moveCarriedObject"},
+    "PlayerChar": {"updateWeaponMastery", "checkIfCanGrab", "getPowerUp", "getInvincibility", "pauseAfterMiniboss", "beatMiniboss", "getWeaponSheetName", "getWeaponName"},
+    "CustomerChar": {"checkForHittingBullets"},
+    "§_-4R§": {"§_-m§", "§_-6P§", "§_-Z§"},
+}
+
+# Single functions left out for one of the reasons above, in classes that are otherwise ported.
+_DEBUG = "the original's debug FPS / memory readout (the port has its own overlay)"
+_CLEANUP = ("Flash memory cleanup (removes listeners and children, disposes bitmaps, drops references); "
+            "C++ ownership frees the same")
+_MENUBAR = ("the Flipline API's separate BADDIES / BADGES / CONTROLS / HELP / CREDITS screens over the map "
+            "(the port's menu bar switches those sections in place)")
+_NOSENDER = "an event the screen listens for that nothing in the SWF sends"
+_OVERRIDDEN = "always overridden: every object that runs it is a subclass with its own version (no super call)"
+_NOGRAB = ("carrying and throwing objects: no PL2 object is grabbable (isGrabbable is never true), so this "
+           "engine code shared with PL3 never runs in PL2")
+_PL3DATA = "reached only with data PL2 does not have (money drops: no \"$\" items and no Money* item classes)"
+_NAMEONLY = "never called: the calls with this name all go to the same method of another class"
+_LOG = "the original's logger set-up (trace level, frame counter in each line)"
+_NOMULTI = "the multi-part enemy sprite (legs, torso, head): no PL2 enemy sets isMultiSprite"
+_BACKUP = "the Flipline API's save-file backup (download / upload a file); the port keeps its saves as files"
+_HUDDRAW = "adds the HUD and the level to the Flash display list; the port draws them itself (GameHUD::render)"
+_INPUT = "Flash keyboard listeners and focus (the port's input layer sets the same key flags)"
+EXCLUDED_FN = {
+    ("SlotSelectScreen", "clickSaveBackup"): _BACKUP,
+    ("SlotSelectScreen", "clickLoadBackup"): _BACKUP,
+    ("UserData", "loadSlotDataForBackup"): _BACKUP,
+    ("SlotSelectScreen", "clickStart"): _NAMEONLY,
+    ("GameHUD", "attachHUD"): _HUDDRAW,
+    ("GameHUD", "attachGameDisplay"): _HUDDRAW,
+    ("Character", "stopGrabRiding"): _OVERRIDDEN,
+    ("Enemy", "updateMultiSprite"): _NOMULTI,
+    ("Enemy", "legSpriteChangeFrame"): _NOMULTI,
+    ("Enemy", "adjustLegFrameSync"): _NOMULTI,
+    ("Enemy", "grabLegAnimationCycle"): _NOMULTI,
+    ("Enemy", "grabHeadAnimationCycle"): _NOMULTI,
+    ("DataManager", "destroy"): _NAMEONLY,
+    ("§_-4R§", "§_-1W§"): _PRELOAD,
+    ("§_-4R§", "§_-6J§"): _PRELOAD,
+    ("§_-4R§", "§_-89§"): _PRELOAD,
+    ("§_-4R§", "§_-8g§"): _PRELOAD,
+    ("§_-4R§", "§_-5L§"): _PRELOAD,
+    ("§_-4R§", "§_-N§"): _PRELOAD,
+    ("§_-4R§", "§_-AD§"): _PRELOAD,
+    ("§_-4R§", "§_-AP§"): _LOG,
+    ("§_-4R§", "§_-4M§"): _LOG,
+    ("ObjectManager", "allowReactions"): _NAMEONLY, ("EnemyManager", "allowReactions"): _NAMEONLY,
+    ("EnemyManager", "stopCameraPan"): _NAMEONLY,
+    ("PlayerChar", "checkForHittingEnemies"): _OVERRIDDEN,
+    ("PlayerChar", "checkForHittingObjects"): _OVERRIDDEN,
+    ("PlayerChar", "checkForGrabbingTile"): _OVERRIDDEN,
+    ("PlayerChar", "usingGun"): _OVERRIDDEN,
+    ("PlayerChar", "usingPowerTool"): _OVERRIDDEN,
+    ("GameObject", "checkHittingEnemies"): _OVERRIDDEN,
+    ("PlayerChar", "throwCarriedObject"): _NOGRAB,
+    ("PlayerChar", "checkForGrabbingObjects"): _NOGRAB,
+    ("PlayerChar", "adjustCarriedObject"): _NOGRAB,
+    ("CustomerChar", "startThrowingObject"): _NOGRAB,
+    ("GameObject", "grabObject"): _NOGRAB,
+    ("GameObject", "throwObject"): _NOGRAB,
+    ("ObjectManager", "recreateCarriedObject"): _NOGRAB,
+    ("ItemManager", "dropMoney"): _PL3DATA,
+    ("MainMenuScreen", "clickCustomerPlayGame"): _ONLINE,
+    ("MainMenuScreen", "clickBaddiesRedirect"): _MENUBAR, ("MainMenuScreen", "clickBaddiesRedirectBack"): _MENUBAR,
+    ("MainMenuScreen", "clickMedalsRedirect"): _MENUBAR, ("MainMenuScreen", "clickMedalsRedirectBack"): _MENUBAR,
+    ("MainMenuScreen", "clickControlsRedirect"): _MENUBAR, ("MainMenuScreen", "clickControlsRedirectBack"): _MENUBAR,
+    ("MainMenuScreen", "clickHelpRedirect"): _MENUBAR, ("MainMenuScreen", "clickHelpRedirectBack"): _MENUBAR,
+    ("MainMenuScreen", "clickCreditsRedirect"): _MENUBAR, ("MainMenuScreen", "clickCreditsRedirectBack"): _MENUBAR,
+    ("MainMenuScreen", "clickParade"): _NOSENDER, ("MainMenuScreen", "clickParadeTwo"): _NOSENDER,
+    ("MainMenuScreen", "clickContinueToMap"): _NOSENDER,
+    ("Bullet", "destroy"): _CLEANUP, ("ChallengeManager", "destroy"): _CLEANUP,
+    ("EventManager", "destroy"): _CLEANUP,
+    ("GameControls", "destroy"): _CLEANUP, ("GameDisplay", "destroy"): _CLEANUP,
+    ("GameHUD", "cleanupModel"): _CLEANUP, ("GameObject", "destroy"): _CLEANUP,
+    ("GameObject1", "destroy"): _CLEANUP, ("GameObject14", "destroy"): _CLEANUP,
+    ("MainMenuScreen", "cleanupInfoModel"): _CLEANUP, ("MainMenuScreen", "cleanupModel"): _CLEANUP,
+    ("MapManager", "destroy"): _CLEANUP, ("NewCustomerScreen", "cleanupModel"): _CLEANUP,
+    ("ScoreTallyScreen", "cleanupModel"): _CLEANUP, ("ScreenData", "destroy"): _CLEANUP,
+    ("SlotSelectScreen", "cleanupModel"): _CLEANUP, ("StageIntroScreen", "cleanupModel"): _CLEANUP,
+    ("StageOutroScreen", "cleanupModel"): _CLEANUP, ("WorldData", "destroy"): _CLEANUP,
+    ("LevelData", "prepareXML"): _LOAD, ("LevelData", "prepareXMLcycle"): _LOAD,
+    ("LevelData", "getCharacter"): _LOAD, ("DataManager", "generateLevelData"): _LOAD,
+    ("ScreenData", "createBitmap"): _BLIT, ("ScreenData", "clearBitmaps"): _BLIT,
+    ("BitmapManager", "setupGameBitmaps"): _BLIT, ("BitmapManager", "setupTilesheets"): _BLIT,
+    ("BitmapManager", "clearExtraSprites"): _BLIT, ("BitmapManager", "createTilesheet"): _BLIT,
+    ("GameHUD", "clickFPS"): _DEBUG, ("GameHUD", "updateMessageFPS"): _DEBUG,
+    ("GameControls", "adjustFramerate"): _DEBUG,
+    ("GameControls", "resetKeyFocus"): _INPUT,
+    ("GameControls", "keyDownListener"): _INPUT, ("GameControls", "keyUpListener"): _INPUT,
+    ("SlotSelectScreen", "clickMissingWidget"): _ONLINE, ("UserData", "onFlushStatus"): _ONLINE,
+    ("SoundManager", "apiMutedSound"): _ONLINE, ("SoundManager", "apiUnmutedSound"): _ONLINE,
+}
+
 
 def is_excluded(cls, name):
     e = EXCLUDED.get(cls)
-    return e is not None and (e[0] == "*" or name in e[0])
+    return (e is not None and (e[0] == "*" or name in e[0])) or name in DEAD.get(cls, ()) or (cls, name) in EXCLUDED_FN
+
+
+def exclusion_reason(cls, name):
+    e = EXCLUDED.get(cls)
+    if e is not None and (e[0] == "*" or name in e[0]):
+        return e[1]
+    return EXCLUDED_FN.get((cls, name), _DEAD)
 
 HEAD = re.compile(r"\s*(override\s+)?(public|private|protected|internal)?\s*(static\s+)?"
                   r"function\s+(?:(get|set)\s+)?([^\s(]+)\s*\(")
@@ -112,7 +231,7 @@ def main():
                         ex_f += 1
                         ex_l += n
                         if list_excluded:
-                            print(f"  {cls}.{name}  ({n} lines): {EXCLUDED[cls][1]}")
+                            print(f"  {cls}.{name}  ({n} lines): {exclusion_reason(cls, name)}")
                 if missing == cls:
                     for name, n in fn:
                         if (cls, name) not in tags:

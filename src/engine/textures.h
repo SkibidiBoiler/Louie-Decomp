@@ -24,6 +24,8 @@ public:
     // The same shape as a white silhouette (its alpha kept), drawn with additive blending: the additive terms of a
     // colour transform (a shape tinted white, for example). Made on first use.
     SDL_Texture *silhouette(uint16_t id);
+    // The same shape desaturated with the luminance weights of the game's grey filter (0.2127, 0.7152, 0.0722).
+    SDL_Texture *grayscale(uint16_t id);
 
 private:
     SDL_Renderer *renderer_ = nullptr;
@@ -31,6 +33,8 @@ private:
     int scale_ = 1;
     std::unordered_map<uint16_t, SDL_Texture *> cache_;
     std::unordered_map<uint16_t, SDL_Texture *> silhouettes_;
+    std::unordered_map<uint16_t, SDL_Texture *> grays_;
+    SDL_Texture *derived(uint16_t id, std::unordered_map<uint16_t, SDL_Texture *> &cache, bool gray);
 };
 
 } // namespace engine

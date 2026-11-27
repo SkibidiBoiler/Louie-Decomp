@@ -23,10 +23,12 @@ public:
     // Port: the base class's cycle defaults from objects.json.
     static void loadTables(const engine::JsonValue &base);
 
+    // AS: GameObject.setupParams
     virtual void setupParams(const std::vector<as3::Value> & /*params*/) {}
     void placeObject(double tileX, double tileY);
     void addCollision();
     void removeCollision();
+    // AS: GameObject.saveObjectData
     virtual void saveObjectData() {}
     const AnimationCycle &grabAnimationCycle() override;
     void endAnimationCycle() override;
@@ -37,19 +39,26 @@ public:
     void broadcastTriggered(double amount, bool fromGlobal = false);
     void sendTriggered(double amount, bool pan, bool fromGlobal = false);
     void setCameraPan(const std::string &wait, const std::string &reaction);
+    void stopCameraPan();
     void stopReactions() { canReact = false; }      // AS: GameObject.stopReactions
     void allowTriggerReactions() {}                  // AS: GameObject.allowTriggerReactions (empty)
     void setEventData(const std::vector<std::vector<double>> &triggers, double pan, double panTarget);
     void setEventTriggers(double necessary, const std::vector<std::vector<double>> &from = {});
+    // AS: GameObject.grabRideableObject
     virtual void grabRideableObject(Character *c) { (void)c; isGrabRiding = true; } // AS: GameObject
+    // AS: GameObject.releaseRideableObject
     virtual void releaseRideableObject() { isGrabRiding = false; }                  // AS: GameObject
+    // AS: GameObject.getRideableDirection
     virtual double getRideableDirection() const { return 1; }                         // AS: GameObject
+    // AS: GameObject.unregisterSpawn
     virtual void unregisterSpawn() {}
     virtual bool checkOnScreen();
+    // AS: GameObject.checkAdditionalBlitting
     virtual void checkAdditionalBlitting(bool /*foreground*/, bool /*before*/ = false) {}
     virtual void updateTrainingSign() {} // AS: GameObject.updateTrainingSign (empty; no subclass overrides it)
     void allowReactions() { canReact = true; } // AS: GameObject.allowReactions
     void updateObject() override;
+    // AS: GameObject.getHit
     virtual void getHit(double /*damage*/ = 1) {}
     bool acceptsDamage(const std::string &kind, const std::string &weapon) const;
     bool checkPushingObject() const { return isPushable && isBeingPushed; } // AS: GameObject.checkPushingObject

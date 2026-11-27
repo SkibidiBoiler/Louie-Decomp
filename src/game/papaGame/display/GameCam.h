@@ -1,7 +1,9 @@
 #pragma once
 // AS: papaGame.display.GameCam — the camera (centre of the screen, in level pixels).
-// Ported so far: fields, setCameraBounds, adjustCamera, the camera lock and the jiggle. Mouse panning and
-// panCamera come later.
+// The camera follows the player (adjustCamera), can be locked, jiggles, and pans to an object and back
+// (panCamera, driven by the camera pan of GameControls).
+#include <string>
+
 #include "game/as3.h"
 
 namespace obf_9G { class obf_4R; }
@@ -25,6 +27,9 @@ public:
     void unsetCameraForceScrolling() { forcedScrollingCamera = false; } // AS: GameCam.unsetCameraForceScrolling
 
     void savePrevious() { prevX = x; prevY = y; }
+    // The original passes the pan type as `*` ("player", or 1 for an object); the port passes "player" or "1".
+    void panCamera(double tx, double ty, const std::string &type, bool snap = false);
+    void destroy() {} // AS: GameCam.destroy (empty)
 
     obf_9G::obf_4R *gameObj = nullptr;
     double x = 240;
@@ -72,6 +77,13 @@ public:
     double jiggleTrainDelayMax = 8;
     double jiggleTrainDelayShort = 8;
     double jiggleTrainDelayLong = 45;
+    double pansteps = 8;
+    double prepanx = 0;
+    double prepany = 0;
+    double panstartdelay = 15;
+    double currstartdelay = 0;
+    double panenddelay = 15;
+    double currenddelay = 0;
     double cameraOffset = 0;
     double maxCameraOffset = 160;
 

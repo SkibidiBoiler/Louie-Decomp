@@ -43,6 +43,7 @@ struct RenderContext {
     bool interpolate = false;
     float alpha = 1.0f;
     MaskLayers *masks = nullptr; // masks are skipped (content drawn unclipped) when null
+    bool gray = false;           // shapes drawn desaturated (a clip with `desaturated` set, and its children)
 };
 
 // The pointer (mouse or a finger) in stage coordinates, for one logic frame.
@@ -122,6 +123,8 @@ public:
     std::function<void()> onClick, onMouseDown, onRollOver, onRollOut;
     bool mouseEnabled = true;
     bool mouseChildren = true; // false: the children take no mouse events (this clip may, with a handler)
+    // `filters = [desaturating ColorMatrixFilter]`: this clip and its children are drawn in grey (shapes only).
+    bool desaturated = false;
 
     // A TextField created by code (`new TextField()` + addChild) in one of the SWF's fonts, drawn above the
     // children in this clip's space. The single line is aligned in [x, x + width] (align 0 left, 1 right,

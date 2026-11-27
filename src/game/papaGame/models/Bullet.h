@@ -15,6 +15,7 @@ public:
     // AS: Bullet(gameObj, x, y, dirx, diry, type, id, statAttack, fromEnemy, fromWeaponName); the subclasses'
     // constructors run their own part in init().
     using Character::Character;
+    void defineVars() override {} // AS: Bullet.defineVars (empty)
     virtual void init(double x, double y, double dirx, double diry, const std::string &type, double id,
                       double statAttack, bool fromEnemy, const std::string &fromWeaponName);
 
