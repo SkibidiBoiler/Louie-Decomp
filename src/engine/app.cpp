@@ -177,6 +177,8 @@ SDL_AppResult App::init(int argc, char *argv[])
                 }
             }
         } else if (std::strcmp(argv[i], "--level") == 0 && game_) { // DEV: start level N (0-based)
+            // A test run saves (on beating the level) into its own files, never over a player's slot.
+            game_->obf_51->saveSlotPrefix += "DevTest_";
             game_->obf_6V(std::atof(argv[i + 1]));
         } else if (std::strcmp(argv[i], "--room") == 0 && game_) { // DEV: start in room N (0-based)
             switchRoom(std::atoi(argv[i + 1]) - static_cast<int>(game_->obf_AQ->currentScreen));

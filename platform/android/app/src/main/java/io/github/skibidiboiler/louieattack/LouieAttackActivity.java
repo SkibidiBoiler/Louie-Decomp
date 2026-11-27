@@ -1,5 +1,6 @@
 package io.github.skibidiboiler.louieattack;
 
+import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
@@ -14,6 +15,18 @@ public class LouieAttackActivity extends SDLActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestHighestRefreshRate();
+    }
+
+    // Debug builds only: the desktop test options from adb, e.g.
+    //   adb shell am start -n io.github.skibidiboiler.louieattack/.LouieAttackActivity --es args "--game pl2 --level 0"
+    @Override
+    protected String[] getArguments() {
+        String args = getIntent() != null ? getIntent().getStringExtra("args") : null;
+        boolean debuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        if (!debuggable || args == null || args.trim().isEmpty()) {
+            return new String[0];
+        }
+        return args.trim().split("\\s+");
     }
 
     // Many phones (e.g. 120 Hz panels) run apps at 60 Hz unless the window asks for a faster display mode.
