@@ -302,6 +302,9 @@ if(ANDROID)
     set_target_properties(louieattack PROPERTIES OUTPUT_NAME main)
 else()
     add_executable(louieattack WIN32 ${PL_SOURCES})
+    if(WIN32)
+        target_sources(louieattack PRIVATE platform/windows/louieattack.rc) # the app icon
+    endif()
 endif()
 
 target_include_directories(louieattack PRIVATE src)
