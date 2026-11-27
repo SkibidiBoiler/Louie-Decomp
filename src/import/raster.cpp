@@ -1160,9 +1160,75 @@ Rasterizer::~Rasterizer() = default;
 
 namespace {
 
+// Writes the surface as straight-alpha RGBA. Fully transparent pixels next to the art take the colour of their
+// visible neighbours (alpha stays 0): the game draws these textures with linear filtering, which otherwise mixes
+// the black of transparent pixels into the edges, a grey fringe that showed as hairlines where white shapes meet
+// (the map's fog). Two passes cover the filter's reach at any draw scale down to half size.
 bool savePng(plutovg_surface_t *s, const std::string &path)
 {
-    return plutovg_surface_write_to_png(s, path.c_str());
+    const int w = plutovg_surface_get_width(s), h = plutovg_surface_get_height(s);
+    const int stride = plutovg_surface_get_stride(s);
+    const unsigned char *src = plutovg_surface_get_data(s);
+    if (w <= 0 || h <= 0 || !src) {
+        return false;
+    }
+    std::vector<uint8_t> rgba(static_cast<size_t>(w) * h * 4);
+    std::vector<uint8_t> filled(static_cast<size_t>(w) * h);
+    for (int y = 0; y < h; ++y) {
+        const uint32_t *row = reinterpret_cast<const uint32_t *>(src + static_cast<size_t>(y) * stride);
+        for (int x = 0; x < w; ++x) {
+            const uint32_t p = row[x]; // premultiplied 0xAARRGGBB
+            const uint32_t a = p >> 24;
+            uint8_t *o = &rgba[(static_cast<size_t>(y) * w + x) * 4];
+            if (a != 0) {
+                o[0] = static_cast<uint8_t>(std::min<uint32_t>(255, (((p >> 16) & 0xff) * 255 + a / 2) / a));
+                o[1] = static_cast<uint8_t>(std::min<uint32_t>(255, (((p >> 8) & 0xff) * 255 + a / 2) / a));
+                o[2] = static_cast<uint8_t>(std::min<uint32_t>(255, ((p & 0xff) * 255 + a / 2) / a));
+                filled[static_cast<size_t>(y) * w + x] = 1;
+            }
+            o[3] = static_cast<uint8_t>(a);
+        }
+    }
+    for (int pass = 0; pass < 2; ++pass) {
+        std::vector<uint8_t> next = filled;
+        for (int y = 0; y < h; ++y) {
+            for (int x = 0; x < w; ++x) {
+                const size_t i = static_cast<size_t>(y) * w + x;
+                if (filled[i]) {
+                    continue;
+                }
+                uint32_t sum[3] = {0, 0, 0}, n = 0;
+                for (int dy = -1; dy <= 1; ++dy) {
+                    for (int dx = -1; dx <= 1; ++dx) {
+                        const int nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= w || ny >= h || !filled[static_cast<size_t>(ny) * w + nx]) {
+                            continue;
+                        }
+                        const uint8_t *q = &rgba[(static_cast<size_t>(ny) * w + nx) * 4];
+                        sum[0] += q[0];
+                        sum[1] += q[1];
+                        sum[2] += q[2];
+                        ++n;
+                    }
+                }
+                if (n) {
+                    uint8_t *o = &rgba[i * 4];
+                    o[0] = static_cast<uint8_t>(sum[0] / n);
+                    o[1] = static_cast<uint8_t>(sum[1] / n);
+                    o[2] = static_cast<uint8_t>(sum[2] / n);
+                    next[i] = 1;
+                }
+            }
+        }
+        filled.swap(next);
+    }
+    SDL_Surface *out = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, rgba.data(), w * 4);
+    if (!out) {
+        return false;
+    }
+    const bool ok = SDL_SavePNG(out, path.c_str());
+    SDL_DestroySurface(out);
+    return ok;
 }
 
 } // namespace
