@@ -54,10 +54,59 @@ EXCLUDED = {
                     _ONLINE + "; " + _BLIT),
 }
 
+# Functions the game never calls: no call site (nor event listener) anywhere in the SWF's code. Found by searching
+# every .as file for the name; a name shared with a called function elsewhere is not listed here.
+_DEAD = "never called by the game (no call site in the SWF's code)"
+DEAD = {
+    "Challenge": {"meetsJuggleRequirements", "weaponIsFists", "meetsRescueRequirements"},
+    "CustomerData": {"getCustomerFirstGame"},
+    "DataManager": {"weaponNameToID", "levelDataError", "randomize", "getUpgradeCost", "getArsenalCost", "getNumberOfArsenal", "isArrow"},
+    "ScreenData": {"createBackgroundBitmap"},
+    "UserData": {"getLivesLostTally", "getTreasureBonus", "checkForCheats"},
+    "GameCam": {"setCameraForceScrolling", "offsetCamera", "withinPanBounds"},
+    "GameDisplay": {"getTileCoords"},
+    "GameControls": {"playerHasDied", "setCameraAnchor"},
+    "BitmapManager": {"createEnemySprite"},
+    "EnemyManager": {"clearEnemySheet", "preblitEnemySheets", "getWeaponSheet", "clearWeaponSheets", "getCurrentEnemyTotal", "anyEnemiesAttacking", "checkForceNoDrop", "output"},
+    "ItemManager": {"weaponNameToID", "dropEnemyWeapon"},
+    "ObjectManager": {"getObjectByID"},
+    "Character": {"checkForCloudToBottom"},
+    "Enemy": {"setupSprite", "launchEnemy", "grabWeaponAnimationCycle", "startShoving", "startQuickAttacking"},
+    "GameHUD": {"clickPause", "clickAdjustment", "animateTally", "tempRemoveInterface"},
+    "GameObject": {"moveCarriedObject"},
+    "PlayerChar": {"updateWeaponMastery", "checkIfCanGrab", "getPowerUp", "getInvincibility", "pauseAfterMiniboss", "beatMiniboss", "getWeaponSheetName", "getWeaponName"},
+    "CustomerChar": {"checkForHittingBullets"},
+    "§_-4R§": {"§_-m§", "§_-6P§", "§_-Z§"},
+}
+
+# Single functions left out for one of the reasons above, in classes that are otherwise ported.
+_DEBUG = "the original's debug FPS / memory readout (the port has its own overlay)"
+_INPUT = "Flash keyboard listeners and focus (the port's input layer sets the same key flags)"
+EXCLUDED_FN = {
+    ("LevelData", "prepareXML"): _LOAD, ("LevelData", "prepareXMLcycle"): _LOAD,
+    ("LevelData", "getCharacter"): _LOAD, ("DataManager", "generateLevelData"): _LOAD,
+    ("ScreenData", "createBitmap"): _BLIT, ("ScreenData", "clearBitmaps"): _BLIT,
+    ("BitmapManager", "setupGameBitmaps"): _BLIT, ("BitmapManager", "setupTilesheets"): _BLIT,
+    ("BitmapManager", "clearExtraSprites"): _BLIT, ("BitmapManager", "createTilesheet"): _BLIT,
+    ("GameHUD", "clickFPS"): _DEBUG, ("GameHUD", "updateMessageFPS"): _DEBUG,
+    ("GameControls", "adjustFramerate"): _DEBUG,
+    ("GameControls", "setupControls"): _INPUT, ("GameControls", "resetKeyFocus"): _INPUT,
+    ("GameControls", "keyDownListener"): _INPUT, ("GameControls", "keyUpListener"): _INPUT,
+    ("SlotSelectScreen", "clickMissingWidget"): _ONLINE, ("UserData", "onFlushStatus"): _ONLINE,
+    ("SoundManager", "apiMutedSound"): _ONLINE, ("SoundManager", "apiUnmutedSound"): _ONLINE,
+}
+
 
 def is_excluded(cls, name):
     e = EXCLUDED.get(cls)
-    return e is not None and (e[0] == "*" or name in e[0])
+    return (e is not None and (e[0] == "*" or name in e[0])) or name in DEAD.get(cls, ()) or (cls, name) in EXCLUDED_FN
+
+
+def exclusion_reason(cls, name):
+    e = EXCLUDED.get(cls)
+    if e is not None and (e[0] == "*" or name in e[0]):
+        return e[1]
+    return EXCLUDED_FN.get((cls, name), _DEAD)
 
 HEAD = re.compile(r"\s*(override\s+)?(public|private|protected|internal)?\s*(static\s+)?"
                   r"function\s+(?:(get|set)\s+)?([^\s(]+)\s*\(")
@@ -112,7 +161,7 @@ def main():
                         ex_f += 1
                         ex_l += n
                         if list_excluded:
-                            print(f"  {cls}.{name}  ({n} lines): {EXCLUDED[cls][1]}")
+                            print(f"  {cls}.{name}  ({n} lines): {exclusion_reason(cls, name)}")
                 if missing == cls:
                     for name, n in fn:
                         if (cls, name) not in tags:

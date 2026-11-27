@@ -334,4 +334,14 @@ void ObjectManager::setEventTriggers(double whichScreen, double screenObjID, dou
     }
 }
 
+// AS: ObjectManager.stopCameraPan
+void ObjectManager::stopCameraPan(double screenObjID)
+{
+    if (models::GameObject *obj = getObject(screenObjID, 0)) {
+        obj->stopCameraPan();
+    } else {
+        SDL_Log("Could not find Object with screenObjID = %g to stop the pan.", screenObjID);
+    }
+}
+
 } // namespace papaGame::managers

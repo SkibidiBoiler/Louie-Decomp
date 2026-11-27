@@ -24,6 +24,7 @@ public:
 
     void updateTrainingSigns();
     models::GameObject *getObject(double screenObjID, double whichScreen) const;
+    void stopCameraPan(double screenObjID);
     void checkSteppingOnObjects(models::Character &c, bool byObject = false);
     void releaseStandingChars(models::GameObject &o); // port: no dangling whichMovingTile
     double addObject(double xtile, double ytile, double type, double whichScreen, double screenObjID,

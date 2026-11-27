@@ -46,16 +46,22 @@ public:
     double getChallengeTally() const;
     void unlockNextLevel();
     double updateAndGetLevelScore(bool returnThisScore = true, bool save = true);
+    // AS: UserData.getCurrentPoints
     double getCurrentPoints() const { return points; }
+    // AS: UserData.getCurrentMoney
     double getCurrentMoney() const { return money; }
+    // AS: UserData.getCurrentBurgerzillas
     double getCurrentBurgerzillas() const { return burgerzillas; }
+    // AS: UserData.getCurrentSpecialItems
     double getCurrentSpecialItems() const { return specialitems; }
     double getLevelHighScore(double level = -1) const;
     void saveHighScore(double score, double level = -1, bool onlyIfBetter = true);
     void setLevelTime(double time);
     double getLevelBestTime(double level = -1) const;
     double getTotalScore() const;
+    // AS: UserData.getTotalMoney
     double getTotalMoney() const { return totalMoney; }
+    // AS: UserData.getWarpCoins
     double getWarpCoins() const { return warpCoins; }
     double getEnemyKills(double type) const;
     bool hasCompletedChallenge(double world, double challenge) const;

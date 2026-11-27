@@ -243,4 +243,83 @@ void GameCam::adjustCamera(double anchorX, double anchorY, bool anchorIsPlayerCh
     last_y = y;
 }
 
+// AS: GameCam.panCamera — moves an eighth of the way to the target each frame once the start delay is over (or
+// jumps there with `snap`); when it stops moving it tells GameControls the pan is done (at once for the pan back to
+// the player, else after the end delay). The pointer on the stage gives the mouse target, as always.
+void GameCam::panCamera(double tx, double ty, const std::string &type, bool snap)
+{
+    GameDisplay &display = *gameObj->obf_71;
+    double mx = gameObj->pointer.x;
+    double my = gameObj->pointer.y;
+    if (mx < screenbounds_minx) {
+        mx = screenbounds_minx;
+    }
+    if (mx > screenbounds_maxx) {
+        mx = screenbounds_maxx;
+    }
+    if (my < screenbounds_miny) {
+        my = screenbounds_miny;
+    }
+    if (my > screenbounds_maxy) {
+        my = screenbounds_maxy;
+    }
+    mx -= screenbounds_offsetX;
+    my -= screenbounds_offsetY;
+    mouseRealX = mx;
+    mouseRealY = my;
+    targetX = tx;
+    targetY = ty;
+    if (targetX > max_x) {
+        targetX = max_x;
+    }
+    if (targetX < min_x) {
+        targetX = min_x;
+    }
+    if (targetY > max_y) {
+        targetY = max_y;
+    }
+    if (targetY < min_y) {
+        targetY = min_y;
+    }
+    double stepX = as3::NaN; // QUIRK: left NaN when snapping, so the "stopped moving" test below fails then
+    double stepY = as3::NaN;
+    if (!snap) {
+        stepX = std::floor((targetX - x) / pansteps);
+        stepY = std::floor((targetY - y) / pansteps);
+        ++currstartdelay;
+        if (currstartdelay >= panstartdelay) {
+            x += stepX;
+            y += stepY;
+        }
+    } else {
+        x = targetX;
+        y = targetY;
+    }
+    if (stepX == 0 && stepY == 0) {
+        ++currenddelay;
+        if (currenddelay == panenddelay || type == "player") {
+            gameObj->obf_8o->finishCameraPan();
+        }
+    }
+    const double left = std::floor(x) - std::floor(display.screenTileWidth / 2) * display.tileWidth;
+    const double top = std::floor(y) - std::floor(display.screenTileHeight / 2) * display.tileWidth;
+    mouseTargetX = std::floor(left + mx);
+    mouseTargetY = std::floor(top + my);
+    if (jiggle) {
+        jiggleCamera();
+    }
+    if (x > max_x) {
+        x = max_x;
+    }
+    if (x < min_x) {
+        x = min_x;
+    }
+    if (y > max_y) {
+        y = max_y;
+    }
+    if (y < min_y) {
+        y = min_y;
+    }
+}
+
 } // namespace papaGame::display

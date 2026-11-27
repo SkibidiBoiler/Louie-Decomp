@@ -122,7 +122,7 @@ void GameObject::deactivateObject()
     }
 }
 
-// AS: GameObject.finishActivatingObject (SKELETON: the camera pan back)
+// AS: GameObject.finishActivatingObject
 void GameObject::finishActivatingObject()
 {
     isActivating = false;
@@ -134,7 +134,10 @@ void GameObject::finishActivatingObject()
     } else if (!isSolidActive && isSolidInactive) {
         removeCollision();
     }
-    waitPanBack = false;
+    if (waitPanBack) {
+        gameObj->obf_8o->setCameraPan(gameObj->obf_3Y->prepanx, gameObj->obf_3Y->prepany, "player", screenObjID);
+        waitPanBack = false;
+    }
     if (jigglecam) {
         gameObj->obf_3Y->setCameraJiggle(jiggleamount, jiggleduration);
     }
@@ -152,7 +155,7 @@ void GameObject::finishActivatingObject()
     }
 }
 
-// AS: GameObject.finishDeactivatingObject (SKELETON: the camera pan back)
+// AS: GameObject.finishDeactivatingObject
 void GameObject::finishDeactivatingObject()
 {
     isDeactivating = false;
@@ -164,7 +167,10 @@ void GameObject::finishDeactivatingObject()
     } else if (isSolidInactive && !isSolidActive) {
         addCollision();
     }
-    waitPanBack = false;
+    if (waitPanBack) {
+        gameObj->obf_8o->setCameraPan(gameObj->obf_3Y->prepanx, gameObj->obf_3Y->prepany, "player", screenObjID);
+        waitPanBack = false;
+    }
     if (jigglecam) {
         gameObj->obf_3Y->setCameraJiggle(jiggleamount, jiggleduration);
     }
@@ -262,19 +268,27 @@ void GameObject::sendTriggered(double amount, bool pan, bool fromGlobal)
     }
 }
 
-// AS: GameObject.setCameraPan — SKELETON: the camera pan (GameCam.setCameraPan) is not ported, so the object
-// reacts at once instead of when the camera reaches it.
+// AS: GameObject.setCameraPan — the camera pans here; the object reacts when it arrives (stopCameraPan).
 void GameObject::setCameraPan(const std::string &wait, const std::string &reaction)
 {
     if (!wait.empty()) {
         waitActivate = true;
         waitType = reaction;
     }
-    waitActivate = false;
-    if (reaction == "activate") {
-        activateObject();
-    } else {
-        deactivateObject();
+    gameObj->obf_8o->setCameraPan(x, y, "1", screenObjID);
+}
+
+// AS: GameObject.stopCameraPan — the camera got here: react, then pan back once the reaction is over.
+void GameObject::stopCameraPan()
+{
+    if (waitActivate) {
+        if (waitType == "activate") {
+            activateObject();
+        } else if (waitType == "deactivate") {
+            deactivateObject();
+        }
+        waitPanBack = true;
+        waitActivate = false;
     }
 }
 

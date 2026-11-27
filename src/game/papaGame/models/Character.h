@@ -60,18 +60,23 @@ public:
     explicit Character(obf_9G::obf_4R *gameObj_) : gameObj(gameObj_) {}
     virtual ~Character() = default;
 
+    // AS: Character.defineVars
     virtual void defineVars() {}
     // Port: remember the position before a logic step (interpolation).
     void savePrevious() { prevX = x; prevY = y; }
 
+    // AS: Character.killMe
     // AS: Character.updateObject / destroy / killMe (empty in Character).
     virtual void updateObject() {}
+    // AS: Character.destroy
     virtual void destroy() {}
     virtual void killMe(double /*dir*/ = 1) {}
     void adjustHealth(double amount);
     // Animation: grabAnimationCycle picks the cycle; updateSprite advances it.
     virtual const AnimationCycle &grabAnimationCycle();
+    // AS: Character.randomizeAnimationCycle
     virtual void randomizeAnimationCycle() {}
+    // AS: Character.endAnimationCycle
     virtual void endAnimationCycle() {}
     // The original also passes the old frame numbers and the cycle type, which no override reads.
     virtual void adjustFrameSync(const std::string &newName, const std::string &oldName, double firstFrame,
@@ -82,6 +87,7 @@ public:
     const AnimationCycle &cycleFrames(const std::string &field) const;
     bool checkSpriteCollision(const Rect &r, const Rect *rect = nullptr) const;
     Rect getCurrentCollRect(const Rect *rect = nullptr) const;
+    // AS: Character.setSheetIndex
     void setSheetIndex(double index) { sheetIndex = index; }
     double getProximityVolume() const;
     double getProximityPan() const;
@@ -99,6 +105,7 @@ public:
     void getMyCorners(double px, double py);
     void checkForCeilingSlopes(double dir = -1);
     void checkForSlopes(double dirx, double diry);
+    // AS: Character.checkForCrawlGap
     virtual bool checkForCrawlGap(double /*dir*/) { return false; }
     virtual bool isInsideCrawlGap() { return false; } // AS: Character.isInsideCrawlGap
     bool checkDropThruCloud() const { return false; } // AS: Character.checkDropThruCloud (always false)

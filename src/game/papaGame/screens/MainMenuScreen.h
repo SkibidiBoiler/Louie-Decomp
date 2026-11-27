@@ -78,13 +78,16 @@ public:
     void clickMedals() { setSection("medals"); } // AS: MainMenuScreen.clickMedals
     void setupInfo(bool setup = true);
     void setupConfirmQuit(bool setup = true);
+    // AS: MainMenuScreen.clickInfo
     void clickInfo() { setSection("info"); }
     void clickBackToGame();
     void clickQuit();
     void clickConfirmQuit();
     void clickCancelQuit();
     void destroy();
+    // AS: MainMenuScreen.clickMap
     void clickMap() { setSection("map"); }
+    // AS: MainMenuScreen.clickCredits
     void clickCredits() { setSection("credits"); }
     void clickExit();
     // Port: QUIT asks where to go (the title screen, as the original, or the port's game picker).

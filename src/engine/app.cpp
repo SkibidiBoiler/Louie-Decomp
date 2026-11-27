@@ -530,6 +530,7 @@ void App::tickLevel()
                 player.isDoubleJumping ? " dj" : "", player.isGliding ? " glide" : "",
                 player.isGroundPounding ? " pound" : "", player.isSliding ? " slide" : "",
                 player.isWallSliding ? " wallslide" : "", player.isWallJumping ? " walljump" : "");
+        SDL_Log("CAM %.0f,%.0f%s", game_->obf_3Y->x, game_->obf_3Y->y, game_->obf_8o->cameraPan ? " pan" : "");
         // DEV: the room's enemies: id:type x,y cycle and flags (d dead, s stunned, h hit).
         std::string enemies;
         for (const papaGame::models::Enemy *e : game_->obf_E->enemies) {

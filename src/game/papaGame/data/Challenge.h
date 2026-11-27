@@ -50,6 +50,7 @@ struct Challenge {
         tally = value;
         return tally >= targetAmount;
     }
+    // AS: Challenge.addToTally
     bool addToTally(double amount = 1)
     {
         tally += amount;

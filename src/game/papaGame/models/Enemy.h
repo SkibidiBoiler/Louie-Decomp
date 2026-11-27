@@ -23,20 +23,25 @@ public:
     static void loadTables(const engine::JsonValue &enemy);
 
     virtual void setupSprite() {}
+    // AS: Enemy.setupParams
     virtual void setupParams(const std::vector<as3::Value> & /*params*/) {}
     virtual void placeEnemy(double tileX, double tileY); // overridden by Enemy38 (pixel position)
     virtual void stunEnemy();
+    // AS: Enemy.reactToHurtingPlayer
     virtual void reactToHurtingPlayer() {}
     virtual bool getHit(double damage = 1, double dir = 1, bool unused = false, const std::string &weapon = "none");
     void killMe(double dir = 1) override;
     const AnimationCycle &grabAnimationCycle() override;
     virtual void launchEnemy() {}
+    // AS: Enemy.getTorsoOffsetX
     virtual double getTorsoOffsetX() const { return 0; }
+    // AS: Enemy.getTorsoOffsetY
     virtual double getTorsoOffsetY() const { return 0; }
     void endAnimationCycle() override {}
     void broadcastTriggered(double state, bool fromGlobal = false);
     virtual void sendTriggered(double state, bool pan, bool fromGlobal = false);
     virtual bool checkOnScreen();
+    // AS: Enemy.checkBeforeBlitting
     virtual void checkBeforeBlitting() {}
     void saveEnemyKill();
     virtual void removeEnemy();
@@ -48,12 +53,14 @@ public:
     void destroy() override;
     virtual void startShoving() {}
     virtual void startQuickAttacking() {}
+    // AS: Enemy.startAttacking
     virtual void startAttacking() {}
     void lookForPlayer();
     void setEventData(const std::vector<std::vector<double>> &triggers, double pan, double panTarget);
     void setEventTriggers(double necessary, const std::vector<std::vector<double>> &from = {});
     void updateSprite() override;
     virtual double adjustSpeedForSlopes(double speed) const;
+    // AS: Enemy.receiveGroupMessage
     virtual void receiveGroupMessage(const std::string & /*message*/, double /*value*/) {}
 
     double whichScreen = -1;
