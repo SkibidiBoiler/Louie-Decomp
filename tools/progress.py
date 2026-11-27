@@ -91,8 +91,18 @@ _NOGRAB = ("carrying and throwing objects: no PL2 object is grabbable (isGrabbab
            "engine code shared with PL3 never runs in PL2")
 _PL3DATA = "reached only with data PL2 does not have (money drops: no \"$\" items and no Money* item classes)"
 _NAMEONLY = "never called: the calls with this name all go to the same method of another class"
+_LOG = "the original's logger set-up (trace level, frame counter in each line)"
 _INPUT = "Flash keyboard listeners and focus (the port's input layer sets the same key flags)"
 EXCLUDED_FN = {
+    ("§_-4R§", "§_-1W§"): _PRELOAD,
+    ("§_-4R§", "§_-6J§"): _PRELOAD,
+    ("§_-4R§", "§_-89§"): _PRELOAD,
+    ("§_-4R§", "§_-8g§"): _PRELOAD,
+    ("§_-4R§", "§_-5L§"): _PRELOAD,
+    ("§_-4R§", "§_-N§"): _PRELOAD,
+    ("§_-4R§", "§_-AD§"): _PRELOAD,
+    ("§_-4R§", "§_-AP§"): _LOG,
+    ("§_-4R§", "§_-4M§"): _LOG,
     ("ObjectManager", "allowReactions"): _NAMEONLY, ("EnemyManager", "allowReactions"): _NAMEONLY,
     ("EnemyManager", "stopCameraPan"): _NAMEONLY,
     ("PlayerChar", "checkForHittingEnemies"): _OVERRIDDEN,

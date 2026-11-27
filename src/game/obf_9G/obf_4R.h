@@ -86,6 +86,7 @@ public:
     void obf_6s(); // AS: §_-6s§
     void obf_6I(); // AS: §_-6I§ (show the boss intro)
     void obf_7X(); // AS: §_-7X§ (show the Flipline logo)
+    void obf_Aq() {} // AS: §_-4R§.§_-Aq§ (empty; the original calls it when a debug flag is set)
     void obf_4E(); // AS: §_-4E§ (remove the Flipline logo)
     void obf_3q(); // AS: §_-3q§ (remove the parade)
     void obf_49(); // AS: §_-49§ (show the game ending)

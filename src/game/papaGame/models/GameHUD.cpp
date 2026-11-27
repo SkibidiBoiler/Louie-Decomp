@@ -14,7 +14,7 @@ GameHUD::GameHUD(obf_9G::obf_4R *gameObj_) : gameObj(gameObj_)
     setupHUD();
 }
 
-// AS: GameHUD.setupHUD (SKELETON: the FPS toggle, the portrait and the bubbles)
+// AS: GameHUD.setupHUD (the FPS readout toggle, a debug feature, is left out)
 void GameHUD::setupHUD()
 {
     const engine::SymbolLibrary &symbols = *gameObj->symbols;
@@ -47,7 +47,98 @@ void GameHUD::setupHUD()
             skill->gotoLabel(c->skillType, false);
         }
     }
+    setupPortrait();
+    setupBubbles();
     hideHUD();
+}
+
+// AS: GameHUD.setupPortrait — the player's face (head, eyes, mouth and any hair of the chosen style) at 35 %,
+// lined up on the head's bottom right corner, in the HUD's portrait holder. The GlowFilter outline (black,
+// 1.3 px) is not drawn: the port has no filters.
+void GameHUD::setupPortrait()
+{
+    const engine::SymbolLibrary &symbols = *gameObj->symbols;
+    std::unique_ptr<engine::MovieClip> portrait = engine::MovieClip::create(symbols, "customerPortraitMC");
+    engine::MovieClip *holder = interfaceClip ? interfaceClip->findChild("portraitholder") : nullptr;
+    if (!portrait || !holder) {
+        return;
+    }
+    std::string name = gameObj->obf_3A->getCustomerClipName(gameObj->obf_51->selectedCharacter);
+    if (gameObj->obf_51->selectedStyle == 2) {
+        name += "2";
+    } else if (gameObj->obf_51->selectedStyle == 3) {
+        name += "3";
+    }
+    engine::MovieClip *head = nullptr;
+    for (const char *part : {"head", "eyes", "mouth", "hair", "back_hair"}) {
+        engine::MovieClip *slot = portrait->findChild(part);
+        std::unique_ptr<engine::MovieClip> clip = engine::MovieClip::create(symbols, "customer_" + name + "_" + part);
+        if (slot && clip) { // hair and back_hair are optional (a try/catch in the original)
+            engine::MovieClip &added = slot->addChild(std::move(clip), "clip");
+            if (std::string(part) == "head") {
+                head = &added;
+            }
+        }
+    }
+    const float scale = 0.35f;
+    portrait->setScale(scale, scale);
+    float x = 0, y = 0;
+    if (head) {
+        float minX = 1e9f, minY = 1e9f, maxX = -1e9f, maxY = -1e9f;
+        head->accumulateBounds(engine::Affine{}, minX, minY, maxX, maxY);
+        if (maxX >= minX) {
+            x -= (57 - maxX) * scale;
+            y += (19 - maxY) * scale;
+        }
+    }
+    portrait->setPosition(x, y);
+    portrait->mouseEnabled = false;
+    portrait->mouseChildren = false;
+    portraitMC = &holder->addChild(std::move(portrait), "");
+}
+
+// AS: GameHUD.destroy — the bubbles stop listening and the clips go (cleanupModel and the listeners are Flash
+// clean-up).
+void GameHUD::destroy()
+{
+    setupBubbles(false);
+    portraitMC = nullptr;
+    interfaceClip.reset();
+}
+
+// AS: GameHUD.setupBubbles — over the coins, burgers and special counters, the skill this level's challenge 6, 5
+// or 4 needs (hidden when none); rolling over one shows it.
+void GameHUD::setupBubbles(bool setup)
+{
+    if (!interfaceClip) {
+        return;
+    }
+    const managers::ChallengeManager &cm = *gameObj->obf_94;
+    const std::pair<const char *, double> bubbles[] = {{"bubble_special", 4}, {"bubble_burgers", 5}, {"bubble_coins", 6}};
+    for (const auto &[instance, which] : bubbles) {
+        engine::MovieClip *bubble = interfaceClip->findChild(instance);
+        if (!bubble) {
+            continue;
+        }
+        if (setup) {
+            const std::string skill = cm.getChallengeSkillNeeded(gameObj->obf_8W, which);
+            if (skill == data::CustomerData::SKILL_NONE) {
+                bubble->setVisible(false);
+            } else if (engine::MovieClip *inside = bubble->findChild("inside")) {
+                if (engine::MovieClip *icon = inside->findChild("skill")) {
+                    icon->gotoLabel(skill, false);
+                }
+            }
+            bubble->mouseEnabled = true;
+            // AS: GameHUD.rolloverBubble
+            bubble->onRollOver = [bubble] { bubble->gotoLabel("show", true); };
+            // AS: GameHUD.rolloutBubble
+            bubble->onRollOut = [bubble] { bubble->gotoLabel("hide", true); };
+        } else {
+            bubble->onRollOver = nullptr;
+            bubble->onRollOut = nullptr;
+        }
+    }
 }
 
 // AS: GameHUD.updateDisplay

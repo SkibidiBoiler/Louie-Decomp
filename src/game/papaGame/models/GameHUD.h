@@ -36,6 +36,11 @@ public:
 
     obf_9G::obf_4R *gameObj = nullptr;
     std::unique_ptr<engine::MovieClip> interfaceClip; // AS: new hudMC()
+    engine::MovieClip *portraitMC = nullptr;          // owned by interfaceClip.portraitholder
+
+    void setupPortrait();
+    void setupBubbles(bool setup = true);
+    void destroy();
 };
 
 } // namespace papaGame::models

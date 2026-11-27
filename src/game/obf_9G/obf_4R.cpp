@@ -2,6 +2,9 @@
 
 namespace obf_9G {
 
+// AS: §_-4R§.§_-4g§ (added to the stage) with §_-4s§ — the two containers and the managers. The logger set-up
+// (§_-AP§) and the API are left out; the border_overlay clip, which hides what is drawn outside the stage, is
+// replaced by the port's own framing of the stage.
 obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engine::SymbolLibrary *symbols_,
                engine::ShapeTextures *textures_, engine::TextLibrary *text_, engine::Audio *audio)
     : renderer(renderer_), symbols(symbols_), textures(textures_), text(text_)
@@ -30,6 +33,7 @@ obf_4R::obf_4R(SDL_Renderer *renderer_, engine::SheetLibrary *sheets, const engi
     rootClips = engine::MovieClip::createEmpty(*symbols);
 }
 
+// AS: §_-4R§.§_-4s§ — the managers it makes are made in the constructor; prepareLevelData reads levels.xml.
 bool obf_4R::loadLevelData(const std::string &gameDir_)
 {
     gameDir = gameDir_;
@@ -258,6 +262,9 @@ void obf_4R::obf_2r()
 void obf_4R::obf_Ap()
 {
     obf_AQ->clearLevelScreens();
+    if (obf_6Z) {
+        obf_6Z->destroy();
+    }
     obf_6Z.reset();
     if (playerObj) {
         playerObj->stopTrainSound(); // PlayerChar.destroy
