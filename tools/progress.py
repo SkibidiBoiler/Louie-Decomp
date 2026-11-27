@@ -92,8 +92,15 @@ _NOGRAB = ("carrying and throwing objects: no PL2 object is grabbable (isGrabbab
 _PL3DATA = "reached only with data PL2 does not have (money drops: no \"$\" items and no Money* item classes)"
 _NAMEONLY = "never called: the calls with this name all go to the same method of another class"
 _LOG = "the original's logger set-up (trace level, frame counter in each line)"
+_NOMULTI = "the multi-part enemy sprite (legs, torso, head): no PL2 enemy sets isMultiSprite"
 _INPUT = "Flash keyboard listeners and focus (the port's input layer sets the same key flags)"
 EXCLUDED_FN = {
+    ("Enemy", "updateMultiSprite"): _NOMULTI,
+    ("Enemy", "legSpriteChangeFrame"): _NOMULTI,
+    ("Enemy", "adjustLegFrameSync"): _NOMULTI,
+    ("Enemy", "grabLegAnimationCycle"): _NOMULTI,
+    ("Enemy", "grabHeadAnimationCycle"): _NOMULTI,
+    ("DataManager", "destroy"): _NAMEONLY,
     ("§_-4R§", "§_-1W§"): _PRELOAD,
     ("§_-4R§", "§_-6J§"): _PRELOAD,
     ("§_-4R§", "§_-89§"): _PRELOAD,
@@ -128,7 +135,7 @@ EXCLUDED_FN = {
     ("MainMenuScreen", "clickParade"): _NOSENDER, ("MainMenuScreen", "clickParadeTwo"): _NOSENDER,
     ("MainMenuScreen", "clickContinueToMap"): _NOSENDER,
     ("Bullet", "destroy"): _CLEANUP, ("ChallengeManager", "destroy"): _CLEANUP,
-    ("CustomerChar", "destroy"): _CLEANUP, ("EventManager", "destroy"): _CLEANUP,
+    ("EventManager", "destroy"): _CLEANUP,
     ("GameControls", "destroy"): _CLEANUP, ("GameDisplay", "destroy"): _CLEANUP,
     ("GameHUD", "cleanupModel"): _CLEANUP, ("GameObject", "destroy"): _CLEANUP,
     ("GameObject1", "destroy"): _CLEANUP, ("GameObject14", "destroy"): _CLEANUP,

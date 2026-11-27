@@ -28,6 +28,7 @@ public:
                               bool fromEnemy = false, const std::string &fromWeaponName = "none");
     void processBullets();
     void clearBullets();
+    void destroy() { clearBullets(); } // AS: BulletManager.destroy
     void addToPreblit(const std::string &type);
     void preblitSheets();
     void removeBullet(double bulletid, bool nosplice = false);

@@ -2225,4 +2225,20 @@ void CustomerChar::stopTrainSound()
     }
 }
 
+// AS: CustomerChar.destroy with PlayerChar.destroy (its super call) — the looping sounds stop; the rest is Flash
+// clean-up.
+void CustomerChar::destroy()
+{
+    if (poundSound) {
+        poundSound->stop();
+        poundSound = nullptr;
+    }
+    whichObjectRiding = nullptr;
+    if (slideSound) {
+        slideSound->stop();
+        slideSound = nullptr;
+    }
+    stopTrainSound();
+}
+
 } // namespace papaGame::models::characters

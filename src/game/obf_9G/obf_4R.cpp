@@ -267,10 +267,17 @@ void obf_4R::obf_Ap()
     }
     obf_6Z.reset();
     if (playerObj) {
-        playerObj->stopTrainSound(); // PlayerChar.destroy
+        playerObj->destroy();
     }
     playerObj.reset();
     obf_4i.reset();
+    if (obf_7u) {
+        obf_7u->destroy();
+        obf_E->destroy();
+        obf_3Z->destroy();
+        obf_V->destroy();
+        obf_4l->destroy();
+    }
     obf_7u.reset();
     obf_E.reset();
     obf_3Z.reset();

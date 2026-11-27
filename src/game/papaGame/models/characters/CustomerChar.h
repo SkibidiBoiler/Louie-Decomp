@@ -115,6 +115,7 @@ public:
     std::shared_ptr<engine::SoundChannel> slideSound, poundSound;
     std::shared_ptr<engine::SoundChannel> trainSound; // AS: PlayerChar.trainSound
     void startTrainSound();
+    void destroy() override;
     void stopTrainSound();
     // AS: PlayerChar.addWeapon (empty in PL2: no weapon is ever added)
     void addWeapon(const std::string & /*sku*/, double /*health*/ = -1, double /*ammo*/ = -1) {}

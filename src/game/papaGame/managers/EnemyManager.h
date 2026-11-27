@@ -26,6 +26,7 @@ public:
                     double screenObjID, const std::vector<as3::Value> &extraParams = {});
     void processEnemies();
     void clearEnemies(double whichScreen, bool all = false, bool resetCounter = true);
+    void destroy() { clearEnemies(1, true); } // AS: EnemyManager.destroy
     void saveEnemies();
     void buildEnemies(double whichScreen);
     void removeEnemy(double enemyID, bool nosplice = false);

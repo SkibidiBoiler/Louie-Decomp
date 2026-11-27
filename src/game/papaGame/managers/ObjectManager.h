@@ -32,6 +32,7 @@ public:
                      const std::vector<as3::Value> &extraParams = {});
     void processObjects();
     void clearObjects(double whichScreen, bool all = false, bool resetCounter = true, bool keepCarried = false);
+    void destroy() { clearObjects(1, true, false, true); } // AS: ObjectManager.destroy
     void saveObjects();
     void saveObjectsAtCheckpoint();
     void buildObjects(double whichScreen);

@@ -26,6 +26,7 @@ public:
     void preblitSheets() {} // AS: EffectManager.preblitSheets (empty)
     void processEffects();
     void clearEffects();
+    void destroy() { clearEffects(); } // AS: EffectManager.destroy
     void removeEffect(double effectID, bool nosplice = false);
     models::Effect *getEffect(double effectID) const;
 
