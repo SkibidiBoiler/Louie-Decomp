@@ -23,7 +23,9 @@ First release with downloads. **Only Papa Louie 2 is playable**; Papa Louie 3 an
   transparency, FPS info.
 - Widescreen: shows more of the level at the sides instead of black bars (optional).
 - Menus in English and Spanish, with accented letters the original fonts lack.
-- The importer draws morph shapes, aligns sprite sheets to whole pixels and repairs see-through tile edges.
+- The importer draws morph shapes, aligns sprite sheets to whole pixels, repairs see-through tile edges and no
+  longer leaves thin grey lines where white shapes meet (import the game again to get it).
+- The map's help bubbles show below the top menu bar instead of hiding behind it.
 - One `VERSION` file for Windows, Android and the picker; test runs save to their own slots.
 - Project renamed to **Louie Attack Decomp**. Saves and settings from the earlier names move over by themselves.
 
