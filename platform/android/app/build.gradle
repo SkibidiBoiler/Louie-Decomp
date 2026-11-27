@@ -29,6 +29,15 @@ android {
         }
     }
 
+    buildTypes {
+        release {
+            // Optimised native code. Signed with the local debug key for now, so anyone can build and install it;
+            // a project release key would replace this before a store listing.
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path new File(repoRoot, 'CMakeLists.txt')
