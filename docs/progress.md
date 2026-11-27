@@ -700,3 +700,19 @@ see-through lines. `SheetLibrary::repairCellEdges` runs once on the composed til
 that is more transparent than the one just inside takes that pixel (two pixels deep thickened art crossing an edge,
 so only one). Checked by captures of `--level 2 --room 4` and `--level 0 --room 2`. A proper fix would bake the
 parts at a whole-pixel origin in the importer (FFDec has no option for it).
+
+(64) PL2 reaches 100 % of the functions progress.py counts (1991 of 1991; 272 left out on purpose, each with its
+reason in `progress.py --excluded`). New this round:
+- the camera pan to a switched object and back (GameCam.panCamera, GameControls set/finishCameraPan,
+  GameObject/ObjectManager stopCameraPan). Checked by trace: Fort Onion room 0, the switch pans to door 1, then
+  door 2, then back to the player (the trace has a CAM line now);
+- Challenge's constructor and setup* methods (defaults as the original), weapon groups for mastery challenges
+  (ObjectManager.getWeaponType; mastery challenges never counted before), the HUD portrait and skill bubbles,
+  the managers' and player's destroy on leaving a level, setupControls / setupCycleCode, the train and river
+  loops (not in PL2's data), grey unearned badges (a `desaturated` flag: grey copies of the shape textures);
+- a crash fix: leaving a level to the map crashed since the widescreen merge (`updatePresentation` wrote to the
+  freed GameDisplay).
+Left out, with reasons: functions with no call site in the SWF (DEAD), code reached only with PL3 data
+(grabbing and throwing objects, money drops, multi-part enemies), methods always overridden, Flash memory
+clean-up, keyboard listeners, the API's menu screens, backups and logger. Checked: Windows build, a level, the
+quit-to-map path (exit 0), captures of the HUD and the medals.

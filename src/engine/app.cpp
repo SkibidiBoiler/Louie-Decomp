@@ -1140,7 +1140,7 @@ void App::updatePresentation()
         const float wide = static_cast<float>(stage_.height) * static_cast<float>(pw) / static_cast<float>(ph);
         extra = std::clamp(std::floor((wide - static_cast<float>(stage_.width)) / 2), 0.0f, 190.0f);
     }
-    if (game_) {
+    if (game_ && game_->obf_71) { // no GameDisplay between levels (§_-Ap§ frees it)
         game_->obf_71->viewExtraX = extra;
     }
     if (extra == viewExtra_) {

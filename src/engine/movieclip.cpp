@@ -29,7 +29,7 @@ ColorTransform lerp(const ColorTransform &p, const ColorTransform &q, float t)
 void drawShape(const RenderContext &ctx, uint16_t id, const Affine &m, const ColorTransform &color)
 {
     const ShapeBounds *bounds = ctx.symbols->shape(id);
-    SDL_Texture *texture = ctx.textures->get(id);
+    SDL_Texture *texture = ctx.gray ? ctx.textures->grayscale(id) : ctx.textures->get(id);
     if (!bounds || !texture) {
         return;
     }
@@ -519,6 +519,12 @@ void MovieClip::renderChild(const RenderContext &ctx, const Child &child, const 
 
 void MovieClip::render(const RenderContext &ctx, const Affine &parent, const ColorTransform &parentColor) const
 {
+    if (desaturated && !ctx.gray) {
+        RenderContext grey = ctx;
+        grey.gray = true;
+        render(grey, parent, parentColor);
+        return;
+    }
     // An attached clip may be masked by an attached sibling (`.mask = sibling` from code); masks are not drawn.
     const auto renderAttached = [&](const Attached &a) {
         if (!a.clip->visible_ || a.clip->masking_) {

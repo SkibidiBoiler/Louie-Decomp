@@ -93,8 +93,17 @@ _PL3DATA = "reached only with data PL2 does not have (money drops: no \"$\" item
 _NAMEONLY = "never called: the calls with this name all go to the same method of another class"
 _LOG = "the original's logger set-up (trace level, frame counter in each line)"
 _NOMULTI = "the multi-part enemy sprite (legs, torso, head): no PL2 enemy sets isMultiSprite"
+_BACKUP = "the Flipline API's save-file backup (download / upload a file); the port keeps its saves as files"
+_HUDDRAW = "adds the HUD and the level to the Flash display list; the port draws them itself (GameHUD::render)"
 _INPUT = "Flash keyboard listeners and focus (the port's input layer sets the same key flags)"
 EXCLUDED_FN = {
+    ("SlotSelectScreen", "clickSaveBackup"): _BACKUP,
+    ("SlotSelectScreen", "clickLoadBackup"): _BACKUP,
+    ("UserData", "loadSlotDataForBackup"): _BACKUP,
+    ("SlotSelectScreen", "clickStart"): _NAMEONLY,
+    ("GameHUD", "attachHUD"): _HUDDRAW,
+    ("GameHUD", "attachGameDisplay"): _HUDDRAW,
+    ("Character", "stopGrabRiding"): _OVERRIDDEN,
     ("Enemy", "updateMultiSprite"): _NOMULTI,
     ("Enemy", "legSpriteChangeFrame"): _NOMULTI,
     ("Enemy", "adjustLegFrameSync"): _NOMULTI,

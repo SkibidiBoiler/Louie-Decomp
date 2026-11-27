@@ -1823,9 +1823,11 @@ void MainMenuScreen::setupMedals(bool setup)
     animatingMedals_ = true;
 }
 
+// AS: MainMenuScreen.getDesaturatedFilter — the ColorMatrixFilter that turns a clip grey (luminance weights
+// 0.212671, 0.71516, 0.072169): the engine's `desaturated` flag on the clip.
+
 // AS: MainMenuScreen.populateMedals — this page's eight badges: title, description and tally, reward, picture and
-// earned mark (an unearned one is greyed in the original: a ColorMatrixFilter, getDesaturatedFilter, which the
-// port does not draw); a locked one is the "Hidden Badge". Then the page arrows and number, and the slide-in.
+// earned mark (an unearned one is greyed: getDesaturatedFilter); a locked one is the "Hidden Badge". Then the page arrows and number, and the slide-in.
 void MainMenuScreen::populateMedals()
 {
     const data::UserData &user = *gameObj->obf_51;
@@ -1859,6 +1861,9 @@ void MainMenuScreen::populateMedals()
             }
             if (engine::MovieClip *earned = p->findChild("earned")) {
                 earned->setVisible(user.hasBadge(which));
+            }
+            if (thumb) {
+                thumb->desaturated = !user.hasBadge(which); // thumb.filters = [getDesaturatedFilter()] or []
             }
             if (challenges.shouldLockBadge(which)) {
                 if (thumb) {

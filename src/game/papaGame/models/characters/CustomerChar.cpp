@@ -2225,6 +2225,7 @@ void CustomerChar::stopTrainSound()
     }
 }
 
+// AS: PlayerChar.destroy (the super call of CustomerChar.destroy, folded in)
 // AS: CustomerChar.destroy with PlayerChar.destroy (its super call) — the looping sounds stop; the rest is Flash
 // clean-up.
 void CustomerChar::destroy()
