@@ -618,10 +618,22 @@ void obf_4R::renderScreens(engine::RenderContext &ctx, float offsetX)
 {
     ctx.masks = masks;
     const engine::Affine at = engine::Affine::translate(offsetX, 0);
+    // Port: a menu screen's training bubble (trainingMC at y 0) is drawn just below the menu bar. Under the bar only
+    // its bottom edge showed; over it, it hid the bar's tabs. It has no buttons, so only the drawing moves.
+    engine::MovieClip *training = obf_a && !obf_a->isInGame && menuBar.active() ? obf_a->clip : nullptr;
+    const bool trainingShown = training && training->visible();
+    if (trainingShown) {
+        training->setVisible(false);
+    }
     obf_5h->render(ctx, at, engine::ColorTransform{});
     obf_9X->render(ctx, at, engine::ColorTransform{});
     rootClips->render(ctx, at, engine::ColorTransform{});
     menuBar.render(ctx, offsetX);
+    if (trainingShown) {
+        training->setVisible(true);
+        training->render(ctx, at * engine::Affine::translate(training->x(), training->y() + menuBar.topVisible()),
+                         engine::ColorTransform{});
+    }
 }
 
 } // namespace obf_9G

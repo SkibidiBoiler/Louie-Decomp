@@ -21,6 +21,45 @@ constexpr float kSmallBox = 0.78f; // the boxes that are not selected
 constexpr float kFadeSeconds = 0.35f;
 constexpr SDL_FColor kInk{0.05f, 0.07f, 0.12f, 1}; // text on a bright button
 
+// SDL's debug font has ASCII only: Spanish letters lose their accent (a, n, u...) and the opening marks go.
+std::string asciiFold(const std::string &s)
+{
+    // Latin-1 code points U+00A0..U+00FF that the port's languages use, as ASCII ("" drops the character).
+    auto fold = [](unsigned cp) -> const char * {
+        switch (cp) {
+        case 0xE1: return "a";
+        case 0xE9: return "e";
+        case 0xED: return "i";
+        case 0xF3: return "o";
+        case 0xFA: case 0xFC: return "u";
+        case 0xF1: return "n";
+        case 0xC1: return "A";
+        case 0xC9: return "E";
+        case 0xCD: return "I";
+        case 0xD3: return "O";
+        case 0xDA: case 0xDC: return "U";
+        case 0xD1: return "N";
+        case 0xBF: case 0xA1: return "";
+        default: return nullptr;
+        }
+    };
+    std::string out;
+    out.reserve(s.size());
+    for (size_t i = 0; i < s.size(); ++i) {
+        const auto lead = static_cast<unsigned char>(s[i]);
+        if ((lead == 0xC2 || lead == 0xC3) && i + 1 < s.size()) {
+            const unsigned cp = ((lead & 0x1Fu) << 6) | (static_cast<unsigned char>(s[i + 1]) & 0x3Fu);
+            if (const char *ascii = fold(cp)) {
+                out += ascii;
+                ++i;
+                continue;
+            }
+        }
+        out += s[i];
+    }
+    return out;
+}
+
 // Interface text in the embedded font; before any game is imported there is none, so SDL's debug font
 // (ASCII only) stands in.
 float label(SDL_Renderer *r, TextLibrary &text, float size, const std::string &s, float x, float baseline,
@@ -29,13 +68,14 @@ float label(SDL_Renderer *r, TextLibrary &text, float size, const std::string &s
     if (text.drawString(ui::kFont, size, "A", 0, 0, color, 0, Affine{}, false) > 0) {
         return text.drawString(ui::kFont, size, s, x, baseline, color, align, Affine{}, draw);
     }
+    const std::string ascii = asciiFold(s);
     const float scale = std::max(1.0f, std::floor(size / 10));
-    const float w = static_cast<float>(s.size()) * 8 * scale;
+    const float w = static_cast<float>(ascii.size()) * 8 * scale;
     if (draw) {
         const float left = align == 1 ? x - w : (align == 2 ? x - w / 2 : x);
         SDL_SetRenderDrawColorFloat(r, color.r, color.g, color.b, color.a);
         SDL_SetRenderScale(r, scale, scale);
-        SDL_RenderDebugText(r, left / scale, (baseline - 7 * scale) / scale, s.c_str());
+        SDL_RenderDebugText(r, left / scale, (baseline - 7 * scale) / scale, ascii.c_str());
         SDL_SetRenderScale(r, 1, 1);
     }
     return w;

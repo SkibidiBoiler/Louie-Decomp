@@ -1,6 +1,7 @@
 # Louie Attack Decomp
 
-An unofficial native port (C++20, SDL3) for Windows and Android of the Papa Louie Attack trilogy:
+An unofficial native port (C++20, SDL3) for Windows and Android of the Papa Louie Attack trilogy (**only Papa Louie 2
+is playable so far**):
 *Papa Louie: When Pizzas Attack!*, *Papa Louie 2: When Burgers Attack!* and *Papa Louie 3: When Sundaes Attack!*.
 
 > **Unofficial fan project.** Not affiliated with, endorsed by or sponsored by Flipline Studios. *Papa Louie* and
@@ -18,11 +19,11 @@ Please do not share converted data folders, `.swf` files or builds that bundle t
 
 - Project rules, code profile and build commands: [AGENTS.md](AGENTS.md)
 - Asset format: [docs/asset-format.md](docs/asset-format.md) · Renderer notes: [docs/renderer.md](docs/renderer.md)
-- Status: Papa Louie 2 is playable from the title screen: slot select and saving, the story, the map and the
-  customer choice, and the levels with their enemies, items, objects, effects, bullets, HUD and sound. Still
-  missing: the later worlds' enemies and objects, the boss, the level-complete score screen, the pause menu and
-  some menu sections. `python -I tools/progress.py` shows how much of the original code is translated (about half
-  of PL2). PL3 and PL1 come after PL2.
+- Status: **only Papa Louie 2 works for now.** All of its game code is translated (`python -I tools/progress.py`
+  counts it): the story, the map, every world, the bosses, challenges and badges, saving and sound. Papa Louie 3
+  and Papa Louie show as "Coming soon" in the game picker; PL3 comes next, then PL1.
+- Downloads: [Releases](https://github.com/SkibidiBoiler/Louie-Decomp/releases) has a Windows `.zip` and an
+  Android `.apk`. Neither contains any game data: you still import your own `PapaLouie2.swf`.
 - Publishing checklist and legal notes: [docs/publishing.md](docs/publishing.md)
 
 ## Why a native port
@@ -63,6 +64,15 @@ with no Flash emulator and no browser.
 - 🚧 An editor for the touch controls: position, size, transparency and which buttons are shown, saved as
   profiles.
 - 🚧 Physical controller support.
+
+## What it runs on
+
+| | needs |
+|---|---|
+| Windows | Windows 10 or 11, 64-bit (x64). Any graphics card: SDL picks Direct3D, OpenGL or software drawing. |
+| Android | Android 8.0 or newer on a 64-bit ARM processor (`arm64-v8a`): almost every phone and tablet sold since about 2017 (Snapdragon, Exynos, MediaTek, Tensor, Kirin…). Not included yet: old 32-bit ARM phones and x86 devices. |
+
+Tested on Windows 11 and on a POCO X5 Pro 5G (Snapdragon 778G). Other devices should work but have not been tried.
 
 ## Getting the source
 
