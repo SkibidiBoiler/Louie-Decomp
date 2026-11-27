@@ -53,6 +53,7 @@ public:
     void enterDoor(double tileX, double tileY);
     void fellOffLevel(double maxY) override;
     // Damage (AS: PlayerChar).
+    // AS: PlayerChar.getNormalAttackPower
     double getNormalAttackPower() const { return statAttack; }
     void clearCombo();
     bool canGetHit() const;
@@ -112,6 +113,11 @@ public:
     double balloonFXID = -1, balloonsLastFloatedAway = 0;
     std::vector<double> foodiniGlideBalloonIDs;
     std::shared_ptr<engine::SoundChannel> slideSound, poundSound;
+    std::shared_ptr<engine::SoundChannel> trainSound; // AS: PlayerChar.trainSound
+    void startTrainSound();
+    void stopTrainSound();
+    // AS: PlayerChar.addWeapon (empty in PL2: no weapon is ever added)
+    void addWeapon(const std::string & /*sku*/, double /*health*/ = -1, double /*ammo*/ = -1) {}
     double climbSpeed = 5;
     bool waitToEnterDoor = false;
     double doorDirX = 0, doorDirY = 0, doorXtile = 0, doorYtile = 0;

@@ -25,6 +25,7 @@ public:
     void updateTrainingSigns();
     models::GameObject *getObject(double screenObjID, double whichScreen) const;
     void stopCameraPan(double screenObjID);
+    std::string getWeaponType(const std::string &weapon) const;
     void checkSteppingOnObjects(models::Character &c, bool byObject = false);
     void releaseStandingChars(models::GameObject &o); // port: no dangling whichMovingTile
     double addObject(double xtile, double ytile, double type, double whichScreen, double screenObjID,

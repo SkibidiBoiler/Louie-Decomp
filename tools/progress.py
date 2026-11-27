@@ -86,8 +86,26 @@ _CLEANUP = ("Flash memory cleanup (removes listeners and children, disposes bitm
 _MENUBAR = ("the Flipline API's separate BADDIES / BADGES / CONTROLS / HELP / CREDITS screens over the map "
             "(the port's menu bar switches those sections in place)")
 _NOSENDER = "an event the screen listens for that nothing in the SWF sends"
+_OVERRIDDEN = "always overridden: every object that runs it is a subclass with its own version (no super call)"
+_NOGRAB = ("carrying and throwing objects: no PL2 object is grabbable (isGrabbable is never true), so this "
+           "engine code shared with PL3 never runs in PL2")
+_PL3DATA = "reached only with data PL2 does not have (money drops: no \"$\" items and no Money* item classes)"
 _INPUT = "Flash keyboard listeners and focus (the port's input layer sets the same key flags)"
 EXCLUDED_FN = {
+    ("PlayerChar", "checkForHittingEnemies"): _OVERRIDDEN,
+    ("PlayerChar", "checkForHittingObjects"): _OVERRIDDEN,
+    ("PlayerChar", "checkForGrabbingTile"): _OVERRIDDEN,
+    ("PlayerChar", "usingGun"): _OVERRIDDEN,
+    ("PlayerChar", "usingPowerTool"): _OVERRIDDEN,
+    ("GameObject", "checkHittingEnemies"): _OVERRIDDEN,
+    ("PlayerChar", "throwCarriedObject"): _NOGRAB,
+    ("PlayerChar", "checkForGrabbingObjects"): _NOGRAB,
+    ("PlayerChar", "adjustCarriedObject"): _NOGRAB,
+    ("CustomerChar", "startThrowingObject"): _NOGRAB,
+    ("GameObject", "grabObject"): _NOGRAB,
+    ("GameObject", "throwObject"): _NOGRAB,
+    ("ObjectManager", "recreateCarriedObject"): _NOGRAB,
+    ("ItemManager", "dropMoney"): _PL3DATA,
     ("MainMenuScreen", "clickCustomerPlayGame"): _ONLINE,
     ("MainMenuScreen", "clickBaddiesRedirect"): _MENUBAR, ("MainMenuScreen", "clickBaddiesRedirectBack"): _MENUBAR,
     ("MainMenuScreen", "clickMedalsRedirect"): _MENUBAR, ("MainMenuScreen", "clickMedalsRedirectBack"): _MENUBAR,
@@ -113,7 +131,7 @@ EXCLUDED_FN = {
     ("BitmapManager", "clearExtraSprites"): _BLIT, ("BitmapManager", "createTilesheet"): _BLIT,
     ("GameHUD", "clickFPS"): _DEBUG, ("GameHUD", "updateMessageFPS"): _DEBUG,
     ("GameControls", "adjustFramerate"): _DEBUG,
-    ("GameControls", "setupControls"): _INPUT, ("GameControls", "resetKeyFocus"): _INPUT,
+    ("GameControls", "resetKeyFocus"): _INPUT,
     ("GameControls", "keyDownListener"): _INPUT, ("GameControls", "keyUpListener"): _INPUT,
     ("SlotSelectScreen", "clickMissingWidget"): _ONLINE, ("UserData", "onFlushStatus"): _ONLINE,
     ("SoundManager", "apiMutedSound"): _ONLINE, ("SoundManager", "apiUnmutedSound"): _ONLINE,

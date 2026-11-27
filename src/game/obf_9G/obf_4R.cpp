@@ -98,9 +98,10 @@ void obf_4R::obf_52()
     obf_AQ->initializeScreenObjects(0);
     obf_7C->startLevelMusic();
     obf_7C->playSound("portalsound_spinfallout.wav");
-    // SKELETON: playerObj.startTrainSound (train and river levels).
+    playerObj->startTrainSound();
     obf_6Z->showHUD();
-    // SKELETON: setupControls, setupCycleCode.
+    obf_8o->setupControls();
+    obf_8o->setupCycleCode();
     obf_AQ->handleCheckpointProgress();
     obf_6Z->updateDisplay();
     obf_6Z->updatePlayerHealth(playerObj->currentHealth);
@@ -150,7 +151,7 @@ void obf_4R::finishLevel()
     SDL_Log("BEAT LEVEL");
     obf_8o->stopCycle = true;
     obf_8o->stopControls = true;
-    // SKELETON: playerObj.stopTrainSound (the train and river loops are not played yet).
+    playerObj->stopTrainSound();
     obf_AQ->clearCheckpoint();
     // (api.§_-6i§, an analytics call, is left out.)
     if (obf_8o) {
@@ -258,6 +259,9 @@ void obf_4R::obf_Ap()
 {
     obf_AQ->clearLevelScreens();
     obf_6Z.reset();
+    if (playerObj) {
+        playerObj->stopTrainSound(); // PlayerChar.destroy
+    }
     playerObj.reset();
     obf_4i.reset();
     obf_7u.reset();

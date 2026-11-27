@@ -374,9 +374,10 @@ void ChallengeManager::recordEnemyKill(double type, const std::string &weapon, c
     }
 }
 
-// AS: ChallengeManager.recordMastery — SKELETON: ObjectManager.getWeaponType (the weapon's own name is used).
-void ChallengeManager::recordMastery(const std::string &weapon)
+// AS: ChallengeManager.recordMastery — the weapon counts by its group (ObjectManager.getWeaponType).
+void ChallengeManager::recordMastery(const std::string &weaponName)
 {
+    const std::string weapon = gameObj->obf_7u->getWeaponType(weaponName);
     const double level = gameObj->obf_AQ->currentLevel;
     for (data::Challenge &c : challenges) {
         if (c.whichWorld == level && c.challengeType == data::Challenge::MASTERY &&

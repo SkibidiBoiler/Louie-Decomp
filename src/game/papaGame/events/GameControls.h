@@ -28,6 +28,7 @@ public:
     void setCameraPan(double tx, double ty, const std::string &type, double id);
     void finishCameraPan();
     void setupCycleCode();
+    void setupControls();
     // AS: GameControls.convertToRadians
     static double convertToRadians(double degrees) { return degrees * (3.141592653589793 / 180); }
     // AS: GameControls.convertToDegrees

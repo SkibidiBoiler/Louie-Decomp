@@ -159,6 +159,13 @@ void GameControls::finishCameraPan()
     // have; no enemy ever starts a pan, so it is never reached.
 }
 
+// AS: GameControls.setupControls — the timers start again; the key listeners are the input layer of the app.
+void GameControls::setupControls()
+{
+    gameplayTimer = 0;
+    currentLevelTimer = 0;
+}
+
 // AS: GameControls.setupCycleCode — the frame handler itself is the fixed step of the app.
 void GameControls::setupCycleCode()
 {

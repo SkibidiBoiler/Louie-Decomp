@@ -344,4 +344,36 @@ void ObjectManager::stopCameraPan(double screenObjID)
     }
 }
 
+// AS: ObjectManager.getWeaponType — the group a weapon belongs to (the weapons_* lists), "punch" when none.
+std::string ObjectManager::getWeaponType(const std::string &weapon) const
+{
+    static const std::vector<std::pair<const char *, std::vector<const char *>>> groups = {
+        {"weapon1", {"spatula", "plunger"}},
+        {"weapon2", {"Mallet", "Pickaxe", "Axe", "Scythe", "PoolCue", "Morningstar", "BossScythe"}},
+        {"weapon2b", {"Banjo", "Guitar", "Bat", "Shovel", "TwoByFour", "Cactus", "Club", "Bone", "Katana", "Longsword",
+                      "Macana", "ButterflyNet"}},
+        {"gloves", {"BrassKnuckles", "BoxingGloves", "Iron", "BearClaws", "BrawlerGloves", "IronClad", "Katar",
+                    "MeatHooks"}},
+        {"longgun", {"Blunderbuss", "Shotgun", "Flamethrower", "Crossbow", "HarpoonGun", "SubMachineGun", "BBGun"}},
+        {"pistol", {"Revolver", "Derringer", "RomanCandle", "SquirtGun", "HatfieldPistol", "DartGun", "FlareGun"}},
+        {"whip", {"BullWhip", "BarbedWire", "CatOfNineTails", "ChainWhip", "Meteor", "Rattlesnake", "Rope", "ThornWhip",
+                  "TowChain", "FlyTrap"}},
+        {"toss", {"Dagger", "PlayingCard", "Dart", "Badge", "TNT", "Lantern", "CherryBomb", "Tomahawk", "Grenade",
+                  "Scorpion", "TearGas", "Egg", "Bottle", "WaterBalloon", "ProxyMine", "PowerBall", "FuseBomb",
+                  "ThornBomb", "Boomerang", "Firecracker"}},
+        {"powertool", {"Chainsaw", "PowerDrill", "Buzzsaw", "Crocodile"}},
+        {"hurl", {"Pitchfork", "LadderSpear", "Halberd", "Lance", "SharpStick", "Spear", "Trident"}},
+        {"gatling", {"Gatling"}},
+        {"bazooka", {"Bazooka", "Cannon", "GrenadeLauncher", "TearGasLauncher"}},
+    };
+    for (const auto &[type, names] : groups) {
+        for (const char *n : names) {
+            if (weapon == n) {
+                return type;
+            }
+        }
+    }
+    return "punch";
+}
+
 } // namespace papaGame::managers
