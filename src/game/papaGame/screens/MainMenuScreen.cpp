@@ -116,11 +116,13 @@ void MainMenuScreen::setupCharacter(bool setup)
         }
         const double index = i;
         thumb->onMouseDown = [this, index] { clickCharacterThumb(index); };
+        // AS: MainMenuScreen.rolloverCharacterThumb
         thumb->onRollOver = [thumb] {
             if (engine::MovieClip *roll = thumb->findChild("roll")) {
                 roll->setVisible(true);
             }
         };
+        // AS: MainMenuScreen.rolloutCharacterThumb
         thumb->onRollOut = [thumb] {
             if (engine::MovieClip *roll = thumb->findChild("roll")) {
                 roll->setVisible(false);
@@ -208,11 +210,13 @@ void MainMenuScreen::setupCharacter(bool setup)
         }
         const double style = s + 1;
         button->onMouseDown = [this, style] { clickCharacterStyle(style); };
+        // AS: MainMenuScreen.rolloverCharacterStyle
         button->onRollOver = [button] {
             if (engine::MovieClip *r = button->findChild("rolloverclip")) {
                 r->setVisible(true);
             }
         };
+        // AS: MainMenuScreen.rolloutCharacterStyle
         button->onRollOut = [button] {
             if (engine::MovieClip *r = button->findChild("rolloverclip")) {
                 r->setVisible(false);
@@ -1230,11 +1234,13 @@ void MainMenuScreen::setupBaddies(bool setup)
                 }
             }
             thumb->onMouseDown = [this, i] { clickEnemyThumb(i); };
+            // AS: MainMenuScreen.rolloverEnemyThumb
             thumb->onRollOver = [thumb] {
                 if (engine::MovieClip *roll = thumb->findChild("roll")) {
                     roll->setVisible(true);
                 }
             };
+            // AS: MainMenuScreen.rolloutEnemyThumb
             thumb->onRollOut = [thumb] {
                 if (engine::MovieClip *roll = thumb->findChild("roll")) {
                     roll->setVisible(false);
@@ -1349,6 +1355,7 @@ void MainMenuScreen::setupControls(bool setup)
                 btn->gotoLabel("rollover", false);
             }
         };
+        // AS: MainMenuScreen.rolloutControlsButton
         btn->onRollOut = [this, btn] {
             if (settingWhichKey == "none") {
                 btn->gotoLabel("click", false);
@@ -1462,6 +1469,7 @@ void MainMenuScreen::setupHelp(bool setup)
                 h->setVisible(true);
             }
         };
+        // AS: MainMenuScreen.rolloutHelpTab
         tab->onRollOut = [this, tab, i] {
             if (helpIndex != i) {
                 if (engine::MovieClip *h = tab->findChild("hilite")) {

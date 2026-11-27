@@ -81,8 +81,31 @@ DEAD = {
 
 # Single functions left out for one of the reasons above, in classes that are otherwise ported.
 _DEBUG = "the original's debug FPS / memory readout (the port has its own overlay)"
+_CLEANUP = ("Flash memory cleanup (removes listeners and children, disposes bitmaps, drops references); "
+            "C++ ownership frees the same")
+_MENUBAR = ("the Flipline API's separate BADDIES / BADGES / CONTROLS / HELP / CREDITS screens over the map "
+            "(the port's menu bar switches those sections in place)")
+_NOSENDER = "an event the screen listens for that nothing in the SWF sends"
 _INPUT = "Flash keyboard listeners and focus (the port's input layer sets the same key flags)"
 EXCLUDED_FN = {
+    ("MainMenuScreen", "clickCustomerPlayGame"): _ONLINE,
+    ("MainMenuScreen", "clickBaddiesRedirect"): _MENUBAR, ("MainMenuScreen", "clickBaddiesRedirectBack"): _MENUBAR,
+    ("MainMenuScreen", "clickMedalsRedirect"): _MENUBAR, ("MainMenuScreen", "clickMedalsRedirectBack"): _MENUBAR,
+    ("MainMenuScreen", "clickControlsRedirect"): _MENUBAR, ("MainMenuScreen", "clickControlsRedirectBack"): _MENUBAR,
+    ("MainMenuScreen", "clickHelpRedirect"): _MENUBAR, ("MainMenuScreen", "clickHelpRedirectBack"): _MENUBAR,
+    ("MainMenuScreen", "clickCreditsRedirect"): _MENUBAR, ("MainMenuScreen", "clickCreditsRedirectBack"): _MENUBAR,
+    ("MainMenuScreen", "clickParade"): _NOSENDER, ("MainMenuScreen", "clickParadeTwo"): _NOSENDER,
+    ("MainMenuScreen", "clickContinueToMap"): _NOSENDER,
+    ("Bullet", "destroy"): _CLEANUP, ("ChallengeManager", "destroy"): _CLEANUP,
+    ("CustomerChar", "destroy"): _CLEANUP, ("EventManager", "destroy"): _CLEANUP,
+    ("GameControls", "destroy"): _CLEANUP, ("GameDisplay", "destroy"): _CLEANUP,
+    ("GameHUD", "cleanupModel"): _CLEANUP, ("GameObject", "destroy"): _CLEANUP,
+    ("GameObject1", "destroy"): _CLEANUP, ("GameObject14", "destroy"): _CLEANUP,
+    ("MainMenuScreen", "cleanupInfoModel"): _CLEANUP, ("MainMenuScreen", "cleanupModel"): _CLEANUP,
+    ("MapManager", "destroy"): _CLEANUP, ("NewCustomerScreen", "cleanupModel"): _CLEANUP,
+    ("ScoreTallyScreen", "cleanupModel"): _CLEANUP, ("ScreenData", "destroy"): _CLEANUP,
+    ("SlotSelectScreen", "cleanupModel"): _CLEANUP, ("StageIntroScreen", "cleanupModel"): _CLEANUP,
+    ("StageOutroScreen", "cleanupModel"): _CLEANUP, ("WorldData", "destroy"): _CLEANUP,
     ("LevelData", "prepareXML"): _LOAD, ("LevelData", "prepareXMLcycle"): _LOAD,
     ("LevelData", "getCharacter"): _LOAD, ("DataManager", "generateLevelData"): _LOAD,
     ("ScreenData", "createBitmap"): _BLIT, ("ScreenData", "clearBitmaps"): _BLIT,

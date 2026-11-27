@@ -13,8 +13,7 @@ namespace papaGame::managers {
 
 namespace {
 
-// `new Challenge(whichWorld, whichChallenge, type, params)` as the importer wrote it; the setup* methods copy
-// the params they use.
+// `new Challenge(whichWorld, whichChallenge, type, params)` as the importer wrote it.
 data::Challenge readChallenge(const engine::JsonValue &v)
 {
     data::Challenge c;
@@ -22,60 +21,7 @@ data::Challenge readChallenge(const engine::JsonValue &v)
     if (!args || args->items.size() < 4) {
         return c;
     }
-    c.whichWorld = args->items[0].number;
-    c.whichChallenge = args->items[1].number;
-    c.challengeType = args->items[2].string;
-    const engine::JsonValue &params = args->items[3];
-    auto str = [&](const char *key, std::string &out) {
-        if (const engine::JsonValue *p = params.get(key)) {
-            out = p->string;
-        }
-    };
-    auto num = [&](const char *key, double &out) {
-        if (const engine::JsonValue *p = params.get(key)) {
-            out = p->number;
-        }
-    };
-    str("title", c.title);
-    str("description", c.description);
-    str("skillNeeded", c.skillNeeded);
-    str("tagName", c.tagName);
-    num("targetAmount", c.targetAmount);
-    num("whichCustomer", c.whichCustomer);
-    num("rewardMoney", c.rewardMoney);
-    str("whichWeapon", c.whichWeapon);
-    str("weaponType", c.weaponType);
-    num("enemyType", c.enemyType);
-    str("enemyWeapon", c.enemyWeapon);
-    str("enemyWeaponType", c.enemyWeaponType);
-    if (params.get("enemyHeadName")) {
-        str("enemyHeadName", c.enemyHeadName);
-    } else {
-        str("enemyHeadType", c.enemyHeadName);
-    }
-    str("enemyCategory", c.enemyCategory);
-    num("juggleTimesHit", c.juggleTimesHit);
-    num("juggleWeaponsAmount", c.juggleWeaponsAmount);
-    str("juggleStartingWeapon", c.juggleStartingWeapon);
-    if (const engine::JsonValue *p = params.get("juggleWeapons")) {
-        c.juggleWeapons.clear();
-        for (const engine::JsonValue &w : p->items) {
-            c.juggleWeapons.push_back(w.string);
-        }
-    }
-    if (const engine::JsonValue *p = params.get("includeStartingWeapon")) {
-        c.juggleIncludeStarting = p->number != 0 || p->boolean;
-    }
-    str("upgradeType", c.upgradeType);
-    if (const engine::JsonValue *p = params.get("showTally")) {
-        c.showTally = p->number != 0 || p->boolean;
-    }
-    if (const engine::JsonValue *p = params.get("requiredCustomers")) {
-        for (const engine::JsonValue &n : p->items) {
-            c.requiredCustomerUnlocks.push_back(n.string);
-        }
-    }
-    num("requiredLevel", c.requiredLevelUnlock);
+    c.construct(args->items[0].number, args->items[1].number, args->items[2].string, args->items[3]);
     return c;
 }
 

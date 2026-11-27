@@ -1,9 +1,10 @@
 #pragma once
-// AS: papaGame.data.Challenge — one level challenge or badge: its type, what it counts and its tally. The
-// setup* methods (setupTitles too) only copy their params (the importer's `new Challenge(...)` arguments):
-// ChallengeManager's reader does that. SKELETON: meetsJuggleRequirements (juggles are not counted yet).
+// AS: papaGame.data.Challenge — one level challenge or badge: its type, what it counts and its tally. Built from
+// the `new Challenge(whichWorld, whichChallenge, type, params)` arguments the importer wrote (construct).
 #include <string>
 #include <vector>
+
+namespace engine { struct JsonValue; }
 
 namespace papaGame::data {
 
@@ -36,6 +37,23 @@ struct Challenge {
     static constexpr const char *WEAPON_TYPE_LONGGUN_GATLING = "weaponLongGatling";
     static constexpr const char *WEAPON_TYPE_SWING = "weaponSwing";
     static constexpr const char *WEAPON_TYPE_PUNCH = "weaponPunch";
+
+    // `new Challenge(whichWorld, whichChallenge, type, params)`: the type picks the setup method; params is the
+    // importer's object of named arguments.
+    void construct(double world, double challenge, const std::string &type, const engine::JsonValue &params);
+    void setupTitles();
+    void setupChallenge();
+    void setupRescue();
+    void setupTagged();
+    void setupTimeTrial();
+    void setupCombo();
+    void setupEnemyTally();
+    void setupEnemyJuggle();
+    void setupMultiExplosion();
+    void setupMultiRocket();
+    void setupMultiJuggle();
+    void setupMastery();
+    void setupCustom();
 
     // AS: Challenge.clearTally — a level challenge (or any, when forced) starts again from 0.
     void clearTally(bool force = false)
@@ -90,6 +108,7 @@ struct Challenge {
     bool showTally = false;
     std::vector<std::string> requiredCustomerUnlocks; // null in the original when absent
     double requiredLevelUnlock = -1;
+    const engine::JsonValue *params = nullptr; // during construct only (the original keeps its params object)
 };
 
 } // namespace papaGame::data
