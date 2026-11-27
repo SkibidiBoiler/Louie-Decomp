@@ -36,6 +36,8 @@ public:
                const std::vector<Item> &items, const Layout &layout);
     void clear();
     bool active() const { return active_; }
+    // How far down the stage the top panel reaches (0 without one).
+    float topVisible() const { return active_ && layout_.showTop ? layout_.topVisible : 0; }
     // api.disableButtons / enableButtons: the buttons stop taking the pointer (the bars still cover it).
     void setEnabled(bool enabled) { enabled_ = enabled; }
     // api.§_-AG§(title): a new title for the current screen.
