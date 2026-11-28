@@ -177,8 +177,6 @@ SDL_AppResult App::init(int argc, char *argv[])
                 }
             }
         } else if (std::strcmp(argv[i], "--level") == 0 && game_) { // DEV: start level N (0-based)
-            // A test run saves (on beating the level) into its own files, never over a player's slot.
-            game_->obf_51->saveSlotPrefix += "DevTest_";
             // Level 0 is already loaded; a level the game starts gets a new GameDisplay (§_-9k§), with no sky or
             // backdrop yet: drop level 0's, or they stay.
             game_->obf_71->bgSheet = nullptr;
@@ -387,6 +385,13 @@ void App::loadGame(const std::string &game)
     game_->masks = &masks_;
     if (game_->loadLevelData(dir)) {
         if (devDirect_) {
+            // A test run plays its own slot (DevTest_1, made on first use), never a player's.
+            game_->obf_51->saveSlotPrefix += "DevTest_";
+            game_->obf_51->loadData(1);
+            if (customer_ >= 0) { // loadData picks the first customer again
+                game_->obf_51->selectedCharacter = customer_;
+                game_->playerObj->defineVars();
+            }
             game_->obf_6V(0);
             SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
                     game_->obf_AQ->currentScreens.size());
