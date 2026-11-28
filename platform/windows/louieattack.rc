@@ -1,0 +1,2 @@
+// The app icon (art/icon.svg rendered at 16-256 px). SDL uses the first icon resource for its windows.
+1 ICON "louieattack.ico"
