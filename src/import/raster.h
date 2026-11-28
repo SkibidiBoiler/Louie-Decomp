@@ -38,6 +38,9 @@ public:
     // shapes/<scale>x/<id>.png for every shape. `tick` is called after each shape (for progress/cancel);
     // returning false stops.
     bool exportShapes(const std::string &dir, int scale, const std::function<bool(size_t, size_t)> &tick);
+    // shapes/<scale>x/m<id>_<ratio>.png for each morph step in `uses`, and shapes/<scale>x/morphs.txt
+    // ("id ratio x y": each PNG's top-left in stage pixels).
+    bool exportMorphs(const std::string &dir, int scale, const std::vector<std::pair<uint16_t, uint16_t>> &uses);
 
     // sheets/<scale>x/<name>.png (vector) or sheets/1x/<name>.(png) (bitmap) plus sheets/index.txt.
     bool exportSheets(const std::string &dir, const std::vector<std::string> &names, int scale,

@@ -22,6 +22,12 @@ void ShapeTextures::clear()
         }
     }
     grays_.clear();
+    for (auto &entry : morphs_) {
+        if (entry.second) {
+            SDL_DestroyTexture(entry.second);
+        }
+    }
+    morphs_.clear();
 }
 
 void ShapeTextures::init(SDL_Renderer *renderer, const std::string &gameDir, int scale)
@@ -29,6 +35,47 @@ void ShapeTextures::init(SDL_Renderer *renderer, const std::string &gameDir, int
     renderer_ = renderer;
     scale_ = scale;
     dir_ = gameDir + "/shapes/" + std::to_string(scale) + "x/";
+    morphAt_.clear();
+    size_t size = 0;
+    if (char *text = static_cast<char *>(SDL_LoadFile((dir_ + "morphs.txt").c_str(), &size))) {
+        // One line per exported step: id ratio x y (the PNG's top-left, in stage pixels).
+        const char *p = text;
+        unsigned id = 0, ratio = 0;
+        float x = 0, y = 0;
+        int used = 0;
+        while (SDL_sscanf(p, "%u %u %f %f%n", &id, &ratio, &x, &y, &used) == 4) {
+            morphAt_[(id << 16) | ratio] = {x, y};
+            p += used;
+        }
+        SDL_free(text);
+    }
+}
+
+SDL_Texture *ShapeTextures::morph(uint16_t id, uint16_t ratio, float &x, float &y)
+{
+    const uint32_t key = (static_cast<uint32_t>(id) << 16) | ratio;
+    auto at = morphAt_.find(key);
+    if (at == morphAt_.end()) {
+        return nullptr;
+    }
+    x = at->second.first;
+    y = at->second.second;
+    auto it = morphs_.find(key);
+    if (it != morphs_.end()) {
+        return it->second;
+    }
+    SDL_Texture *texture = nullptr;
+    const std::string path = dir_ + "m" + std::to_string(id) + "_" + std::to_string(ratio) + ".png";
+    if (SDL_Surface *surface = SDL_LoadPNG(path.c_str())) {
+        texture = SDL_CreateTextureFromSurface(renderer_, surface);
+        SDL_DestroySurface(surface);
+        if (texture) {
+            SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
+            SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+        }
+    }
+    morphs_[key] = texture;
+    return texture;
 }
 
 SDL_Texture *ShapeTextures::get(uint16_t id)

@@ -487,6 +487,11 @@ bool Importer::run(const std::string &swfPath, const std::string &dataDir, const
         error_ = cancel ? "cancelled" : "could not write the shapes";
         return false;
     }
+    report(0.85f, "Drawing morph shapes");
+    if (!raster.exportMorphs(out, kScale, morphUses(swf, index))) {
+        error_ = "could not write the morph shapes";
+        return false;
+    }
     const std::vector<std::string> sheets = sheetList(game->id);
     if (!sheets.empty()) {
         const bool sheetsOk = raster.exportSheets(out, sheets, kScale, [&](size_t done, size_t total) {

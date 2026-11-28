@@ -52,6 +52,9 @@ TimelineData parseTimeline(const uint8_t *data, size_t pos, size_t end, uint16_t
 // Walks the top-level tags once.
 SwfIndex indexSwf(const Swf &swf);
 
+// Every (morph shape id, ratio) the timelines place, for the importer to draw each step.
+std::vector<std::pair<uint16_t, uint16_t>> morphUses(const Swf &swf, const SwfIndex &index);
+
 // Builds symbols.bin in memory.
 std::vector<uint8_t> buildSymbols(const Swf &swf, const SwfIndex &index);
 

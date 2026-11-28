@@ -149,7 +149,7 @@ bool SymbolLibrary::load(const std::string &path)
                                r.get<float>(), r.get<float>(), r.get<float>(), r.get<float>()};
                 }
                 if (flags & 2) {
-                    r.get<uint16_t>(); // morph ratio: not used yet
+                    k.ratio = r.get<uint16_t>();
                 }
             }
             if (!r.ok()) {
