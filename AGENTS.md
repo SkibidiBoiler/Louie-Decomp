@@ -133,7 +133,7 @@ build\windows\louieattack.exe --data "C:/Users/alfre/Proyectos/datos-papas/build
 #   texto, también en el selector;
 #   --window WxH: tamaño de la ventana (1600x720 simula el móvil; con la opción "Pantalla ancha" el nivel ocupa
 #   todo el ancho);
-#   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. --reenter N: vuelve a empezar el nivel
+#   --capture-frame N: la captura en el fotograma N en vez de a los 3 s. --kill N: el jugador muere en el fotograma N. --reenter N: vuelve a empezar el nivel
 #   actual en el fotograma N (prueba los checkpoints); --parade N: el desfile y el final en el fotograma N.
 #   Partidas guardadas de Windows:
 #   %APPDATA%\SkibidiBoiler\LouieAttackDecomp\saves\PapaLouie2_<ranura>.json

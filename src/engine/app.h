@@ -80,6 +80,7 @@ private:
     std::string capturePath_; // DEV: --capture <png>
     uint64_t captureFrame_ = 0; // DEV: --capture-frame N (app logic frame; 0 = after 3 s)
     uint64_t paradeFrame_ = 0;
+    uint64_t killFrame_ = 0;    // DEV: --kill N, the player dies at logic frame N
     uint64_t reenterFrame_ = 0; // DEV: --reenter N, start the current level again at logic frame N
     bool quitRequested_ = false;
     uint64_t lastRenderNs_ = 0;
