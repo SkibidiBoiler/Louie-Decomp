@@ -247,7 +247,10 @@ void GameObject::sendTriggered(double amount, bool pan, bool fromGlobal)
             deactivate();
         } else {
             allowTriggerReactions();
-            // SKELETON: with a pan (not global), the camera pans back to the player here.
+            if (pan && !fromGlobal) { // nothing changed: the camera goes back to the player
+                gameObj->obf_8o->setCameraPan(gameObj->obf_3Y->prepanx, gameObj->obf_3Y->prepany, "player",
+                                              screenObjID);
+            }
         }
     } else if (currentTriggers < necessaryTriggers) {
         if (canDeactivate && (broadcastReceiptMethod == 1 || broadcastReceiptMethod == 3)) {

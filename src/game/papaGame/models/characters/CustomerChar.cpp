@@ -968,7 +968,7 @@ void CustomerChar::endAnimationCycle()
     events::GameControls &controls = *gameObj->obf_8o;
     if (cycleName == "pickup_map") {
         controls.stopCycle = true;
-        // SKELETON: GameDisplay.startMainIrisOut.
+        gameObj->obf_71->startMainIrisOut();
     } else if (cycleName == "dead" || cycleName == "crawldead") {
         skidSpeed = 0;
         isSkidding = false;
@@ -1392,8 +1392,33 @@ void CustomerChar::updateObject()
                         }
                     }
                 }
+            } else if (finishType == "fake") {
+                // A boss level's false finish: walk to the spot, face left and jump for joy.
+                if (!jump && !isRidingObject && x != finishTargetX) {
+                    isWalking = true;
+                    speed = walkspeed;
+                    const double dir = finishTargetX > x ? 1 : -1;
+                    facingDir = dir;
+                    walkingDir = dir;
+                    dirx = dir;
+                    moveChar(dirx, 0, 0);
+                    if ((dir == 1 && x > finishTargetX) || (dir == -1 && x < finishTargetX)) {
+                        x = finishTargetX;
+                    }
+                } else if (x == finishTargetX) {
+                    facingDir = -1;
+                    walkingDir = -1;
+                    dirx = -1;
+                    isWalking = false;
+                    if (finishJumps < finishJumpsMax && !jump) {
+                        ++finishJumps;
+                        jumpspeed = jumpstart / 2;
+                        jump = true;
+                    }
+                }
+            } else {
+                SDL_Log("Some other kind of finishing: %s. Don't know what to do...", finishType.c_str());
             }
-            // SKELETON: the "fake" finish (boss levels) and the other finish types.
         }
         if (onMovingTile) {
             isSkidding = false;
@@ -1723,7 +1748,11 @@ void CustomerChar::updateObject()
     } else if (!jump) {
         walkingDir = facingDir;
         dirx = facingDir;
-        // SKELETON: the end portal opens over the player after falling or crawling to death.
+        if ((wasJumping || isCrawling) && !finishAddedPortal) { // dead on landing: a portal opens over the player
+            finishPortalID = gameObj->obf_V->addEffect(x, y - 44, "EndPortalEffect", "delay");
+            gameObj->obf_7C->playSound("portalsound_spin.wav");
+            finishAddedPortal = true;
+        }
     }
     managers::EffectManager &fx = *gameObj->obf_V;
     if (wasJumping && !jump && !isGrabbing && !isRidingObject && !isInQuicksand) {
@@ -1751,7 +1780,13 @@ void CustomerChar::updateObject()
     if (isCrawling) {
         gameObj->obf_c("crawl");
     }
-    // SKELETON: Professor Fitz's copter sound.
+    const bool isFitz = playerData() && playerData()->customerName == "Professor Fitz";
+    if (isGliding && isFitz && !copterSound) {
+        copterSound = gameObj->obf_7C->playSound("fitzcopter.wav", true);
+    } else if (!isGliding && isFitz && copterSound) {
+        copterSound->stop();
+        copterSound = nullptr;
+    }
 }
 
 // AS: PlayerChar.clearCombo
@@ -2230,6 +2265,10 @@ void CustomerChar::stopTrainSound()
 // clean-up.
 void CustomerChar::destroy()
 {
+    if (copterSound) {
+        copterSound->stop();
+        copterSound = nullptr;
+    }
     if (poundSound) {
         poundSound->stop();
         poundSound = nullptr;

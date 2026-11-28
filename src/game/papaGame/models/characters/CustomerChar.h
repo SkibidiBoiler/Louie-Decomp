@@ -112,7 +112,7 @@ public:
     double maxSlideSpeed = 24, slideDecayTimerInterval = 2, bulletFrequency = 5;
     double balloonFXID = -1, balloonsLastFloatedAway = 0;
     std::vector<double> foodiniGlideBalloonIDs;
-    std::shared_ptr<engine::SoundChannel> slideSound, poundSound;
+    std::shared_ptr<engine::SoundChannel> slideSound, poundSound, copterSound;
     std::shared_ptr<engine::SoundChannel> trainSound; // AS: PlayerChar.trainSound
     void startTrainSound();
     void destroy() override;

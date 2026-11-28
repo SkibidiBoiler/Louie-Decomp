@@ -54,7 +54,10 @@ void GameControls::detectKeys()
         ++gameplayTimer;
         ++currentLevelTimer;
     }
-    // SKELETON: UserData timeBonus / levelTimePlayed.
+    if (!p.isPausingAfterMiniboss && !p.isFinishingLevel) {
+        gameObj->obf_51->timeBonus -= 1;
+        gameObj->obf_51->levelTimePlayed += 1;
+    }
     if (p.isShoved && ((p.walkingDir == 1 && keyPressedRight) || (p.walkingDir == -1 && keyPressedLeft))) {
         p.isShoved = false;
         p.walkingDir = p.facingDir;
@@ -73,7 +76,10 @@ void GameControls::detectKeys()
             p.jumpChar(false);
         } else {
             p.jumpChar();
-            // SKELETON: ground pounding runs updateObject and jumpChar once more.
+            if (p.isGroundPounding) { // a ground pound falls twice as fast
+                p.updateObject();
+                p.jumpChar();
+            }
         }
     }
     if (wasJumping && !p.jump && !p.isWalking && p.skidSpeed != 0 && !p.isHit) {
