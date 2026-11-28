@@ -19,11 +19,14 @@ Please do not share converted data folders, `.swf` files or builds that bundle t
 
 - Project rules, code profile and build commands: [AGENTS.md](AGENTS.md)
 - Asset format: [docs/asset-format.md](docs/asset-format.md) · Renderer notes: [docs/renderer.md](docs/renderer.md)
-- Status: **only Papa Louie 2 works for now.** All of its game code is translated (`python -I tools/progress.py`
-  counts it): the story, the map, every world, the bosses, challenges and badges, saving and sound. Papa Louie 3
-  and Papa Louie show as "Coming soon" in the game picker; PL3 comes next, then PL1.
+- Status: **version 0.2.0, only Papa Louie 2 works for now.** All of its game code is translated: 1,991 of
+  1,991 functions in 223 classes (`python -I tools/progress.py` counts it). That covers the story, the map,
+  every world, the bosses, challenges and badges, saving and sound. Papa Louie 3 and Papa Louie show as
+  "Coming soon" in the game picker; PL3 comes next, then PL1.
+- What changed in each version: [CHANGELOG.md](CHANGELOG.md)
 - Downloads: [Releases](https://github.com/SkibidiBoiler/Louie-Decomp/releases) has a Windows `.zip` and an
-  Android `.apk`. Neither contains any game data: you still import your own `PapaLouie2.swf`.
+  Android `.apk`, both with the app icon. Neither contains any game data: you still import your own
+  `PapaLouie2.swf`.
 - Publishing checklist and legal notes: [docs/publishing.md](docs/publishing.md)
 
 ## Why a native port
