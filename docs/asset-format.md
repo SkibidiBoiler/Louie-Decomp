@@ -7,6 +7,8 @@ Produced by `tools/swf2assets.py` from the owner's SWF, loaded by `src/engine/`.
 ├── manifest.json             summary: stage size, fps, available scales, counts
 ├── symbols.bin               characters, shape bounds, class names, timelines
 ├── shapes/<N>x/<id>.png      shape <id> rasterised at scale N (FFDec)
+├── shapes/<N>x/m<id>_<r>.png  morph shape <id> at ratio <r> (each ratio a timeline key uses)
+├── shapes/<N>x/morphs.txt    one line per morph PNG: id ratio x y (its top-left, stage pixels)
 ├── sheets/index.txt          one line per sheet: "<class> <origin x> <origin y> vector|bitmap"
 ├── sheets/<N>x/<class>.png   vector sheet: frame 1 of the class, rendered at scale N (FFDec)
 ├── sheets/1x/<class>.png|jpg bitmap sheet (a linked BitmapData), as stored in the SWF

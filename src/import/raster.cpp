@@ -1299,6 +1299,47 @@ bool Rasterizer::exportShapes(const std::string &dir, int scale, const std::func
     return !failed && done == ids.size();
 }
 
+bool Rasterizer::exportMorphs(const std::string &dir, int scale, const std::vector<std::pair<uint16_t, uint16_t>> &uses)
+{
+    const std::string out = dir + "/shapes/" + std::to_string(scale) + "x/";
+    SDL_CreateDirectory(out.c_str());
+    const float s = static_cast<float>(scale);
+    std::string index;
+    for (const auto &[id, ratio] : uses) {
+        const Shape *shape = impl_->morph(id, ratio);
+        if (!shape) {
+            continue;
+        }
+        const Rect &r = shape->bounds;
+        const int w = std::max(1, static_cast<int>(std::ceil((r.xmax - r.xmin) / 20.0 * scale)));
+        const int h = std::max(1, static_cast<int>(std::ceil((r.ymax - r.ymin) / 20.0 * scale)));
+        if (w > 8192 || h > 8192) {
+            SDL_Log("Import: morph %u at %u too large (%dx%d), skipped", id, ratio, w, h);
+            continue;
+        }
+        plutovg_surface_t *surface = plutovg_surface_create(w, h);
+        plutovg_canvas_t *cv = plutovg_canvas_create(surface);
+        const Xform m{s, 0, 0, s, static_cast<float>(-r.xmin / 20.0) * s, static_cast<float>(-r.ymin / 20.0) * s};
+        impl_->drawShape(cv, *shape, m, ColorX{});
+        plutovg_canvas_destroy(cv);
+        const bool ok = savePng(surface, out + "m" + std::to_string(id) + "_" + std::to_string(ratio) + ".png");
+        plutovg_surface_destroy(surface);
+        if (!ok) {
+            return false;
+        }
+        char line[96];
+        SDL_snprintf(line, sizeof(line), "%u %u %g %g\n", id, ratio, r.xmin / 20.0, r.ymin / 20.0);
+        index += line;
+    }
+    SDL_IOStream *io = SDL_IOFromFile((out + "morphs.txt").c_str(), "wb");
+    if (!io) {
+        return false;
+    }
+    SDL_WriteIO(io, index.data(), index.size());
+    SDL_CloseIO(io);
+    return true;
+}
+
 bool Rasterizer::exportSheets(const std::string &dir, const std::vector<std::string> &names, int scale,
                               const std::function<bool(size_t, size_t)> &tick)
 {

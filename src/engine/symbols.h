@@ -20,6 +20,7 @@ struct ShapeBounds {
 
 struct TimelineKey {
     uint16_t frame = 0;
+    uint16_t ratio = 0; // morph shapes: the step between the start (0) and end (65535) shapes
     bool hasColor = false;
     Affine matrix;
     ColorTransform color;

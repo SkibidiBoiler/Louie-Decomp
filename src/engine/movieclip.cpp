@@ -26,17 +26,14 @@ ColorTransform lerp(const ColorTransform &p, const ColorTransform &q, float t)
             lerp(p.ar, q.ar, t), lerp(p.ag, q.ag, t), lerp(p.ab, q.ab, t), lerp(p.aa, q.aa, t)};
 }
 
-void drawShape(const RenderContext &ctx, uint16_t id, const Affine &m, const ColorTransform &color)
+// A shape's texture with its top-left at (x0, y0) in the shape's space, through `m` and `color`. `white` is
+// the shape's white silhouette for the colour transform's additive terms (none for morph shapes).
+void drawTexture(const RenderContext &ctx, SDL_Texture *texture, SDL_Texture *(*white)(const RenderContext &, uint16_t),
+                 uint16_t id, float x0, float y0, const Affine &m, const ColorTransform &color)
 {
-    const ShapeBounds *bounds = ctx.symbols->shape(id);
-    SDL_Texture *texture = ctx.gray ? ctx.textures->grayscale(id) : ctx.textures->get(id);
-    if (!bounds || !texture) {
-        return;
-    }
     float tw = 0.0f, th = 0.0f;
     SDL_GetTextureSize(texture, &tw, &th);
     const float scale = static_cast<float>(ctx.textures->scale());
-    const float x0 = bounds->x, y0 = bounds->y;
     const float x1 = x0 + tw / scale, y1 = y0 + th / scale;
 
     // The multiplier first; the additive terms (if any) as a second, additive pass of the shape's white
@@ -52,14 +49,34 @@ void drawShape(const RenderContext &ctx, uint16_t id, const Affine &m, const Col
     }
     static const int indices[6] = {0, 1, 2, 0, 2, 3};
     SDL_RenderGeometry(ctx.renderer, texture, v, 4, indices, 6);
-    if (color.ar > 0.0f || color.ag > 0.0f || color.ab > 0.0f) {
-        if (SDL_Texture *white = ctx.textures->silhouette(id)) {
+    if (white && (color.ar > 0.0f || color.ag > 0.0f || color.ab > 0.0f)) {
+        if (SDL_Texture *silhouette = white(ctx, id)) {
             const SDL_FColor add{clamp01(color.ar), clamp01(color.ag), clamp01(color.ab), clamp01(color.ma)};
             for (SDL_Vertex &vertex : v) {
                 vertex.color = add;
             }
-            SDL_RenderGeometry(ctx.renderer, white, v, 4, indices, 6);
+            SDL_RenderGeometry(ctx.renderer, silhouette, v, 4, indices, 6);
         }
+    }
+}
+
+void drawShape(const RenderContext &ctx, uint16_t id, const Affine &m, const ColorTransform &color)
+{
+    const ShapeBounds *bounds = ctx.symbols->shape(id);
+    SDL_Texture *texture = ctx.gray ? ctx.textures->grayscale(id) : ctx.textures->get(id);
+    if (!bounds || !texture) {
+        return;
+    }
+    drawTexture(ctx, texture, [](const RenderContext &c, uint16_t i) { return c.textures->silhouette(i); }, id,
+                bounds->x, bounds->y, m, color);
+}
+
+// A morph shape at the ratio of its current key (the importer exports each ratio the timelines use).
+void drawMorph(const RenderContext &ctx, uint16_t id, uint16_t ratio, const Affine &m, const ColorTransform &color)
+{
+    float x = 0, y = 0;
+    if (SDL_Texture *texture = ctx.textures->morph(id, ratio, x, y)) {
+        drawTexture(ctx, texture, nullptr, id, x, y, m, color);
     }
 }
 
@@ -500,6 +517,8 @@ void MovieClip::renderChild(const RenderContext &ctx, const Child &child, const 
         }
     } else if (ctx.symbols->kind(track.charId) == CharKind::Shape) {
         drawShape(ctx, track.charId, m, color);
+    } else if (ctx.symbols->kind(track.charId) == CharKind::Morph) {
+        drawMorph(ctx, track.charId, key.ratio, m, color);
     } else if (ctx.text && ctx.symbols->kind(track.charId) == CharKind::Text) {
         ctx.text->drawStatic(track.charId, m, color);
     } else if (ctx.text && ctx.symbols->kind(track.charId) == CharKind::EditText) {
@@ -514,7 +533,6 @@ void MovieClip::renderChild(const RenderContext &ctx, const Child &child, const 
         }
         ctx.text->drawEdit(track.charId, text, m, color);
     }
-    // TODO: morph shapes are not drawn yet.
 }
 
 void MovieClip::render(const RenderContext &ctx, const Affine &parent, const ColorTransform &parentColor) const

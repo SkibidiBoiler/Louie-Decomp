@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <climits>
 #include <cstring>
 
 namespace engine {
@@ -137,6 +138,8 @@ SDL_AppResult App::init(int argc, char *argv[])
             scriptFrame_ = std::max(scriptFrame_, 0);
         } else if (std::strcmp(argv[i], "--parade") == 0) { // DEV: show the parade (then the ending) at frame N
             paradeFrame_ = std::strtoull(argv[i + 1], nullptr, 10);
+        } else if (std::strcmp(argv[i], "--kill") == 0) { // DEV: the player dies at frame N
+            killFrame_ = std::strtoull(argv[i + 1], nullptr, 10);
         } else if (std::strcmp(argv[i], "--reenter") == 0) { // DEV: start the current level again at frame N
             reenterFrame_ = std::strtoull(argv[i + 1], nullptr, 10);
         } else if (std::strcmp(argv[i], "--frames") == 0) { // DEV: quit after N logic frames
@@ -177,8 +180,10 @@ SDL_AppResult App::init(int argc, char *argv[])
                 }
             }
         } else if (std::strcmp(argv[i], "--level") == 0 && game_) { // DEV: start level N (0-based)
-            // A test run saves (on beating the level) into its own files, never over a player's slot.
-            game_->obf_51->saveSlotPrefix += "DevTest_";
+            // Level 0 is already loaded; a level the game starts gets a new GameDisplay (§_-9k§), with no sky or
+            // backdrop yet: drop level 0's, or they stay.
+            game_->obf_71->bgSheet = nullptr;
+            game_->obf_71->mgSheet = nullptr;
             game_->obf_6V(std::atof(argv[i + 1]));
         } else if (std::strcmp(argv[i], "--room") == 0 && game_) { // DEV: start in room N (0-based)
             switchRoom(std::atoi(argv[i + 1]) - static_cast<int>(game_->obf_AQ->currentScreen));
@@ -383,6 +388,13 @@ void App::loadGame(const std::string &game)
     game_->masks = &masks_;
     if (game_->loadLevelData(dir)) {
         if (devDirect_) {
+            // A test run plays its own slot (DevTest_1, made on first use), never a player's.
+            game_->obf_51->saveSlotPrefix += "DevTest_";
+            game_->obf_51->loadData(1);
+            if (customer_ >= 0) { // loadData picks the first customer again
+                game_->obf_51->selectedCharacter = customer_;
+                game_->playerObj->defineVars();
+            }
             game_->obf_6V(0);
             SDL_Log("Level 0: %s, %zu rooms", game_->obf_AQ->getWorldTitle(0).c_str(),
                     game_->obf_AQ->currentScreens.size());
@@ -1041,6 +1053,9 @@ void App::tick()
     ++frame_;
     if (game_ && paradeFrame_ != 0 && frame_ == paradeFrame_) { // DEV: --parade
         game_->obf_14(true);
+    }
+    if (game_ && killFrame_ != 0 && frame_ == killFrame_ && game_->playerObj) { // DEV: --kill
+        game_->playerObj->hurtPlayer(0, INT_MAX, true);
     }
     if (game_ && reenterFrame_ != 0 && frame_ == reenterFrame_) { // DEV: --reenter (checks the checkpoint load)
         SDL_Log("DEV: enter level %s again", std::to_string(static_cast<int>(game_->obf_AQ->currentLevel)).c_str());

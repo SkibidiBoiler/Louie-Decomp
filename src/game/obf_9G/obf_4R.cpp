@@ -261,7 +261,9 @@ void obf_4R::obf_2r()
 // next level uses again (the original makes a new one in §_-9k§).
 void obf_4R::obf_Ap()
 {
-    obf_AQ->clearLevelScreens();
+    // QUIRK: the original clears the level's screens first; objects that save their state when destroyed
+    // (GameObject17 and others) then write into a null ScreenData, an error the Flash player swallows. The port
+    // clears the screens after the managers, so those saves land in data that is dropped right after.
     if (obf_6Z) {
         obf_6Z->destroy();
     }
@@ -283,6 +285,7 @@ void obf_4R::obf_Ap()
     obf_3Z.reset();
     obf_V.reset();
     obf_4l.reset();
+    obf_AQ->clearLevelScreens();
     obf_7t.reset();
     obf_71.reset();
     obf_3Y.reset();

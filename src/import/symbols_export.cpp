@@ -1,5 +1,7 @@
 #include "import/symbols_export.h"
 
+#include <set>
+
 #include <algorithm>
 #include <cstring>
 #include <memory>
@@ -304,6 +306,30 @@ SwfIndex indexSwf(const Swf &swf)
         }
     });
     return index;
+}
+
+std::vector<std::pair<uint16_t, uint16_t>> morphUses(const Swf &swf, const SwfIndex &index)
+{
+    std::set<std::pair<uint16_t, uint16_t>> uses;
+    auto collect = [&](const TimelineData &tl) {
+        for (const auto &t : tl.tracks) {
+            auto kind = index.chars.find(t->charId);
+            if (kind == index.chars.end() || kind->second != KindMorph) {
+                continue;
+            }
+            for (const Key &k : t->keys) {
+                uses.insert({t->charId, k.ratio.value_or(0)});
+            }
+        }
+    };
+    for (const auto &[id, tag] : index.defs) {
+        if (index.chars.at(id) == KindSprite && tag.size >= 4) {
+            collect(parseTimeline(tag.body, 4, tag.size, u16(tag.body + 2)));
+        }
+    }
+    const auto &d = swf.data();
+    collect(parseTimeline(d.data(), swf.firstTag(), d.size(), swf.frameCount()));
+    return {uses.begin(), uses.end()};
 }
 
 std::vector<uint8_t> buildSymbols(const Swf &swf, const SwfIndex &index)
